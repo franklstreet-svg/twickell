@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+
+# Environment
+.env
+
+# Logs / runtime
+logs/
+outputs/
+bundles/
+bridge_queue/requests/
+bridge_queue/results/
+
+# Uploads / user data
+uploads/
+data/uploads/
+
+# Local job/state data (generated)
+data/jobs/
+jobs/
+ledger/
+
+# Test files / samples (local only)
+data/tests/
+*.pdf
+*.xlsx
+*.zip
+
+# Debug / scratch
+_debug*
+_tw_*.txt
+_create_job_debug.txt
+*.PRE_STRIPE_BACKUP
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+{
+  "OK": "OK",
+  "JOB_CREATED": "Job created.",
+  "PDF_NOT_FOUND": "PDF file not found.",
+  "PAGE_LIMIT_FREE_SAMPLE": "Free sample is only available for PDFs up to {max_pages} pages.",
+  "PAGE_LIMIT_HARD_CAP": "PDF exceeds the {cap_pages}-page limit. Please split into {cap_pages}-page batches.",
+  "QUOTE_PRICE": "Price: ${price} for {pages} pages.",
+  "PROCESSING_STARTED": "Processing started.",
+  "PROCESSING_DONE": "Processing complete.",
+  "PROCESSING_FAILED": "Processing failed."
+}

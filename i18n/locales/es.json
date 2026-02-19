@@ -1,0 +1,11 @@
+{
+  "OK": "OK",
+  "JOB_CREATED": "Trabajo creado.",
+  "PDF_NOT_FOUND": "No se encontró el archivo PDF.",
+  "PAGE_LIMIT_FREE_SAMPLE": "La muestra gratis solo está disponible para PDFs de hasta {max_pages} páginas.",
+  "PAGE_LIMIT_HARD_CAP": "El PDF supera el límite de {cap_pages} páginas. Divídalo en lotes de {cap_pages} páginas.",
+  "QUOTE_PRICE": "Precio: ${price} para {pages} páginas.",
+  "PROCESSING_STARTED": "Procesamiento iniciado.",
+  "PROCESSING_DONE": "Procesamiento completo.",
+  "PROCESSING_FAILED": "El procesamiento falló."
+}
