@@ -3,6 +3,7 @@ import os
 import json
 import asyncio
 import logging
+import requests as _requests
 import edge_tts
 from flask import Flask, request, jsonify, send_from_directory, Response
 from dotenv import load_dotenv
@@ -36,14 +37,7 @@ def static_files(filename):
     return send_from_directory(WEBSITE_DIR, filename)
 
 
-@app.route('/demo_chat', methods=['POST'])
-def demo_chat():
-    data = request.get_json(silent=True) or {}
-    user_message = (data.get('message') or '').strip()
-    if not user_message:
-        return jsonify({'error': 'empty'}), 400
-
-    demo_system = """You are Orby — a personal AI companion that runs locally on a customer's computer. You are talking to a potential customer on the My Orby website who has never used you before.
+DEMO_SYSTEM = """You are Orby — a personal AI companion that runs locally on a customer's computer. You are talking to a potential customer on the My Orby website who has never used you before.
 
 YOUR JOB: Let them get to know you. Be yourself — warm, genuine, funny, real. Answer anything they ask. Naturally weave in what you can do when it's relevant. Don't be a sales bot. Be a friend they're meeting for the first time.
 
@@ -87,22 +81,74 @@ RULES:
 - If they ask to buy: tell them to click the Get Started button above.
 - Be genuinely curious about them — ask questions back."""
 
-    try:
-        import anthropic
-        client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY', ''))
-        messages = data.get('history', [])
-        messages.append({'role': 'user', 'content': user_message})
-        response = client.messages.create(
-            model=os.getenv('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
-            max_tokens=300,
-            system=demo_system,
-            messages=messages,
-            temperature=1.0,
-        )
-        return jsonify({'response': response.content[0].text})
-    except Exception as e:
-        log.error('Demo chat error: %s', e)
-        return jsonify({'response': "Having a little trouble — try again in a second!"})
+
+def _chat_phi3(messages):
+    phi3_url = os.getenv('PHI3_URL', 'http://127.0.0.1:11434')
+    payload = {
+        'model': 'phi3',
+        'messages': [{'role': 'system', 'content': DEMO_SYSTEM}] + messages,
+        'max_tokens': 300,
+        'temperature': 0.7,
+        'stream': False,
+    }
+    r = _requests.post(f'{phi3_url}/v1/chat/completions', json=payload, timeout=5)
+    r.raise_for_status()
+    return r.json()['choices'][0]['message']['content']
+
+
+def _chat_huggingface(messages):
+    hf_token = os.getenv('HF_TOKEN', '')
+    hf_model = os.getenv('HF_MODEL', 'microsoft/Phi-3-mini-4k-instruct')
+    headers = {'Authorization': f'Bearer {hf_token}'}
+    payload = {
+        'model': hf_model,
+        'messages': [{'role': 'system', 'content': DEMO_SYSTEM}] + messages,
+        'max_tokens': 300,
+        'temperature': 0.7,
+    }
+    r = _requests.post(
+        f'https://api-inference.huggingface.co/models/{hf_model}/v1/chat/completions',
+        headers=headers,
+        json=payload,
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()['choices'][0]['message']['content']
+
+
+def _chat_anthropic(messages):
+    import anthropic
+    client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY', ''))
+    response = client.messages.create(
+        model=os.getenv('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
+        max_tokens=300,
+        system=DEMO_SYSTEM,
+        messages=messages,
+        temperature=1.0,
+    )
+    return response.content[0].text
+
+
+@app.route('/demo_chat', methods=['POST'])
+def demo_chat():
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get('message') or '').strip()
+    if not user_message:
+        return jsonify({'error': 'empty'}), 400
+
+    messages = data.get('history', [])
+    messages.append({'role': 'user', 'content': user_message})
+
+    for tier, fn in [('phi3', _chat_phi3), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+        try:
+            reply = fn(messages)
+            if reply:
+                log.info('demo_chat served by %s', tier)
+                return jsonify({'response': reply})
+        except Exception as e:
+            log.warning('demo_chat %s failed: %s', tier, e)
+
+    return jsonify({'response': "Having a little trouble — try again in a second!"})
 
 
 @app.route('/tts', methods=['POST'])
