@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Refund &amp; Cancellation Policy — My Orby</title>
+  <meta name="description" content="My Orby Refund and Cancellation Policy — 30-day money-back guarantee, how to cancel, and what to expect." />
+  <style>
+    :root {
+      --bg:        #0a0f1e;
+      --surface:   #111827;
+      --surface2:  #1a2235;
+      --gold:      #d4a017;
+      --gold-light:#f0c040;
+      --gold-glow: rgba(212, 160, 23, 0.35);
+      --text:      #e8eaf0;
+      --text-muted:#8892a4;
+      --border:    rgba(212, 160, 23, 0.18);
+      --radius:    12px;
+      --radius-lg: 20px;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --transition: 0.22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--gold-light); text-decoration: none; transition: color var(--transition); }
+    a:hover { color: #fff; }
+
+    /* NAV */
+    #nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 15, 30, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 24px;
+    }
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .nav-back:hover { color: var(--gold-light); }
+
+    /* ORB */
+    .orb {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow: 0 0 10px var(--gold), 0 0 20px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3);
+      flex-shrink: 0;
+    }
+
+    /* MAIN */
+    .page-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .gold-accent { color: var(--gold-light); }
+    .meta-line {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .page-header .intro {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.75;
+    }
+
+    /* SUMMARY CARDS */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: all var(--transition);
+    }
+    .summary-card:hover { border-color: rgba(212,160,23,0.35); }
+    .summary-card.featured {
+      border-color: var(--gold);
+      background: linear-gradient(160deg, rgba(212,160,23,0.06) 0%, var(--surface) 100%);
+      box-shadow: 0 0 24px rgba(212,160,23,0.1);
+    }
+    .summary-icon {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+    .summary-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+    }
+    .summary-card p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+    .summary-card .big-label {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    /* SECTIONS */
+    .legal-section {
+      margin-bottom: 44px;
+    }
+    .legal-section h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(212, 160, 23, 0.15);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .legal-section p {
+      color: var(--text);
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 14px;
+    }
+    .legal-section p:last-child { margin-bottom: 0; }
+
+    /* HIGHLIGHT */
+    .highlight-box {
+      background: rgba(74, 222, 128, 0.06);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      border-left: 4px solid #4ade80;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .highlight-box p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .highlight-box p:last-child { margin-bottom: 0; }
+
+    /* WARNING */
+    .warning-box {
+      background: rgba(255, 60, 60, 0.05);
+      border: 1px solid rgba(255, 100, 100, 0.25);
+      border-left: 4px solid #e05555;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .warning-box p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .warning-box p:last-child { margin-bottom: 0; }
+
+    /* GOLD */
+    .caution-box {
+      background: rgba(212, 160, 23, 0.06);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      border-left: 4px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .caution-box p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .caution-box p:last-child { margin-bottom: 0; }
+
+    /* STEPS */
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 20px 0;
+      list-style: none;
+      counter-reset: step-counter;
+    }
+    .steps-list li {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      counter-increment: step-counter;
+    }
+    .step-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(212, 160, 23, 0.15);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-content strong {
+      display: block;
+      font-size: 0.97rem;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .step-content p {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 40px 0 28px;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .footer-brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--gold-light); }
+    .footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 24px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-wrap { padding: 40px 16px 60px; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to My Orby
+    </a>
+    <a href="/" class="footer-brand-wrap" style="text-decoration:none;">
+      <div class="orb"></div>
+      <span style="font-size:1.1rem;font-weight:700;color:var(--text);">My Orby</span>
+    </a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="page-wrap">
+
+  <div class="page-header">
+    <h1>Refund &amp; <span class="gold-accent">Cancellation Policy</span></h1>
+    <p class="meta-line">Last Updated: May 15, 2026 &nbsp;&middot;&nbsp; Effective: May 15, 2026</p>
+    <p class="intro">We want you to feel confident buying My Orby. This page explains exactly what you can get a refund on, what you can't, and how to cancel — no fine print, no runaround.</p>
+  </div>
+
+  <!-- AT-A-GLANCE SUMMARY CARDS -->
+  <div class="summary-grid">
+    <div class="summary-card featured">
+      <span class="summary-icon">30</span>
+      <div class="big-label">Day Guarantee</div>
+      <h3>Base License — Full Refund</h3>
+      <p>If My Orby isn't right for you within 30 days of purchase, email us and we'll refund your one-time license fee. No questions asked.</p>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">&#8734;</span>
+      <div class="big-label">Cancel Anytime</div>
+      <h3>Monthly Fee Subscription</h3>
+      <p>Cancel whenever you want. You keep access through the end of your billing period. No penalties, no hoops to jump through.</p>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">&#10006;</span>
+      <div class="big-label">No Refund</div>
+      <h3>Module Setup Fees</h3>
+      <p>Once a module is installed or activated, the one-time setup fee is non-refundable. This is disclosed before every module purchase.</p>
+    </div>
+    <div class="summary-card">
+      <span class="summary-icon">&#10006;</span>
+      <div class="big-label">No Refund</div>
+      <h3>Current Month's Service Fee</h3>
+      <p>Monthly service fees are not refunded for the current billing period, regardless of when you cancel within the month.</p>
+    </div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="legal-section">
+    <h2><span class="section-num">1</span> Base License — 30-Day Money-Back Guarantee</h2>
+    <div class="highlight-box">
+      <p><strong>My Orby offers a full, no-questions-asked thirty (30) day money-back guarantee on the one-time base software license fee.</strong></p>
+      <p>If you purchase My Orby and decide it is not right for you for any reason within thirty (30) days of your original purchase date, contact us at <a href="mailto:support@myorby.com">support@myorby.com</a> with your order number and request a refund. We will process a full refund of your one-time license fee without requiring you to explain your reasons.</p>
+    </div>
+    <p><strong>What this covers:</strong> The one-time per-seat base software license fee paid at the time of your initial purchase. This guarantee applies to each seat you purchase, with the thirty-day window calculated from the date of purchase of each respective seat.</p>
+    <p><strong>What this does not cover:</strong> The thirty-day money-back guarantee does not apply to monthly service fees (see Section 3), module setup fees (see Section 2), or any other fees or charges. Refunds under this guarantee are limited to the base license fee only.</p>
+    <p><strong>After 30 days:</strong> After the thirty-day money-back period has expired, the base license fee becomes non-refundable under all circumstances, regardless of the reason for the refund request. We encourage you to evaluate the Software thoroughly during the thirty-day window.</p>
+    <p><strong>One refund per customer:</strong> The thirty-day money-back guarantee is available once per customer. If you cancel, receive a refund, and later repurchase the Software, the guarantee does not apply to the second purchase.</p>
+    <p><strong>Refund method:</strong> Refunds will be credited to the original payment method used at the time of purchase. My Orby does not offer refunds via check, gift card, or alternative payment methods. Depending on your card issuer, it may take five (5) to ten (10) business days for the refund to appear on your statement.</p>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="legal-section">
+    <h2><span class="section-num">2</span> Module Setup Fees — Non-Refundable After Installation</h2>
+    <div class="warning-box">
+      <p><strong>Module setup fees are non-refundable once the module has been installed, configured, or activated, or once the setup and delivery process has been initiated by My Orby.</strong></p>
+    </div>
+    <p>Optional add-on modules — including but not limited to the Legal Module, Medical Module, Business Modules, Industry Modules, and Trade Specialty Modules — each require a one-time setup fee in addition to any applicable recurring module subscription. The setup fee covers the cost of preparing, delivering, and configuring the module software for your installation.</p>
+    <p>Because module delivery and setup begins immediately upon purchase, the setup fee is consumed at the time of purchase. My Orby discloses this non-refundable policy clearly at the time of each module purchase, and your completion of the module purchase constitutes your acknowledgment and acceptance of this policy.</p>
+    <p><strong>Before you purchase a module:</strong> Please review the module description carefully and ensure the module meets your needs before completing your purchase. If you have questions about whether a specific module is right for you, contact us at support@myorby.com before purchasing. We are happy to answer questions and help you determine if a module is the right fit.</p>
+    <p><strong>Exception for non-delivery:</strong> If a module you purchased fails to deliver or cannot be installed due to a defect or error on My Orby's part — and My Orby is unable to resolve the issue within a reasonable time — you may be entitled to a refund of the module setup fee. Contact support@myorby.com to report any such issue.</p>
+    <p><strong>Module subscriptions:</strong> Where a module includes a recurring monthly subscription component (in addition to the one-time setup fee), that monthly subscription follows the same cancellation rules as the base monthly service fee described in Section 3.</p>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="legal-section">
+    <h2><span class="section-num">3</span> Monthly Service Fee — No Refunds, Cancel Anytime</h2>
+    <p>The monthly service fee is a recurring subscription that auto-renews each month. The following policy applies:</p>
+    <p><strong>Non-refundable for the current period:</strong> Monthly service fees are not refundable, in whole or in part, for the current billing period. If you cancel on the first day of your billing period or the last day, you will not receive a refund for that month.</p>
+    <p><strong>No pro-rated refunds:</strong> My Orby does not offer pro-rated refunds for unused portions of any monthly billing period.</p>
+    <p><strong>Cancel anytime:</strong> You may cancel your monthly service subscription at any time, without penalty, by contacting support@myorby.com or through the account management portal. There are no cancellation fees, early termination fees, or penalties for canceling.</p>
+    <p><strong>Service through end of period:</strong> When you cancel, your access to bridge server features, software updates, and associated online services continues through the end of the billing period for which you have already paid. Your Software will continue to operate in its most recently updated state with its local functionality intact after the billing period ends.</p>
+    <p><strong>After cancellation — what you keep:</strong> After your subscription ends, you retain a perpetual license to use the Software as it existed at the time of your last update, for personal use on your authorized device, subject to the Terms of Service. You do not need to uninstall the Software when you cancel the monthly subscription. However, you will no longer receive Software updates, bridge server connectivity, AI service routing through the bridge server, or customer support.</p>
+    <p><strong>After cancellation — what you lose:</strong> Following the end of the last paid billing period, your Software will no longer be able to connect to My Orby's bridge server. AI conversation features that depend on bridge server routing will become unavailable or degraded. You will not receive future Software updates or new features. Customer support for your installation may be limited.</p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="legal-section">
+    <h2><span class="section-num">4</span> How to Cancel Your Subscription</h2>
+    <p>Canceling your My Orby subscription is straightforward. You may cancel at any time using either of the following methods:</p>
+
+    <ul class="steps-list">
+      <li>
+        <div class="step-icon">1</div>
+        <div class="step-content">
+          <strong>Email Us</strong>
+          <p>Send an email to <a href="mailto:support@myorby.com">support@myorby.com</a> with the subject line "Cancel Subscription." Include your name and the email address associated with your account. We will process your cancellation and confirm it via email within two (2) business days.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-icon">2</div>
+        <div class="step-content">
+          <strong>Account Portal (if available)</strong>
+          <p>If My Orby offers a self-service account management portal, you may cancel directly through the portal by navigating to your subscription settings and selecting "Cancel Subscription." Portal availability will be communicated via email and in-app notifications.</p>
+        </div>
+      </li>
+    </ul>
+
+    <div class="caution-box">
+      <p><strong>Important:</strong> Cancellation takes effect at the end of your current billing period. You will receive a confirmation email when your cancellation has been processed. If you do not receive a confirmation within three (3) business days of your cancellation request, please follow up to ensure your cancellation was received and processed.</p>
+    </div>
+    <p>Uninstalling the Software from your computer does not automatically cancel your subscription. You must contact My Orby to cancel the recurring billing. If you have uninstalled the Software but have not canceled, you may continue to be charged the monthly service fee. My Orby is not responsible for charges incurred because you failed to formally cancel your subscription.</p>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="legal-section">
+    <h2><span class="section-num">5</span> How to Request a Refund</h2>
+    <p>If you believe you are entitled to a refund under this policy (see Section 1 for eligible refunds), here is how to request one:</p>
+
+    <ul class="steps-list">
+      <li>
+        <div class="step-icon">1</div>
+        <div class="step-content">
+          <strong>Email support@myorby.com</strong>
+          <p>Send an email to <a href="mailto:support@myorby.com">support@myorby.com</a> with the subject line "Refund Request."</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-icon">2</div>
+        <div class="step-content">
+          <strong>Include your order information</strong>
+          <p>Include your name, the email address used for your purchase, and your order number or purchase confirmation number. Your order number can be found in your purchase confirmation email from Stripe or My Orby.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-icon">3</div>
+        <div class="step-content">
+          <strong>Confirm your request</strong>
+          <p>You do not need to explain your reason for the refund (for the base license within 30 days). Simply state that you are requesting a refund under the 30-day money-back guarantee.</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-icon">4</div>
+        <div class="step-content">
+          <strong>Await processing</strong>
+          <p>My Orby will review and process eligible refund requests within five (5) to ten (10) business days. You will receive a confirmation email when your refund has been processed. Depending on your card issuer or bank, it may take an additional three (3) to five (5) business days for the funds to appear in your account.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="legal-section">
+    <h2><span class="section-num">6</span> Chargebacks and Payment Disputes</h2>
+    <p>If you have a billing question or believe you have been charged incorrectly, please contact My Orby at support@myorby.com before initiating a chargeback with your credit card issuer or bank. My Orby is committed to resolving legitimate billing disputes quickly and fairly.</p>
+    <p>Initiating a chargeback for a charge that is valid under this policy — such as a monthly service fee that was properly billed before cancellation, or a module setup fee that was incurred after installation — may be treated as a material breach of the Terms of Service and may result in suspension or termination of your license without refund.</p>
+    <p>My Orby will respond to chargeback proceedings honestly and provide the relevant documentation to demonstrate that charges were valid under this policy and the Terms of Service.</p>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="legal-section">
+    <h2><span class="section-num">7</span> Summary Table</h2>
+    <div style="overflow-x:auto; margin: 16px 0;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.92rem;">
+        <thead>
+          <tr style="background:var(--surface2); border-bottom:2px solid var(--border);">
+            <th style="text-align:left; padding:12px 16px; color:var(--gold-light); font-weight:700;">Fee Type</th>
+            <th style="text-align:left; padding:12px 16px; color:var(--gold-light); font-weight:700;">Refundable?</th>
+            <th style="text-align:left; padding:12px 16px; color:var(--gold-light); font-weight:700;">Conditions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 16px; color:var(--text);">One-time base license fee</td>
+            <td style="padding:12px 16px; color:#4ade80; font-weight:700;">Yes</td>
+            <td style="padding:12px 16px; color:var(--text-muted);">Within 30 days of purchase, no questions asked</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+            <td style="padding:12px 16px; color:var(--text);">Monthly service fee (current period)</td>
+            <td style="padding:12px 16px; color:#e05555; font-weight:700;">No</td>
+            <td style="padding:12px 16px; color:var(--text-muted);">No pro-rated refunds; cancel anytime for future periods</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 16px; color:var(--text);">Module setup fee (post-installation)</td>
+            <td style="padding:12px 16px; color:#e05555; font-weight:700;">No</td>
+            <td style="padding:12px 16px; color:var(--text-muted);">Non-refundable after module is installed or activated</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);">
+            <td style="padding:12px 16px; color:var(--text);">Module monthly subscription (current period)</td>
+            <td style="padding:12px 16px; color:#e05555; font-weight:700;">No</td>
+            <td style="padding:12px 16px; color:var(--text-muted);">Same policy as base monthly service fee</td>
+          </tr>
+          <tr>
+            <td style="padding:12px 16px; color:var(--text);">Base license fee (after 30 days)</td>
+            <td style="padding:12px 16px; color:#e05555; font-weight:700;">No</td>
+            <td style="padding:12px 16px; color:var(--text-muted);">Guarantee period has expired</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="legal-section">
+    <h2><span class="section-num">8</span> Contact Us</h2>
+    <p>If you have questions about this Refund and Cancellation Policy, or if you need assistance with a refund or cancellation request, please contact us:</p>
+    <div class="caution-box">
+      <p><strong>My Orby — Customer Support</strong></p>
+      <p>Email: <a href="mailto:support@myorby.com">support@myorby.com</a></p>
+      <p>Subject line for refunds: "Refund Request"</p>
+      <p>Subject line for cancellations: "Cancel Subscription"</p>
+      <p>Please include your name and the email address associated with your account.</p>
+    </div>
+    <p>This Refund and Cancellation Policy is part of, and subject to, the My Orby Terms of Service available at <a href="/terms.html">/terms.html</a>. In the event of any conflict between this policy and the Terms of Service, the Terms of Service shall control.</p>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="footer-brand-wrap" style="text-decoration:none;">
+      <div class="orb"></div>
+      <span>My Orby</span>
+    </a>
+    <ul class="footer-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/terms.html">Terms of Service</a></li>
+      <li><a href="/privacy.html">Privacy Policy</a></li>
+      <li><a href="/refund.html">Refund Policy</a></li>
+      <li><a href="mailto:support@myorby.com">Contact</a></li>
+    </ul>
+  </div>
+  <div class="footer-bottom">
+    &copy; 2026 My Orby. All rights reserved. This Refund and Cancellation Policy was last updated May 15, 2026.
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,3294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Orby — Your Personal AI. Lives On Your Computer. Works For You.</title>
+  <meta name="description" content="Meet Orby — your personal AI companion that runs locally on your computer. No cloud. No subscription to big tech. She's yours." />
+  <style>
+    /* =============================================
+       CSS VARIABLES & RESET
+    ============================================= */
+    :root {
+      --bg:        #0a0f1e;
+      --surface:   #111827;
+      --surface2:  #1a2235;
+      --gold:      #d4a017;
+      --gold-light:#f0c040;
+      --gold-glow: rgba(212, 160, 23, 0.35);
+      --text:      #e8eaf0;
+      --text-muted:#8892a4;
+      --border:    rgba(212, 160, 23, 0.18);
+      --radius:    12px;
+      --radius-lg: 20px;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --transition: 0.22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--gold-light); text-decoration: none; transition: color var(--transition); }
+    a:hover { color: #fff; }
+
+    img { display: block; max-width: 100%; }
+
+    /* =============================================
+       UTILITY
+    ============================================= */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .section-sub {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-bottom: 56px;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .gold { color: var(--gold-light); }
+
+    section { padding: 96px 0; }
+
+    /* =============================================
+       BUTTONS
+    ============================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .btn-gold:hover {
+      background: linear-gradient(135deg, var(--gold-light), #ffe080);
+      box-shadow: 0 0 32px rgba(212, 160, 23, 0.6);
+      color: #0a0f1e;
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 2px solid rgba(255,255,255,0.25);
+    }
+    .btn-outline:hover {
+      border-color: var(--gold);
+      color: var(--gold-light);
+      transform: translateY(-2px);
+    }
+
+    .btn-sm {
+      padding: 10px 20px;
+      font-size: 0.9rem;
+    }
+
+    /* =============================================
+       ORB ANIMATION
+    ============================================= */
+    .orb {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow:
+        0 0 12px var(--gold),
+        0 0 28px var(--gold-glow),
+        inset 0 2px 4px rgba(255,255,255,0.3);
+      animation: orb-pulse 3s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    .orb-lg {
+      width: 80px;
+      height: 80px;
+      box-shadow:
+        0 0 30px var(--gold),
+        0 0 70px var(--gold-glow),
+        0 0 120px rgba(212,160,23,0.15),
+        inset 0 4px 8px rgba(255,255,255,0.3);
+    }
+
+    .orb-sm {
+      width: 28px;
+      height: 28px;
+    }
+
+    @keyframes orb-pulse {
+      0%, 100% { box-shadow: 0 0 12px var(--gold), 0 0 28px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3); }
+      50%       { box-shadow: 0 0 22px var(--gold), 0 0 50px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3); }
+    }
+
+    @keyframes orb-pulse-lg {
+      0%, 100% { box-shadow: 0 0 30px var(--gold), 0 0 70px var(--gold-glow), 0 0 120px rgba(212,160,23,0.15), inset 0 4px 8px rgba(255,255,255,0.3); }
+      50%       { box-shadow: 0 0 50px var(--gold), 0 0 110px rgba(212,160,23,0.55), 0 0 180px rgba(212,160,23,0.2), inset 0 4px 8px rgba(255,255,255,0.3); }
+    }
+
+    .orb-lg { animation: orb-pulse-lg 3s ease-in-out infinite; }
+
+    /* =============================================
+       NAV
+    ============================================= */
+    #nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 15, 30, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 68px;
+      gap: 24px;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      flex-shrink: 0;
+    }
+
+    .nav-logo:hover { color: var(--gold-light); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta { margin-left: 8px; }
+
+    .nav-cart-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      border: 1px solid rgba(212,160,23,0.5);
+      border-radius: 10px;
+      color: var(--gold-light);
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 7px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      position: relative;
+      margin-left: 4px;
+    }
+    .nav-cart-btn:hover {
+      background: rgba(212,160,23,0.1);
+      border-color: var(--gold);
+      box-shadow: 0 0 12px rgba(212,160,23,0.2);
+    }
+    .nav-cart-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .nav-cart-badge {
+      display: none;
+      background: var(--gold);
+      color: #0a0f1e;
+      font-size: 0.68rem;
+      font-weight: 800;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      margin-left: 2px;
+    }
+    .nav-cart-badge.has-items { display: flex; }
+
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 4px;
+      background: none;
+      border: none;
+    }
+    .nav-hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--text);
+      border-radius: 2px;
+      transition: all var(--transition);
+    }
+
+    /* =============================================
+       HERO
+    ============================================= */
+    #hero {
+      padding: 120px 0 96px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #hero::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, rgba(212,160,23,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-orb-wrap {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 36px;
+    }
+
+    .hero-headline {
+      font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -0.03em;
+      max-width: 860px;
+      margin: 0 auto 24px;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 44px;
+      line-height: 1.7;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 44px;
+    }
+
+    .founding-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(212, 160, 23, 0.12);
+      border: 1px solid rgba(212, 160, 23, 0.4);
+      border-radius: 50px;
+      padding: 10px 22px;
+      font-size: 0.9rem;
+      color: var(--gold-light);
+      font-weight: 500;
+    }
+
+    /* =============================================
+       FEATURES
+    ============================================= */
+    #features { background: var(--surface); }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .feature-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .feature-card:hover { border-color: rgba(212,160,23,0.7); transform: translateY(-4px); }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--gold-light);
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    /* =============================================
+       HOW IT WORKS
+    ============================================= */
+    #how-it-works { background: var(--bg); }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      position: relative;
+    }
+
+    .steps::before {
+      content: '';
+      position: absolute;
+      top: 40px;
+      left: calc(16.66% + 20px);
+      right: calc(16.66% + 20px);
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+      opacity: 0.3;
+    }
+
+    .step {
+      text-align: center;
+      padding: 40px 24px;
+    }
+
+    .step-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 2px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      margin: 0 auto 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .step p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.65;
+    }
+
+    /* =============================================
+       DEMO SECTION
+    ============================================= */
+    #demo { background: var(--surface); }
+
+    .demo-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .chat-widget {
+      background: var(--bg);
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 0 60px rgba(212,160,23,0.08), 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .chat-header {
+      background: var(--surface2);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(212,160,23,0.25);
+    }
+
+    .chat-header-info h4 { font-size: 0.95rem; font-weight: 700; }
+    .chat-header-info p { font-size: 0.78rem; color: #4ade80; }
+
+    .chat-messages {
+      height: 420px;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .msg {
+      display: flex;
+      gap: 10px;
+      max-width: 85%;
+      align-items: flex-start;
+    }
+
+    .msg.orby { align-self: flex-start; }
+    .msg.user  { align-self: flex-end; flex-direction: row-reverse; }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 0.93rem;
+      line-height: 1.6;
+    }
+
+    .msg.orby .msg-bubble {
+      background: var(--surface2);
+      border: 1px solid rgba(212,160,23,0.25);
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+
+    .msg.user .msg-bubble {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+      border-bottom-right-radius: 4px;
+      font-weight: 500;
+    }
+
+    .msg-typing .msg-bubble {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 14px 18px;
+    }
+
+    .typing-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: typing 1.4s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+      30%            { opacity: 1;   transform: translateY(-4px); }
+    }
+
+    .chat-input-area {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(212,160,23,0.25);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--transition);
+    }
+
+    .chat-input:focus { border-color: var(--gold); }
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .chat-send {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border: none;
+      border-radius: 8px;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition);
+      color: #0a0f1e;
+      font-size: 1.1rem;
+    }
+    .chat-send:hover { transform: scale(1.08); box-shadow: 0 0 20px var(--gold-glow); }
+    .chat-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .chat-send svg { width: 20px; height: 20px; fill: #0a0f1e; pointer-events: none; }
+
+    .chat-send.spk-off {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    .chat-send.spk-off svg { fill: var(--text-muted); }
+    .chat-send.spk-off:hover { background: var(--surface2); transform: scale(1.08); box-shadow: none; }
+
+    @keyframes micpulse {
+      0%   { box-shadow: 0 0 0 0 rgba(212,160,23,0.7); }
+      70%  { box-shadow: 0 0 0 10px rgba(212,160,23,0); }
+      100% { box-shadow: 0 0 0 0 rgba(212,160,23,0); }
+    }
+    .chat-send.mic-on { animation: micpulse 1s ease-out infinite; }
+
+    /* =============================================
+       MODULES
+    ============================================= */
+    #modules { background: var(--bg); }
+
+    .free-box {
+      border: 2px solid var(--gold);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px 28px;
+      position: relative;
+      box-shadow: 0 0 40px rgba(212,160,23,0.08);
+    }
+
+    .free-box-label {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: #0a0f1e;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 4px 18px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+      margin-bottom: 48px;
+      background: var(--surface);
+      border-radius: 10px;
+      padding: 6px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-bottom: 48px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 7px;
+      transition: all var(--transition);
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+    }
+    .tab-btn:not(.active):hover { color: var(--text); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .modules-category { margin-bottom: 40px; }
+
+    .modules-category-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .module-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      transition: all var(--transition);
+    }
+    .module-card:hover { border-color: rgba(212,160,23,0.7); transform: translateY(-2px); }
+
+    .module-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+    .module-card p  { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* Business tier cards */
+    .biz-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .biz-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+    }
+
+    .biz-card h4 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-bottom: 6px;
+    }
+
+    .biz-price {
+      font-size: 1.6rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .biz-price span { font-size: 0.9rem; font-weight: 400; color: var(--text-muted); }
+
+    .biz-features { list-style: none; }
+    .biz-features li {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .biz-features li::before { content: '✓'; color: var(--gold); flex-shrink: 0; }
+
+    /* Industry grid */
+    .industry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .industry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      transition: all var(--transition);
+      cursor: pointer;
+    }
+    .industry-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+    .industry-card:hover .ind-click-hint { opacity: 1; }
+    .ind-click-hint {
+      font-size: 0.75rem;
+      color: var(--gold);
+      opacity: 0.5;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+
+    .industry-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+
+    .industry-price {
+      font-size: 0.85rem;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .industry-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+
+    /* =============================================
+       PRICING
+    ============================================= */
+    #pricing { background: var(--surface); }
+
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      max-width: 900px;
+      margin: 0 auto 40px;
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    .pricing-modules-cta {
+      text-align: center;
+      padding: 36px 28px;
+      border: 1px dashed rgba(212,160,23,0.4);
+      border-radius: var(--radius-lg);
+      max-width: 900px;
+      margin: 0 auto 32px;
+    }
+
+    .pricing-modules-cta h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .pricing-modules-cta p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 20px;
+    }
+
+    .price-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 28px;
+      position: relative;
+      transition: all var(--transition);
+    }
+
+    .price-card:hover { transform: translateY(-4px); }
+
+    .price-card.featured {
+      border-color: var(--gold);
+      box-shadow: 0 0 40px rgba(212,160,23,0.15);
+      background: linear-gradient(180deg, rgba(212,160,23,0.04) 0%, var(--bg) 100%);
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 5px 18px;
+      border-radius: 50px;
+      white-space: nowrap;
+    }
+
+    .price-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .price-main {
+      margin-bottom: 8px;
+    }
+
+    .price-main .amount {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.03em;
+    }
+
+    .price-main .period {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .price-sub {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .founding-price {
+      background: rgba(212,160,23,0.1);
+      border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 24px;
+      font-size: 0.85rem;
+    }
+
+    .founding-price .was {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .founding-price .now {
+      color: var(--gold-light);
+      font-weight: 700;
+    }
+
+    .price-features {
+      list-style: none;
+      margin-bottom: 28px;
+    }
+
+    .price-features li {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 7px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .price-features li::before { content: '✓'; color: var(--gold); flex-shrink: 0; }
+
+    .price-card .btn { width: 100%; justify-content: center; }
+
+    .volume-note {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      padding: 16px;
+      background: var(--surface2);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .volume-note strong { color: var(--gold-light); }
+
+    /* =============================================
+       TRUST / BEFORE YOU BUY
+    ============================================= */
+    #trust { background: var(--bg); }
+
+    .trust-box {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid rgba(212,160,23,0.45);
+      border-radius: var(--radius-lg);
+      padding: 48px;
+    }
+
+    .trust-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .trust-list li {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      font-size: 0.97rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    .trust-check {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(74, 222, 128, 0.15);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: #4ade80;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* =============================================
+       FOOTER
+    ============================================= */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 48px 0 32px;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand .nav-logo {
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .footer-tagline {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      max-width: 280px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--gold-light); }
+
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    /* =============================================
+       DEMO MODAL (for nav CTA)
+    ============================================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(8px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      background: var(--bg);
+      border: 1px solid rgba(212,160,23,0.5);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 640px;
+      overflow: hidden;
+      box-shadow: 0 0 80px rgba(212,160,23,0.12);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--surface2);
+      border: none;
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    /* =============================================
+       RESPONSIVE
+    ============================================= */
+    @media (max-width: 960px) {
+      .features-grid    { grid-template-columns: repeat(2, 1fr); }
+      .steps            { grid-template-columns: 1fr; }
+      .steps::before    { display: none; }
+      .biz-grid         { grid-template-columns: 1fr; }
+      .pricing-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-links     { display: none; }
+      .nav-hamburger { display: flex; }
+
+      .nav-links.mobile-open {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 68px;
+        left: 0;
+        right: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 24px;
+        gap: 20px;
+        z-index: 999;
+      }
+
+      .nav-cta { display: none; }
+      .nav-cart-btn { display: none; }
+
+      .trust-box { padding: 28px 20px; }
+      .chat-messages { height: 320px; }
+
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+    }
+
+/* ── Industry modal ── */
+.ind-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 40px 20px;
+}
+.ind-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+.ind-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  max-width: 760px;
+  width: 100%;
+  position: relative;
+}
+.ind-modal-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: var(--surface2);
+  border: none;
+  color: var(--text-muted);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.ind-modal-close:hover { color: var(--text); }
+.ind-modal h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+.ind-modal .ind-price-line {
+  color: var(--gold-light);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.ind-modal .ind-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+.ind-modal .ind-features {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+  margin-bottom: 32px;
+}
+.ind-modal .ind-features li::before { content: "✓ "; color: var(--gold); font-weight: 700; }
+.ind-modal .ind-features li { font-size: 0.9rem; }
+.ind-submods-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  color: var(--gold-light);
+}
+.ind-submods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.ind-submod-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+.ind-submod-card:hover { border-color: rgba(212,160,23,0.7); }
+
+/* =============================================
+   SHOPPING CART SYSTEM
+============================================= */
+.cart-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(212,160,23,0.12);
+  border: 1px solid rgba(212,160,23,0.35);
+  border-radius: 8px;
+  color: var(--gold);
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+}
+.cart-btn:hover { background: rgba(212,160,23,0.25); border-color: var(--gold); transform: scale(1.1); }
+.cart-btn.in-cart { background: rgba(212,160,23,0.3); border-color: var(--gold); }
+.cart-btn svg { width: 16px; height: 16px; fill: var(--gold); pointer-events: none; }
+
+.industry-card { position: relative; padding-bottom: 44px; }
+
+/* Quantity popup */
+.qty-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.qty-overlay.open { display: flex; }
+.qty-box {
+  background: var(--bg);
+  border: 1px solid rgba(212,160,23,0.55);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 0 60px rgba(212,160,23,0.15);
+  position: relative;
+}
+.qty-box h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+.qty-module-price { color: var(--gold); font-size: 0.88rem; margin-bottom: 20px; }
+.qty-label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
+.qty-input-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.qty-input {
+  width: 90px;
+  background: var(--surface2);
+  border: 1px solid rgba(212,160,23,0.4);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 10px;
+  outline: none;
+}
+.qty-input:focus { border-color: var(--gold); }
+.qty-cost-preview { font-size: 0.9rem; color: var(--text-muted); }
+.qty-cost-preview strong { color: var(--gold-light); }
+.qty-actions { display: flex; gap: 10px; margin-top: 20px; }
+.qty-actions .btn { flex: 1; justify-content: center; font-size: 0.9rem; padding: 12px; }
+.qty-close {
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: none; color: var(--text-muted);
+  font-size: 1.1rem; cursor: pointer; line-height: 1;
+}
+.qty-close:hover { color: var(--text); }
+
+/* Floating cart bubble */
+.cart-bubble {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #0a0f1e;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 22px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 24px rgba(212,160,23,0.45);
+  z-index: 900;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.cart-bubble:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(212,160,23,0.55); }
+.cart-bubble.visible { display: flex; }
+@media (min-width: 769px) { .cart-bubble { display: none !important; } }
+.cart-bubble svg { width: 18px; height: 18px; fill: #0a0f1e; }
+.cart-count {
+  background: #0a0f1e;
+  color: var(--gold);
+  border-radius: 50%;
+  width: 22px; height: 22px;
+  font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800;
+}
+
+/* Cart drawer */
+.cart-drawer-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1200;
+  backdrop-filter: blur(4px);
+}
+.cart-drawer-overlay.open { display: block; }
+.cart-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg);
+  border-left: 1px solid rgba(212,160,23,0.45);
+  display: flex;
+  flex-direction: column;
+  z-index: 1201;
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+}
+.cart-drawer-overlay.open .cart-drawer { transform: translateX(0); }
+.cart-drawer-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(212,160,23,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cart-drawer-header h3 { font-size: 1.1rem; font-weight: 700; }
+.cart-drawer-close {
+  background: var(--surface2); border: none; color: var(--text-muted);
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+  font-size: 1rem; display: flex; align-items: center; justify-content: center;
+}
+.cart-drawer-close:hover { color: var(--text); }
+.cart-items { flex: 1; overflow-y: auto; padding: 20px 24px; }
+.cart-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cart-item-info { flex: 1; }
+.cart-item-name { font-weight: 700; font-size: 0.92rem; margin-bottom: 2px; }
+.cart-item-detail { font-size: 0.8rem; color: var(--text-muted); }
+.cart-item-price { text-align: right; }
+.cart-item-setup { font-size: 0.78rem; color: var(--text-muted); }
+.cart-item-monthly { font-size: 0.88rem; color: var(--gold-light); font-weight: 700; }
+.cart-item-remove {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; font-size: 0.85rem; padding: 2px 4px;
+}
+.cart-item-remove:hover { color: #e05; }
+.cart-empty { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 0.9rem; }
+.cart-drawer-footer {
+  padding: 20px 24px;
+  border-top: 1px solid rgba(212,160,23,0.25);
+}
+.cart-totals { margin-bottom: 16px; }
+.cart-total-row { display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 6px; color: var(--text-muted); }
+.cart-total-row.main { color: var(--text); font-weight: 700; font-size: 1rem; }
+.cart-total-row span:last-child { color: var(--gold-light); }
+.ind-submod-card h4 { font-size: 0.92rem; font-weight: 700; margin-bottom: 4px; }
+.ind-submod-card .sub-price { font-size: 0.78rem; color: var(--gold); margin-bottom: 4px; }
+.ind-submod-card p { font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; }
+
+/* ── Legal Agreement Modal ── */
+.legal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(5,8,20,0.97);
+  z-index: 9999;
+  overflow-y: auto;
+}
+.legal-overlay.open { display: block; }
+.legal-modal {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+.legal-header {
+  text-align: center;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(212,160,23,0.3);
+  margin-bottom: 36px;
+}
+.legal-header .orby-wordmark { font-size: 1.4rem; font-weight: 800; color: var(--gold); letter-spacing: 0.08em; margin-bottom: 8px; }
+.legal-header h1 { font-size: 1.6rem; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+.legal-header p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.6; max-width: 560px; margin: 0 auto; }
+.legal-progress-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  margin-bottom: 36px;
+  overflow: hidden;
+}
+.legal-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 4px;
+  transition: width 0.4s ease;
+  width: 0%;
+}
+.legal-section {
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  padding: 28px 30px 22px;
+  margin-bottom: 20px;
+  transition: border-color 0.3s;
+}
+.legal-section.agreed { border-color: rgba(212,160,23,0.45); }
+.legal-section-num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.legal-section h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 14px;
+  line-height: 1.3;
+}
+.legal-section p, .legal-section ul {
+  font-size: 0.87rem;
+  color: var(--text-muted);
+  line-height: 1.75;
+  margin-bottom: 12px;
+}
+.legal-section ul { padding-left: 20px; }
+.legal-section ul li { margin-bottom: 5px; }
+.legal-section .highlight-box {
+  background: rgba(212,160,23,0.07);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 0.87rem;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.5;
+}
+.legal-agree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  cursor: pointer;
+}
+.legal-agree-row input[type=checkbox] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.legal-agree-row label {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1.5;
+  width: 100%;
+}
+.legal-agree-row label::before {
+  content: '';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgba(212,160,23,0.35);
+  border-radius: 7px;
+  background: rgba(212,160,23,0.04);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-top: 0px;
+  font-size: 0;
+  color: var(--gold);
+  font-weight: 900;
+  overflow: visible;
+}
+.legal-agree-row input:checked + label::before {
+  content: '✓';
+  font-size: 1.6rem;
+  line-height: 28px;
+  background: rgba(212,160,23,0.12);
+  border-color: var(--gold);
+  box-shadow: 0 0 10px rgba(212,160,23,0.3);
+}
+.legal-agree-row input:checked + label {
+  color: var(--gold-light);
+  font-weight: 600;
+}
+.legal-sticky-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(10,15,30,0.98);
+  border-top: 1px solid rgba(212,160,23,0.35);
+  padding: 16px 24px;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 10000;
+  backdrop-filter: blur(12px);
+}
+.legal-sticky-footer.visible { display: flex; }
+.legal-footer-status { font-size: 0.85rem; color: var(--text-muted); }
+.legal-footer-status strong { color: var(--gold-light); }
+.legal-proceed-btn {
+  background: rgba(212,160,23,0.2);
+  color: rgba(212,160,23,0.4);
+  border: 1px solid rgba(212,160,23,0.2);
+  border-radius: 10px;
+  padding: 12px 28px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: not-allowed;
+  white-space: nowrap;
+  transition: all 0.3s;
+}
+.legal-proceed-btn.ready {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: #0a0f1e;
+  border-color: transparent;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(212,160,23,0.4);
+}
+.legal-proceed-btn.ready:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(212,160,23,0.55); }
+.legal-close-top {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 10001;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.legal-close-top.visible { display: flex; }
+.legal-close-top:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- ========== NAV ========== -->
+<nav id="nav">
+  <div class="container nav-inner">
+    <a href="#" class="nav-logo">
+      <div class="orb"></div>
+      My Orby
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#modules">Modules</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+    </ul>
+    <button class="nav-cart-btn" id="navCartBtn" onclick="openCartDrawer()" title="View cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      View Cart
+      <span class="nav-cart-badge" id="navCartBadge">0</span>
+    </button>
+    <a href="#demo" class="btn btn-gold btn-sm nav-cta" onclick="closeModal()">Talk to Orby</a>
+    <button class="nav-hamburger" id="hamburger" aria-label="Menu" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ========== HERO ========== -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-orb-wrap">
+      <div class="orb orb-lg"></div>
+    </div>
+    <h1 class="hero-headline">
+      Meet Orby. She Lives On Your Computer<br class="hide-sm"> And Changes Everything.
+    </h1>
+    <p class="hero-sub">
+      Your own personal AI companion — not renting access to someone else's cloud. She's yours. She runs on your machine. She works offline. And she knows your whole life.
+    </p>
+    <div class="hero-ctas">
+      <a href="#demo" class="btn btn-gold">Talk to Orby Free</a>
+      <a href="#features" class="btn btn-outline">See What She Can Do</a>
+    </div>
+    <div class="founding-badge">
+      🔥 <strong>Founding Member Offer</strong> — $24.99 license + $9.99/mo for life. Both half off, locked in forever. <strong>847 spots left.</strong>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FEATURES ========== -->
+<section id="features">
+  <div class="container">
+    <h2 class="section-title">What She Can Do</h2>
+    <p class="section-sub">Orby isn't an app. She's a companion. She knows your life and she works for you — all of it, all day, offline.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🧠</span>
+        <h3>She Remembers Everything</h3>
+        <p>Reminders, calendar, notes, your family, your goals. She knows it all and never forgets. No matter how long ago you told her something.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">📡</span>
+        <h3>She Works Offline</h3>
+        <p>No internet required. No subscriptions to cloud services. She runs right on your computer — power it on and she's there, always.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🎙️</span>
+        <h3>She Talks Back</h3>
+        <p>Natural voice conversation. Ask her anything out loud. She answers in a warm, natural voice — no robots, no menus, just her.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">👨‍👩‍👧‍👦</span>
+        <h3>She Knows Your Family</h3>
+        <p>Family calendar, chores, school, allowance, bedtime stories. She runs the whole household without you having to remember everything yourself.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">💰</span>
+        <h3>She Manages Your Money</h3>
+        <p>Track spending, set budgets, get alerts. Like having a personal CFO for your personal life — always watching, always on your side.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">🚀</span>
+        <h3>She Grows With You</h3>
+        <p>Start with the home version. Add business modules when you're ready. She becomes whatever you need — a home manager, a business tool, an industry specialist.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== HOW IT WORKS ========== -->
+<section id="how-it-works">
+  <div class="container">
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Three steps. Then she takes over.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Buy &amp; Download</h3>
+        <p>One purchase. She installs on your Windows PC or Mac in minutes. No complicated setup, no IT required — just click and go.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>She Introduces Herself</h3>
+        <p>First launch, she walks you through setup herself. Tells you what she can do. Gets to know you. It feels like meeting someone, not configuring software.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>She Gets To Work</h3>
+        <p>Talk to her by voice or text. She remembers everything, handles everything, never forgets. Your life, finally organized — by someone who actually cares.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== DEMO ========== -->
+<section id="demo">
+  <div class="container">
+    <h2 class="section-title">Talk to Her Right Now</h2>
+    <p class="section-sub">No sign-up required. This is the real Orby. Ask her anything — she'll tell you what she can do.</p>
+    <div class="demo-wrap">
+      <div class="chat-widget">
+        <div class="chat-header">
+          <div class="orb orb-sm"></div>
+          <div class="chat-header-info">
+            <h4>Orby</h4>
+            <p>● Online &amp; ready</p>
+          </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="msg orby">
+            <div class="orb orb-sm"></div>
+            <div class="msg-bubble">Hi! I'm Orby. You can ask me anything — what's on your mind?</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input
+            type="text"
+            class="chat-input"
+            id="chatInput"
+            placeholder="Ask Orby anything..."
+            autocomplete="off"
+            onkeydown="if(event.key==='Enter') sendMessage()"
+          />
+          <!-- Mic button -->
+          <button class="chat-send" id="chatMic" onclick="toggleMic()" title="Click to speak to Orby">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1 1.93c-3.95-.49-7-3.85-7-7.93H6c0 3.31 2.69 6 6 6s6-2.69 6-6h2c0 4.08-3.05 7.44-7 7.93V21h-2v-5.07z"/></svg>
+          </button>
+          <!-- Speaker toggle -->
+          <button class="chat-send" id="chatSpeaker" onclick="toggleVoice()" title="Toggle Orby's voice on/off">
+            <svg id="spkIconOn"  viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <svg id="spkIconOff" viewBox="0 0 24 24" style="display:none"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+          </button>
+          <!-- Send button -->
+          <button class="chat-send" id="chatSend" onclick="sendMessage()" title="Send">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== MODULES ========== -->
+<section id="modules">
+  <div class="container">
+    <div style="text-align:center;margin-bottom:6px;">
+      <span style="color:var(--gold-light);font-size:1rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Industry Modules</span>
+    </div>
+    <h2 class="section-title">Everything She Can Do</h2>
+    <p class="section-sub">30 capabilities included free with Home. Business and industry add-ons available when you need them.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(this, 'tab-home')">Home</button>
+      <button class="tab-btn" onclick="switchTab(this, 'tab-business')">Business</button>
+      <button class="tab-btn" onclick="switchTab(this, 'tab-industry')">Industry</button>
+    </div>
+
+    <!-- HOME TAB -->
+    <div class="tab-panel active" id="tab-home">
+      <div class="free-box">
+        <div class="free-box-label">✓ All 30 included free — no extras, no unlocks, no hidden fees</div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Core</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Reminders</h4><p>Set reminders for anything — one-time or recurring. Never forget again.</p></div>
+          <div class="module-card"><h4>Calendar</h4><p>Personal and family calendar. Schedule events, see what's coming up.</p></div>
+          <div class="module-card"><h4>To-Do Lists</h4><p>Personal and family to-do lists with priorities.</p></div>
+          <div class="module-card"><h4>Notes</h4><p>Save and search notes. Tagged, searchable, always there.</p></div>
+          <div class="module-card"><h4>Shopping Lists</h4><p>Personal and family shopping lists.</p></div>
+          <div class="module-card"><h4>Morning Briefing</h4><p>Daily summary of what's on your plate — reminders, calendar, weather, to-dos.</p></div>
+          <div class="module-card"><h4>Web Search</h4><p>Safe web search, news, and Wikipedia lookups. Real answers from the internet.</p></div>
+        </div>
+      </div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Family</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Family Messages</h4><p>Send notes and messages to family members.</p></div>
+          <div class="module-card"><h4>Gift Ideas</h4><p>Save gift ideas for people. Never be stuck at gift time again.</p></div>
+          <div class="module-card"><h4>People &amp; Relationships</h4><p>Track important people — birthdays, notes, how you know them.</p></div>
+          <div class="module-card"><h4>Chore Tracker</h4><p>Track chores, earn points. Makes chores a little more fun.</p></div>
+          <div class="module-card"><h4>Emergency Info</h4><p>Emergency contacts, medical info, and insurance in one safe place.</p></div>
+          <div class="module-card"><h4>School Tracker</h4><p>Track homework, grades, teachers, and school events for kids.</p></div>
+          <div class="module-card"><h4>Allowance Manager</h4><p>Set, track, and manage allowances for kids.</p></div>
+          <div class="module-card"><h4>Bedtime Stories</h4><p>Custom bedtime stories for kids. Every story is unique.</p></div>
+        </div>
+      </div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Wellness</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Journal</h4><p>Daily journal with mood tracking. Your thoughts, captured and private.</p></div>
+          <div class="module-card"><h4>Mood Tracker</h4><p>Log how you're feeling. Spot patterns over time.</p></div>
+          <div class="module-card"><h4>Habit Tracker</h4><p>Build good habits. Track streaks, stay consistent.</p></div>
+          <div class="module-card"><h4>Fitness Log</h4><p>Log workouts and track fitness over time.</p></div>
+          <div class="module-card"><h4>Health Log</h4><p>Track symptoms, medications, and health notes. Great for doctor visits.</p></div>
+        </div>
+      </div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Home</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Recipe Box</h4><p>Save and find family recipes.</p></div>
+          <div class="module-card"><h4>Pet Care</h4><p>Track pet care, vet visits, feeding, and health notes.</p></div>
+          <div class="module-card"><h4>Vehicle Tracker</h4><p>Log service records, oil changes, and maintenance for all your vehicles.</p></div>
+          <div class="module-card"><h4>Meal Planning</h4><p>Plan meals for the week. Know what's for dinner.</p></div>
+          <div class="module-card"><h4>Home Maintenance</h4><p>Log repairs, save warranties, track contractors.</p></div>
+        </div>
+      </div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Finance</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Finance Tracker</h4><p>Track income, expenses, and accounts. Know where your money goes.</p></div>
+        </div>
+      </div>
+
+      <div class="modules-category">
+        <div class="modules-category-title">Lifestyle</div>
+        <div class="modules-grid">
+          <div class="module-card"><h4>Travel Planner</h4><p>Plan trips, save destinations, track travel history.</p></div>
+          <div class="module-card"><h4>Countdowns</h4><p>Count down to events you're excited about.</p></div>
+          <div class="module-card"><h4>Bucket List</h4><p>Dreams, goals, and things you want to do in your life.</p></div>
+          <div class="module-card"><h4>Quotes</h4><p>Save quotes that move you. Build your own collection.</p></div>
+        </div>
+      </div>
+      </div><!-- end free-box -->
+    </div>
+
+    <!-- BUSINESS TAB -->
+    <div class="tab-panel" id="tab-business">
+      <div style="max-width:560px;margin:0 auto;text-align:center;">
+        <div class="biz-card" style="border-color:var(--gold);box-shadow:0 0 30px rgba(212,160,23,0.12);text-align:left;">
+          <h4 style="font-size:1.3rem;margin-bottom:6px;">Business Add-On</h4>
+          <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Run a business? Add this to your Home license and Orby becomes your business manager too.</p>
+          <div style="font-size:0.82rem;color:var(--gold);margin-bottom:4px;">$149 one-time setup</div>
+          <div class="biz-price">$39.99<span>/month</span></div>
+          <ul class="biz-features">
+            <li>Customer &amp; client tracking (CRM)</li>
+            <li>Invoice &amp; quote creation</li>
+            <li>Expense logging &amp; monthly reports</li>
+            <li>Business task management</li>
+            <li>Business dashboard — revenue, outstanding invoices, open tasks at a glance</li>
+          </ul>
+          <p style="color:var(--text-muted);font-size:0.82rem;margin-top:16px;">Need something more specialized? Add an Industry Module below — Legal, Medical, Contractor, and more.</p>
+          <button class="btn btn-gold" style="margin-top:20px;width:100%;justify-content:center;" onclick="openQtyPopup('business',event)">
+            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#0a0f1e;margin-right:6px;"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            Add to Cart
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDUSTRY TAB -->
+    <div class="tab-panel" id="tab-industry">
+      <div class="industry-grid">
+        <div class="industry-card" onclick="openIndustry('legal')" style="cursor:pointer;">
+          <h4>Legal</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$349 setup</div>
+          <div class="industry-price">$149/month</div>
+          <p>Case management, client tracking, document organization, deadline alerts, and billing time tracking.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('medical')" style="cursor:pointer;">
+          <h4>Medical</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$349 setup</div>
+          <div class="industry-price">$149/month</div>
+          <p>Patient tracking, appointment management, treatment notes, prescription tracking, and HIPAA-conscious design.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('realestate')" style="cursor:pointer;">
+          <h4>Real Estate</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
+          <div class="industry-price">$79/month</div>
+          <p>Listing management, client pipeline, showing scheduler, offer tracking, and commission calculator.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('restaurant')" style="cursor:pointer;">
+          <h4>Restaurant</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
+          <div class="industry-price">$79/month</div>
+          <p>Menu management, inventory, staff scheduling, reservation tracking, and supplier contacts.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('retail')" style="cursor:pointer;">
+          <h4>Retail</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
+          <div class="industry-price">$49/month</div>
+          <p>Product catalog, inventory alerts, customer tracking, sales reporting, and supplier management.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('salon')" style="cursor:pointer;">
+          <h4>Salon &amp; Spa</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$99 setup</div>
+          <div class="industry-price">$49/month</div>
+          <p>Appointment booking, client history, service tracking, staff management, and product inventory.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('contractor')" style="cursor:pointer;">
+          <h4>Contractor</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$249 setup</div>
+          <div class="industry-price">$99/month</div>
+          <p>Job tracking, estimates, materials lists, subcontractor management, and invoicing. Trade sub-modules available.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('trade')" style="cursor:pointer;">
+          <h4>Trade Specialties</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$99 setup each</div>
+          <div class="industry-price">$39/month each</div>
+          <p>Plumbing, electrical, HVAC, flooring, roofing, and more. Add to any Contractor module for trade-specific workflows.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('accounting')" style="cursor:pointer;">
+          <h4>Accounting</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$249 setup</div>
+          <div class="industry-price">$99/month</div>
+          <p>Client books tracking, tax deadline management, document organization, and billing management.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('hr')" style="cursor:pointer;">
+          <h4>HR Professional</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
+          <div class="industry-price">$59/month</div>
+          <p>Employee records, onboarding checklists, PTO tracking, review scheduling, and compliance reminders.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('therapy')" style="cursor:pointer;">
+          <h4>Therapy &amp; Counseling</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
+          <div class="industry-price">$79/month</div>
+          <p>Session notes, client tracking, appointment management, treatment planning, and confidential data design.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+        <div class="industry-card" onclick="openIndustry('property')" style="cursor:pointer;">
+          <h4>Property Management</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
+          <div class="industry-price">$59/month</div>
+          <p>Tenant tracking, lease management, rent payment logs, maintenance requests, and vacancy status across all properties.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+
+        <div class="industry-card" onclick="openIndustry('inventory')" style="cursor:pointer;">
+          <h4>Inventory Pro</h4>
+          <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
+          <div class="industry-price">$49/month</div>
+          <p>Full-scale inventory management — multi-location stock tracking, purchase orders, suppliers, bulk updates, and value reports. Scales from a small shop to warehouse operations.</p>
+          <div class="ind-click-hint">Click to learn more →</div>
+          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
+            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PRICING ========== -->
+<section id="pricing">
+  <div class="container">
+    <h2 class="section-title">Simple, Honest Pricing</h2>
+    <p class="section-sub">No tricks. No hidden fees. Buy her once, keep her forever.</p>
+
+    <div class="pricing-grid">
+
+      <!-- HOME -->
+      <div class="price-card featured">
+        <div class="popular-badge">My Orby — Home</div>
+        <div class="price-main">
+          <span class="amount">$49.99</span>
+        </div>
+        <div class="price-sub">one-time license + $19.99/month service fee</div>
+        <div class="founding-price">
+          <span class="was">Regular: $49.99 license + $19.99/mo</span><br>
+          <span class="now">🔥 Founding Member: $24.99 license + $9.99/mo for life</span>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">50% off the license and 50% off the monthly fee — locked in forever. First 1,000 users only.</div>
+        </div>
+        <ul class="price-features">
+          <li>All 30 home modules included</li>
+          <li>Works completely offline</li>
+          <li>Voice + text conversation</li>
+          <li>Full family support</li>
+          <li>Runs on Windows PC &amp; Mac</li>
+          <li>You own the software</li>
+          <li>30-day money-back guarantee</li>
+        </ul>
+        <div style="display:flex;gap:10px;margin-top:0;">
+          <a href="/checkout" class="btn btn-gold" style="flex:1;justify-content:center;">Get Started — Founding Member</a>
+          <button class="btn btn-gold" style="padding:0 14px;min-width:48px;justify-content:center;" onclick="openQtyPopup('orby_home',event)" title="Add to cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- BUSINESS ADD-ON -->
+      <div class="price-card featured">
+        <div class="popular-badge" style="background:var(--surface2);color:var(--gold-light);border:1px solid var(--gold);">Business Add-On</div>
+        <div class="price-main">
+          <span class="amount">$149.99</span>
+        </div>
+        <div class="price-sub">one-time setup fee + $39.99/month</div>
+        <div style="background:rgba(212,160,23,0.07);border:1px solid rgba(212,160,23,0.2);border-radius:8px;padding:10px 14px;margin-bottom:24px;font-size:0.85rem;color:var(--text-muted);">
+          Add to any Home license. Orby becomes your business manager — customers, invoices, expenses, and tasks all in one place.
+        </div>
+        <ul class="price-features">
+          <li>Customer &amp; client tracking (CRM)</li>
+          <li>Invoice &amp; quote creation</li>
+          <li>Expense logging &amp; monthly reports</li>
+          <li>Business task management</li>
+          <li>Business dashboard</li>
+          <li>Works alongside any Industry module</li>
+        </ul>
+        <div style="display:flex;gap:10px;margin-top:0;">
+          <a href="/checkout?addon=business" class="btn btn-gold" style="flex:1;justify-content:center;">Add to My Orby</a>
+          <button class="btn btn-gold" style="padding:0 14px;min-width:48px;justify-content:center;" onclick="openQtyPopup('business',event)" title="Add to cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MODULES CTA -->
+    <div class="pricing-modules-cta">
+      <h3>Need Orby for Your Specific Industry?</h3>
+      <p>We have 12 industry-specific modules — Legal, Medical, Contractor, Real Estate, Restaurant, and more. Each is priced individually based on the industry. See exactly what each one costs and what it does.</p>
+      <a href="#modules" class="btn btn-gold" style="font-size:1.15rem;padding:14px 32px;" onclick="document.querySelector('[onclick*=tab-industry]').click()">View Available Modules &amp; Pricing ↑</a>
+    </div>
+
+    <div class="volume-note">
+      <strong>The more people, the better the deal.</strong> Every seat you add gets cheaper — automatically. The 2nd person is 15% off, the 3rd is 30% off, and from the 4th person onward every seat is <strong>half price</strong>, for life. No negotiations, no contracts, no bulk pricing requests. Just add people and watch the price drop.
+    </div>
+  </div>
+</section>
+
+<!-- ========== TRUST / BEFORE YOU BUY ========== -->
+<section id="trust">
+  <div class="container">
+    <h2 class="section-title">What You're Agreeing To</h2>
+    <p class="section-sub">We believe in being clear before you spend a dollar. Read this — it'll take 30 seconds.</p>
+
+    <div class="trust-box">
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:24px; line-height:1.65;">Before you buy, please read the following. These are the most important things to understand about My Orby. Full legal details are in the <a href="/terms.html">Terms of Service</a>, <a href="/privacy.html">Privacy Policy</a>, and <a href="/refund.html">Refund Policy</a>.</p>
+      <ul class="trust-list">
+        <li>
+          <div class="trust-check">✓</div>
+          <span>I have read and agree to the <a href="/terms.html">Terms of Service</a>. I understand these Terms govern my use of the Software and include important provisions about my rights and obligations, including a mandatory arbitration agreement and a class action waiver in Sections 13 and 14.</span>
+        </li>
+        <li>
+          <div class="trust-check">✓</div>
+          <span>I understand Orby is an AI assistant and her responses are <strong>not</strong> professional legal, medical, financial, or other licensed professional advice — even when using the Legal or Medical modules. I will consult a qualified professional for any important decisions. My Orby is not liable for actions taken based on Orby's responses.</span>
+        </li>
+        <li>
+          <div class="trust-check">✓</div>
+          <span>I understand the monthly service fee is a recurring subscription that <strong>auto-renews</strong> each month. I can cancel anytime, but the current month's fee is non-refundable.</span>
+        </li>
+        <li>
+          <div class="trust-check">✓</div>
+          <span>I understand that <strong>module setup fees are non-refundable</strong> once a module has been installed or activated. The 30-day money-back guarantee applies only to the base license fee.</span>
+        </li>
+        <li>
+          <div class="trust-check">✓</div>
+          <span>I have read the <a href="/privacy.html">Privacy Policy</a> and understand that my personal conversations and data are stored locally on my device. When I talk to Orby, my messages are processed by Anthropic's API, subject to Anthropic's privacy policy.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ========== FOOTER ========== -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="#" class="nav-logo">
+          <div class="orb"></div>
+          My Orby
+        </a>
+        <p class="footer-tagline">Your Personal AI. Lives On Your Computer. Works For You.</p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="/privacy.html">Privacy Policy</a></li>
+        <li><a href="/terms.html">Terms of Service</a></li>
+        <li><a href="/refund.html">Refund Policy</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 My Orby. All rights reserved.
+    </div>
+  </div>
+</footer>
+
+<!-- ========== JAVASCRIPT ========== -->
+<script>
+  /* ---------- Mobile nav ---------- */
+  function toggleMenu() {
+    document.getElementById('navLinks').classList.toggle('mobile-open');
+  }
+
+  /* ---------- Tab switching ---------- */
+  function switchTab(btn, panelId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  /* ---------- Demo chat ---------- */
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput    = document.getElementById('chatInput');
+  const chatSend     = document.getElementById('chatSend');
+
+  // Conversation history for multi-turn context
+  let chatHistory = [];
+
+  function scrollBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function appendMessage(role, text) {
+    const wrap   = document.createElement('div');
+    wrap.className = 'msg ' + role;
+
+    if (role === 'orby') {
+      const orb  = document.createElement('div');
+      orb.className = 'orb orb-sm';
+      wrap.appendChild(orb);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+
+    chatMessages.appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+
+  function showTyping() {
+    const wrap   = document.createElement('div');
+    wrap.className = 'msg orby msg-typing';
+    wrap.id = 'typing';
+
+    const orb = document.createElement('div');
+    orb.className = 'orb orb-sm';
+    wrap.appendChild(orb);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    wrap.appendChild(bubble);
+
+    chatMessages.appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  /* ── Voice output ──────────────────────────────────────── */
+  let voiceOn = true;
+  let currentAudio = null;
+  let isSpeaking = false;
+
+  function toggleVoice() {
+    voiceOn = !voiceOn;
+    const btn = document.getElementById('chatSpeaker');
+    document.getElementById('spkIconOn').style.display  = voiceOn ? '' : 'none';
+    document.getElementById('spkIconOff').style.display = voiceOn ? 'none' : '';
+    btn.classList.toggle('spk-off', !voiceOn);
+    if (!voiceOn && currentAudio) { currentAudio.pause(); currentAudio = null; isSpeaking = false; }
+  }
+
+  async function speak(text) {
+    if (!voiceOn) return;
+    if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    isSpeaking = true;
+    clearSilenceTimer();
+    try {
+      const res = await fetch('/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      if (!res.ok) { isSpeaking = false; return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      currentAudio = new Audio(url);
+      currentAudio.onended = currentAudio.onerror = () => {
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        isSpeaking = false;
+        if (micOn && recognition) try { recognition.start(); } catch(_) {}
+      };
+      if (micOn && recognition) try { recognition.stop(); } catch(_) {}
+      currentAudio.play();
+    } catch(e) { isSpeaking = false; }
+  }
+
+  /* ── Voice input (mic) ─────────────────────────────────── */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SILENCE_MS = 1500;   // ms of silence before auto-send
+  let recognition  = null;
+  let micOn        = false;
+  let confirmedText = '';    // locked-in finals for this mic session
+  let silenceTimer  = null;  // auto-send after pause
+
+  function resetSilenceTimer() {
+    if (silenceTimer) clearTimeout(silenceTimer);
+    silenceTimer = setTimeout(() => {
+      silenceTimer = null;
+      if (micOn && !isSpeaking && chatInput.value.trim()) sendMessage();
+    }, SILENCE_MS);
+  }
+
+  function clearSilenceTimer() {
+    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
+  }
+
+  if (SR) {
+    recognition = new SR();
+    recognition.continuous     = true;
+    recognition.interimResults = true;
+    recognition.lang           = 'en-US';
+
+    recognition.onresult = (e) => {
+      let newFinals = '', latestInterim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) newFinals    += e.results[i][0].transcript;
+        else                      latestInterim += e.results[i][0].transcript;
+      }
+      // Add any newly finalized words to our confirmed buffer
+      if (newFinals.trim()) {
+        confirmedText = (confirmedText + ' ' + newFinals.trim()).trim();
+        // Start silence countdown — resets with every new final word
+        resetSilenceTimer();
+      }
+      // If still mid-word, cancel the countdown (user is still speaking)
+      if (latestInterim) clearSilenceTimer();
+      // Always display: confirmed finals + current in-progress word (overlay, not append)
+      chatInput.value = latestInterim
+        ? (confirmedText ? confirmedText + ' ' + latestInterim : latestInterim)
+        : confirmedText;
+    };
+
+    recognition.onerror = (e) => {
+      if (e.error === 'not-allowed') {
+        chatInput.placeholder = 'Microphone blocked — check browser settings';
+        micOff();
+      } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        console.warn('Speech error:', e.error);
+      }
+    };
+
+    recognition.onend = () => {
+      if (micOn && !isSpeaking) {
+        setTimeout(() => { if (micOn && !isSpeaking) try { recognition.start(); } catch(_) {} }, 150);
+      }
+    };
+  }
+
+  function toggleMic() {
+    if (!recognition) {
+      chatInput.placeholder = 'Voice not supported — use Chrome or Edge';
+      return;
+    }
+    micOn ? micOff() : micStart();
+  }
+
+  function micStart() {
+    micOn = true;
+    confirmedText = '';
+    document.getElementById('chatMic').classList.add('mic-on');
+    chatInput.placeholder = 'Listening… speak now';
+    try { recognition.start(); } catch(_) {}
+  }
+
+  function micOff() {
+    micOn = false;
+    confirmedText = '';
+    clearSilenceTimer();
+    document.getElementById('chatMic').classList.remove('mic-on');
+    chatInput.placeholder = 'Ask Orby anything...';
+    if (recognition) try { recognition.abort(); } catch(_) {}
+  }
+
+  /* ── Send ──────────────────────────────────────────────── */
+  async function sendMessage() {
+    const text = chatInput.value.trim();
+    if (!text || chatSend.disabled) return;
+
+    chatInput.value = '';
+    confirmedText = '';
+    chatSend.disabled = true;
+    chatInput.disabled = true;
+
+    appendMessage('user', text);
+    chatHistory.push({ role: 'user', content: text });
+
+    const typing = showTyping();
+
+    try {
+      const res = await fetch('/demo_chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          history: chatHistory.slice(0, -1)
+        })
+      });
+
+      removeTyping();
+
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data.response || "I'm having a little trouble — try again in a second!";
+        appendMessage('orby', reply);
+        chatHistory.push({ role: 'assistant', content: reply });
+        speak(reply);
+      } else {
+        appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
+      }
+    } catch (err) {
+      removeTyping();
+      appendMessage('orby', "Hmm, looks like there's a connection issue. Are you running the My Orby server?");
+    }
+
+    chatSend.disabled = false;
+    chatInput.disabled = false;
+    if (!micOn) chatInput.focus();
+  }
+
+  /* ---------- Nav link close on mobile ---------- */
+  document.querySelectorAll('#navLinks a').forEach(link => {
+    link.addEventListener('click', () => {
+      document.getElementById('navLinks').classList.remove('mobile-open');
+    });
+  });
+
+  /* Close mobile menu on outside click */
+  document.addEventListener('click', (e) => {
+    const nav = document.getElementById('navLinks');
+    const ham = document.getElementById('hamburger');
+    if (nav.classList.contains('mobile-open') && !nav.contains(e.target) && !ham.contains(e.target)) {
+      nav.classList.remove('mobile-open');
+    }
+  });
+
+/* ── Industry modal data ── */
+const INDUSTRY_DATA = {
+  legal: {
+    title: "Legal Pro",
+    price: "$349 setup · $149/month",
+    desc: "Orby becomes your practice management assistant — and your drafting partner. She writes legal briefs, motions, demand letters, and client correspondence, tracks every case, logs billable hours, fires deadline alerts, and generates billing invoices from logged hours.",
+    features: [
+      "Case management & status tracking",
+      "Billable time logging & invoice generation",
+      "Deadline & court date alerts",
+      "Client contact management",
+      "Case notes & document references",
+      "Statute of limitations tracking by case type",
+      "Conflict checks & task reminders",
+      "Write legal briefs, motions & pleadings",
+      "Write demand letters & settlement agreements",
+      "Write client intake letters & retainer agreements",
+      "Write discovery requests & deposition prep questions",
+      "Write client update letters & case summaries",
+      "Know: general legal concepts, court procedures & filing requirements"
+    ],
+    submodsTitle: "Legal Specialty Add-Ons — each adds specialized workflows, terminology, and templates for that practice area",
+    submods: [
+      { key: "legal_injury",    name: "Accident & Injury",   setup: 149, monthly: 79,  price: "$149 setup · $79/mo",  desc: "Write demand letters, mediation summaries, and settlement proposals. Track medical records, statute of limitations alerts, and settlement calculations." },
+      { key: "legal_criminal",  name: "Criminal Defense",    setup: 149, monthly: 79,  price: "$149 setup · $79/mo",  desc: "Write motions to suppress, plea correspondence, and client update letters. Track case timelines, arraignment dates, and plea deal notes." },
+      { key: "legal_family",    name: "Family Law",          setup: 149, monthly: 69,  price: "$149 setup · $69/mo",  desc: "Write custody agreements, support modification letters, and client communications. Track custody schedules, support calculations, and hearing dates." },
+      { key: "legal_realestate",name: "Real Estate Law",     setup: 99,  monthly: 59,  price: "$99 setup · $59/mo",   desc: "Write closing instruction letters, title objection letters, and contract summaries. Track closing checklists, title issues, and contract deadlines." },
+      { key: "legal_corporate", name: "Corporate & Business",setup: 199, monthly: 99,  price: "$199 setup · $99/mo",  desc: "Write shareholder resolutions, operating agreements, and compliance notices. Track entity filings, compliance deadlines, and board meeting notes." },
+      { key: "legal_techip",    name: "Tech & IP",           setup: 249, monthly: 129, price: "$249 setup · $129/mo", desc: "Write cease & desist letters, licensing summaries, and IP assignment notices. Track patent/trademark deadlines, USPTO status, and licensing agreements." },
+      { key: "legal_immigration",name: "Immigration",        setup: 149, monthly: 79,  price: "$149 setup · $79/mo",  desc: "Write cover letters for visa applications, client preparation letters, and USCIS correspondence. Track visa deadlines, case status, and document checklists." },
+      { key: "legal_estate",    name: "Estate Planning",     setup: 149, monthly: 69,  price: "$149 setup · $69/mo",  desc: "Write estate plan summaries, beneficiary letters, and probate notices. Track will & trust checklists, beneficiary records, and probate tasks." }
+    ]
+  },
+  medical: {
+    title: "Medical Pro",
+    price: "$349 setup · $149/month",
+    desc: "Practice management for healthcare providers — and a clinical writing partner. Orby writes SOAP notes, referral letters, prior authorization letters, and patient education materials, while tracking patients, scheduling appointments, managing prescriptions, and keeping everything organized locally.",
+    features: [
+      "Patient records & contact info",
+      "Appointment scheduling & reminders",
+      "Prescription & medication tracking",
+      "Follow-up alerts & referral tracking",
+      "Insurance & billing notes",
+      "Immunization schedule tracking",
+      "Daily patient schedule briefing",
+      "Write patient notes in SOAP format",
+      "Write referral letters & prior authorization letters",
+      "Write patient discharge summaries",
+      "Write prescription notes & patient education materials",
+      "Write appointment reminder letters",
+      "Write insurance claim notes & billing summaries"
+    ],
+    submodsTitle: "Medical Specialty Add-Ons — adds specialty-specific terminology, workflows, and tracking",
+    submods: [
+      { key: "med_cardiology",  name: "Cardiology",               setup: 249, monthly: 129, price: "$249 setup · $129/mo", desc: "Write cardiac procedure notes, follow-up summaries, and patient education letters. Track EKG logs, stress tests, cardiac medications, and follow-up protocols." },
+      { key: "med_neurology",   name: "Neurology",                setup: 249, monthly: 129, price: "$249 setup · $129/mo", desc: "Write neurological assessment notes and patient progress summaries. Track MRI/CT results, seizure logs, and medication titration notes." },
+      { key: "med_ortho",       name: "Orthopedics",              setup: 199, monthly: 99,  price: "$199 setup · $99/mo",  desc: "Write post-op instructions, PT referral letters, and surgical notes. Track surgery schedules, implant records, and post-op follow-ups." },
+      { key: "med_ent",         name: "ENT",                      setup: 199, monthly: 99,  price: "$199 setup · $99/mo",  desc: "Write procedure notes, device fitting summaries, and patient instructions. Track hearing test logs, allergy records, sinus procedures, and device fittings." },
+      { key: "med_vascular",    name: "Vascular",                 setup: 249, monthly: 129, price: "$249 setup · $129/mo", desc: "Write procedure summaries, anticoagulation monitoring notes, and patient letters. Track procedure schedules, imaging follow-ups, and medication monitoring." },
+      { key: "med_pediatrics",  name: "Pediatrics",               setup: 199, monthly: 99,  price: "$199 setup · $99/mo",  desc: "Write well-visit summaries, school forms, and parent education letters. Track growth milestones, vaccination schedules, and developmental notes." },
+      { key: "med_derm",        name: "Dermatology",              setup: 149, monthly: 79,  price: "$149 setup · $79/mo",  desc: "Write biopsy notes, treatment response summaries, and patient care instructions. Track skin condition records, biopsy results, and treatment logs." },
+      { key: "med_psych",       name: "Psychiatry & Mental Health",setup: 199, monthly: 99, price: "$199 setup · $99/mo",  desc: "Write session notes, treatment plan summaries, and medication management notes. Track session history, medication changes, crisis protocols, and treatment plans." },
+      { key: "med_primary",     name: "Primary Care",             setup: 149, monthly: 79,  price: "$149 setup · $79/mo",  desc: "Write annual wellness summaries, chronic disease management notes, and preventive care reminders. Track lab results, wellness visits, and chronic condition histories." }
+    ]
+  },
+  contractor: {
+    title: "Contractor Pro",
+    price: "$249 setup · $99/month",
+    desc: "Orby runs your jobs from estimate to invoice — and writes all your paperwork. She drafts bid proposals, scope of work documents, change orders, subcontractor agreements, and client update letters, while tracking jobs, materials, labor hours, and invoices.",
+    features: [
+      "Job tracking & status management",
+      "Estimate creation with markup",
+      "Materials lists per job",
+      "Labor hour logging",
+      "Subcontractor management",
+      "Invoice generation & job cost summaries",
+      "Write scope of work documents",
+      "Write bid proposals & change orders",
+      "Write subcontractor agreements",
+      "Write project progress reports & client update letters",
+      "Write material lists & punch lists",
+      "Write safety incident reports & lien waiver letters",
+      "Daily job briefing by voice"
+    ],
+    submodsTitle: "Trade Specialty Add-Ons — adds trade-specific codes, workflows, and material tracking. Each requires the Contractor base module.",
+    submods: [
+      { key: "trade_electrical", name: "Electrical",        setup: 99, monthly: 39, price: "$99 setup · $39/mo", desc: "Write permit application notes and code violation remediation plans. Track NEC code references, panel schedules, load calculations, and permit status." },
+      { key: "trade_plumbing",   name: "Plumbing",          setup: 99, monthly: 39, price: "$99 setup · $39/mo", desc: "Write inspection prep notes and job completion reports. Track fixture unit counts, pipe sizing references, inspection checklists, and permit logs." },
+      { key: "trade_hvac",       name: "HVAC",              setup: 99, monthly: 39, price: "$99 setup · $39/mo", desc: "Write equipment startup notes, warranty letters, and maintenance reports. Track equipment specs, refrigerant logs, load calc notes, and service schedules." },
+      { key: "trade_framing",    name: "Framing & Carpentry",setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write lumber takeoff summaries and framing inspection notes. Track span table references, framing checklists, and material counts." },
+      { key: "trade_concrete",   name: "Concrete & Masonry",setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write pour schedules and cure documentation notes. Track mix specs, pour logs, cure times, and rebar placement notes." },
+      { key: "trade_roofing",    name: "Roofing",           setup: 99, monthly: 39, price: "$99 setup · $39/mo", desc: "Write warranty letters and insurance claim support notes. Track shingle calculations, underlayment specs, warranty records, and inspection logs." },
+      { key: "trade_flooring",   name: "Flooring",          setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write material takeoff summaries and installation completion notes. Track expansion gap rules, subfloor inspection records, and install schedules." },
+      { key: "trade_painting",   name: "Painting",          setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write color specification sheets and prep checklists. Track paint calculations by sq ft, color records per room/job, and surface prep notes." },
+      { key: "trade_drywall",    name: "Drywall",           setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write material summaries and inspection completion notes. Track sheet calculations, mud/tape schedules, and inspection logs." },
+      { key: "trade_landscape",  name: "Landscaping",       setup: 79, monthly: 29, price: "$79 setup · $29/mo", desc: "Write plant lists, seasonal care plans, and client proposals. Track irrigation notes, seasonal schedules, and equipment maintenance logs." }
+    ]
+  },
+  property: {
+    title: "Property Management Pro",
+    price: "$149 setup · $59/month",
+    desc: "Orby manages your rental portfolio — and writes all your landlord paperwork. She drafts lease agreements, tenant welcome letters, late payment notices, eviction warnings, and vendor work orders, while tracking tenants, leases, rent payments, and maintenance requests.",
+    features: [
+      "Property & unit tracking",
+      "Tenant records & lease management",
+      "Rent payment logging & tracking",
+      "Maintenance request tracking & vendor management",
+      "Vacancy status & rent roll reports",
+      "Write lease agreements (draft)",
+      "Write tenant welcome letters & move-in/move-out notes",
+      "Write maintenance request acknowledgments & vendor work orders",
+      "Write late payment notices & eviction warning letters",
+      "Write lease renewal offer letters",
+      "Write tenant rules & regulations documents",
+      "Generate rent roll & occupancy reports"
+    ],
+    submodsTitle: "Property Type Add-Ons — specialized workflows for each property category",
+    submods: [
+      { key: null,              name: "Residential",           setup: 0,   monthly: 0,  price: "Included in base",     desc: "Write move-in letters, lease renewal offers, and tenant notices. Track single-family homes, condos, and townhomes — leases, tenants, and maintenance." },
+      { key: "prop_commercial", name: "Commercial",            setup: 199, monthly: 99, price: "$199 setup · $99/mo",  desc: "Write NNN reconciliation summaries, tenant improvement notices, and lease renewal proposals. Track CAM charges, compliance deadlines, and lease renewal alerts." },
+      { key: "prop_multifamily",name: "Multi-Family / Apartment",setup: 199, monthly: 99, price: "$199 setup · $99/mo", desc: "Write bulk tenant notices, common area maintenance updates, and vacancy reports. Track unit-by-unit records, vacancy rates, and bulk rent status." },
+      { key: "prop_vacation",   name: "Vacation Rental",       setup: 149, monthly: 79, price: "$149 setup · $79/mo",  desc: "Write guest welcome letters, cleaning instructions, and seasonal rate notices. Track bookings, cleaning schedules, turnover checklists, and seasonal rates." }
+    ]
+  },
+  realestate: {
+    title: "Real Estate Pro",
+    price: "$199 setup · $79/month",
+    desc: "Orby tracks your listings, manages your client pipeline, schedules showings, and calculates commissions — and writes your property descriptions, offer letters, client emails, and market summaries so you can focus on closing deals.",
+    features: [
+      "Listing management & status tracking",
+      "Buyer & seller client tracking",
+      "Showing scheduler & feedback logging",
+      "Offer tracking & comparison",
+      "Commission calculator",
+      "Follow-up reminders & transaction timeline",
+      "Write property listing descriptions",
+      "Write buyer/seller cover letters & offer letters",
+      "Write follow-up emails & client update letters",
+      "Write market analysis summaries",
+      "Write contract summaries & showing feedback letters",
+      "Write referral thank-you letters",
+      "Daily pipeline briefing"
+    ],
+    submods: []
+  },
+  restaurant: {
+    title: "Restaurant Pro",
+    price: "$199 setup · $79/month",
+    desc: "Orby helps you run front and back of house — and writes your menus, supplier emails, staff schedules, catering proposals, and customer response letters so your operation runs smooth.",
+    features: [
+      "Menu management",
+      "Inventory tracking & low-stock alerts",
+      "Reservation booking & covers tracking",
+      "Staff scheduling",
+      "Supplier contact management & reorder reminders",
+      "Waste log & daily prep briefing",
+      "Write daily specials descriptions & menu item copy",
+      "Write supplier order emails & negotiation notes",
+      "Write staff schedules & task briefings",
+      "Write health inspection prep notes",
+      "Write customer complaint response letters",
+      "Write catering proposals",
+      "Generate food cost analysis"
+    ],
+    submods: []
+  },
+  retail: {
+    title: "Retail Pro",
+    price: "$149 setup · $49/month",
+    desc: "Orby manages your store — and writes your product descriptions, supplier emails, promotional copy, and customer service responses so you can focus on selling.",
+    features: [
+      "Product catalog with SKUs",
+      "Stock level tracking & low stock alerts",
+      "Sales recording & customer tracking",
+      "Supplier management",
+      "Monthly sales reports & inventory adjustments",
+      "Write product descriptions & promotional copy",
+      "Write supplier negotiation emails",
+      "Write customer service response letters",
+      "Write inventory audit reports",
+      "Write return policy letters",
+      "Write staff task lists",
+      "Generate sales & inventory reports"
+    ],
+    submods: []
+  },
+  salon: {
+    title: "Salon & Spa Pro",
+    price: "$99 setup · $49/month",
+    desc: "Orby keeps your books and your clients happy — and writes your service descriptions, appointment reminders, promotional offers, client thank-you notes, and allergy waivers so every touchpoint is professional.",
+    features: [
+      "Client profiles with notes & allergies",
+      "Appointment booking & rebooking reminders",
+      "Service menu management",
+      "Staff scheduling",
+      "Visit history logging & product inventory",
+      "Birthday & anniversary reminders",
+      "Write client consultation notes",
+      "Write appointment reminder messages",
+      "Write service menu descriptions & promotional offers",
+      "Write client thank-you notes",
+      "Write allergy waiver notes",
+      "Write staff schedules",
+      "Generate revenue reports"
+    ],
+    submods: []
+  },
+  accounting: {
+    title: "Accounting Pro",
+    price: "$249 setup · $99/month",
+    desc: "Orby keeps your client files and deadlines straight — and writes your engagement letters, IRS correspondence, tax organizer cover letters, extension requests, and year-end client letters so your practice looks polished.",
+    features: [
+      "Client management & multi-client dashboard",
+      "Tax deadline tracking & upcoming deadline alerts",
+      "Income & expense logging",
+      "P&L summaries & document reference tracking",
+      "Filing type tracking",
+      "Write client engagement letters",
+      "Write tax organizer cover letters",
+      "Write financial summary reports",
+      "Write IRS correspondence letters",
+      "Write extension request letters",
+      "Write client year-end letters",
+      "Write billing statements",
+      "Generate P&L summaries on demand"
+    ],
+    submods: []
+  },
+  hr: {
+    title: "HR Professional",
+    price: "$149 setup · $59/month",
+    desc: "Orby handles your HR admin — and writes your job postings, offer letters, termination letters, performance reviews, policy documents, and onboarding welcome letters so every HR interaction is documented and professional.",
+    features: [
+      "Employee records & department filtering",
+      "Onboarding task checklists",
+      "PTO tracking, balances & approval workflow",
+      "Performance review scheduling & upcoming review alerts",
+      "Compliance reminders",
+      "Write job postings & offer letters",
+      "Write employee handbook sections & policy documents",
+      "Write termination letters & disciplinary action letters",
+      "Write performance review summaries",
+      "Write PTO approval/denial letters",
+      "Write onboarding welcome letters",
+      "Generate org chart summaries",
+      "New hire checklist management"
+    ],
+    submods: []
+  },
+  therapy: {
+    title: "Therapy & Counseling Pro",
+    price: "$199 setup · $79/month",
+    desc: "Orby handles the admin so you can focus on your clients — and writes your session notes, treatment plans, progress notes, discharge summaries, referral letters, and insurance billing notes, all stored locally with privacy in mind.",
+    features: [
+      "Client records & confidential local storage",
+      "Appointment scheduling & session history",
+      "Mood rating tracking",
+      "Treatment plan tracking & progress notes",
+      "Write session notes in SOAP and DAP format",
+      "Write treatment plan documents",
+      "Write progress notes & session summaries",
+      "Write client intake summaries",
+      "Write discharge summaries",
+      "Write referral letters",
+      "Write insurance billing notes",
+      "Generate session history reports"
+    ],
+    submods: []
+  },
+  trade: {
+    title: "Trade Specialties",
+    price: "$99 setup each · $39/month each",
+    desc: "Add-on modules for specific trades — each adds trade-specific code references, material tracking, and the ability to write job quotes, inspection prep notes, permit application notes, warranty letters, and job completion reports for your trade.",
+    features: [
+      "Trade-specific code references",
+      "Material order tracking",
+      "Job notes with trade codes",
+      "Inspection checklists & permit tracking",
+      "Equipment/tool notes",
+      "Write job quotes & estimates",
+      "Write material lists",
+      "Write inspection prep notes",
+      "Write permit application notes",
+      "Write code violation remediation plans",
+      "Write customer progress update letters",
+      "Write warranty letters",
+      "Generate job completion reports"
+    ],
+    submods: []
+  },
+  inventory: {
+    title: "Inventory Pro",
+    price: "$149 setup · $49/month",
+    desc: "Orby becomes your full inventory system — from a single-location boutique to a multi-warehouse operation. She tracks every SKU, manages suppliers, creates purchase orders, generates reports, and writes audit reports, supplier requests, and inventory policy documents on demand.",
+    features: [
+      "Multi-location stock tracking",
+      "SKU-based product catalog",
+      "Low stock alerts with configurable thresholds",
+      "Purchase order creation & receiving",
+      "Supplier management",
+      "Bulk stock updates",
+      "Stock movement log (last 5,000 entries)",
+      "Inventory value report (cost vs. retail)",
+      "Category organization",
+      "Write inventory audit reports",
+      "Write supplier purchase requests & negotiation notes",
+      "Write low-stock alert summaries",
+      "Write inventory policy & procedure documents",
+      "Write receiving discrepancy notes & stock transfer documentation",
+      "Generate shrinkage/loss reports"
+    ],
+    submodsTitle: "Scale to Any Operation Size",
+    submods: [
+      { name: "Single Location", price: "Included in base", desc: "Perfect for retail shops, restaurants, and small businesses. Track your full product catalog with reorder alerts and supplier contacts." },
+      { name: "Multi-Location / Warehouse", price: "Included in base", desc: "Track stock separately at each location — main warehouse, store floor, storage room, off-site. Transfer and bulk update across locations." },
+      { name: "Purchase Order Workflow", price: "Included in base", desc: "Create POs to specific suppliers, receive full or partial shipments, and auto-update stock levels when goods arrive." }
+    ]
+  }
+};
+
+function openIndustry(key) {
+  const d = INDUSTRY_DATA[key];
+  if (!d) return;
+  document.getElementById('indTitle').textContent = d.title;
+  document.getElementById('indPriceLine').textContent = d.price;
+  document.getElementById('indDesc').textContent = d.desc;
+  const fl = document.getElementById('indFeatures');
+  fl.innerHTML = d.features.map(f => `<li>${f}</li>`).join('');
+  const subSec = document.getElementById('indSubmodsSection');
+  if (d.submods && d.submods.length) {
+    document.getElementById('indSubmodsTitle').textContent = d.submodsTitle || 'Available Add-On Modules';
+    const sg = document.getElementById('indSubmodsGrid');
+    sg.innerHTML = d.submods.map(s =>
+      `<div class="ind-submod-card" style="position:relative;padding-bottom:${s.key ? '42px' : '14px'};">
+        <h4>${s.name}</h4>
+        <div class="sub-price">${s.price}</div>
+        <p>${s.desc}</p>
+        ${s.key ? `<button class="cart-btn" style="bottom:8px;right:8px;" onclick="openQtyPopup('${s.key}',event)" title="Add to cart">
+          <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </button>` : ''}
+      </div>`
+    ).join('');
+    subSec.style.display = '';
+  } else {
+    subSec.style.display = 'none';
+  }
+  document.getElementById('indOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeIndustry(e) {
+  if (e && e.target !== document.getElementById('indOverlay') && !e.target.classList.contains('ind-modal-close')) return;
+  document.getElementById('indOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// ── CART SYSTEM ──────────────────────────────────────────────────────────────
+
+const MODULE_PRICES = {
+  orby_home:  { name: 'My Orby Home',            setup: 49.99,  monthly: 19.99 },
+  legal:      { name: 'Legal Pro',               setup: 349,    monthly: 149   },
+  medical:    { name: 'Medical Pro',              setup: 349,    monthly: 149   },
+  realestate: { name: 'Real Estate Pro',          setup: 199,    monthly: 79    },
+  restaurant: { name: 'Restaurant Pro',           setup: 199,    monthly: 79    },
+  retail:     { name: 'Retail Pro',               setup: 149,    monthly: 49    },
+  salon:      { name: 'Salon & Spa Pro',          setup: 99,     monthly: 49    },
+  contractor: { name: 'Contractor Pro',           setup: 249,    monthly: 99    },
+  trade:      { name: 'Trade Specialties',        setup: 99,     monthly: 39    },
+  accounting: { name: 'Accounting Pro',           setup: 249,    monthly: 99    },
+  hr:         { name: 'HR Professional',          setup: 149,    monthly: 59    },
+  therapy:    { name: 'Therapy & Counseling Pro', setup: 199,    monthly: 79    },
+  property:   { name: 'Property Management Pro',  setup: 149,    monthly: 59    },
+  inventory:  { name: 'Inventory Pro',            setup: 149,    monthly: 49    },
+  business:   { name: 'Business Add-On',          setup: 149.99, monthly: 39.99 },
+  // Legal specialties
+  legal_injury:     { name: 'Accident & Injury',    setup: 149, monthly: 79  },
+  legal_criminal:   { name: 'Criminal Defense',     setup: 149, monthly: 79  },
+  legal_family:     { name: 'Family Law',           setup: 149, monthly: 69  },
+  legal_realestate: { name: 'Real Estate Law',      setup: 99,  monthly: 59  },
+  legal_corporate:  { name: 'Corporate & Business', setup: 199, monthly: 99  },
+  legal_techip:     { name: 'Tech & IP',            setup: 249, monthly: 129 },
+  legal_immigration:{ name: 'Immigration',          setup: 149, monthly: 79  },
+  legal_estate:     { name: 'Estate Planning',      setup: 149, monthly: 69  },
+  // Medical specialties
+  med_cardiology:   { name: 'Cardiology',               setup: 249, monthly: 129 },
+  med_neurology:    { name: 'Neurology',                setup: 249, monthly: 129 },
+  med_ortho:        { name: 'Orthopedics',              setup: 199, monthly: 99  },
+  med_ent:          { name: 'ENT',                      setup: 199, monthly: 99  },
+  med_vascular:     { name: 'Vascular',                 setup: 249, monthly: 129 },
+  med_pediatrics:   { name: 'Pediatrics',               setup: 199, monthly: 99  },
+  med_derm:         { name: 'Dermatology',              setup: 149, monthly: 79  },
+  med_psych:        { name: 'Psychiatry & Mental Health',setup: 199, monthly: 99 },
+  med_primary:      { name: 'Primary Care',             setup: 149, monthly: 79  },
+  // Contractor trades
+  trade_electrical: { name: 'Electrical',          setup: 99, monthly: 39 },
+  trade_plumbing:   { name: 'Plumbing',            setup: 99, monthly: 39 },
+  trade_hvac:       { name: 'HVAC',                setup: 99, monthly: 39 },
+  trade_framing:    { name: 'Framing & Carpentry', setup: 79, monthly: 29 },
+  trade_concrete:   { name: 'Concrete & Masonry',  setup: 79, monthly: 29 },
+  trade_roofing:    { name: 'Roofing',             setup: 99, monthly: 39 },
+  trade_flooring:   { name: 'Flooring',            setup: 79, monthly: 29 },
+  trade_painting:   { name: 'Painting',            setup: 79, monthly: 29 },
+  trade_drywall:    { name: 'Drywall',             setup: 79, monthly: 29 },
+  trade_landscape:  { name: 'Landscaping',         setup: 79, monthly: 29 },
+  // Property Management add-ons
+  prop_commercial:  { name: 'Commercial Properties',      setup: 199, monthly: 99 },
+  prop_multifamily: { name: 'Multi-Family / Apartment',   setup: 199, monthly: 99 },
+  prop_vacation:    { name: 'Vacation Rental',            setup: 149, monthly: 79 }
+};
+
+let cart = {};
+let qtyActiveKey = null;
+
+function openQtyPopup(key, event) {
+  if (event) event.stopPropagation();
+  const mod = MODULE_PRICES[key];
+  if (!mod) return;
+  qtyActiveKey = key;
+  document.getElementById('qtyModuleName').textContent = mod.name;
+  document.getElementById('qtyModulePrice').textContent =
+    '$' + mod.setup.toFixed(2) + ' setup · $' + mod.monthly.toFixed(2) + '/month per person';
+  const existingQty = cart[key] ? cart[key].qty : 1;
+  document.getElementById('qtyInput').value = existingQty;
+  updateQtyPreview();
+  document.getElementById('qtyOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('qtyInput').focus(), 100);
+}
+
+function closeQtyPopup() {
+  document.getElementById('qtyOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  qtyActiveKey = null;
+}
+
+// Tiered pricing: person 1=100%, 2=85%, 3=70%, 4+=50%
+function tieredTotal(basePrice, qty) {
+  if (qty <= 0) return 0;
+  const tiers = [1.00, 0.85, 0.70];
+  let total = 0;
+  for (let i = 0; i < qty; i++) {
+    total += basePrice * (i < tiers.length ? tiers[i] : 0.50);
+  }
+  return total;
+}
+
+function tierBreakdown(basePrice, qty) {
+  if (qty === 1) return '1 person @ 100%';
+  const lines = [];
+  if (qty >= 1) lines.push('1st @ $' + basePrice.toFixed(2));
+  if (qty >= 2) lines.push('2nd @ $' + (basePrice * 0.85).toFixed(2));
+  if (qty >= 3) lines.push('3rd @ $' + (basePrice * 0.70).toFixed(2));
+  if (qty >= 4) lines.push((qty - 3) + ' more @ $' + (basePrice * 0.50).toFixed(2) + ' each');
+  return lines.join(' · ');
+}
+
+function updateQtyPreview() {
+  if (!qtyActiveKey) return;
+  const mod = MODULE_PRICES[qtyActiveKey];
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const setupTotal = tieredTotal(mod.setup, qty);
+  const monthlyTotal = tieredTotal(mod.monthly, qty);
+  document.getElementById('qtyCostPreview').innerHTML =
+    '<strong>$' + setupTotal.toFixed(2) + '</strong> setup<br><strong>$' + monthlyTotal.toFixed(2) + '</strong>/mo';
+}
+
+function confirmAddToCart() {
+  if (!qtyActiveKey) return;
+  const qty = parseInt(document.getElementById('qtyInput').value) || 1;
+  const mod = MODULE_PRICES[qtyActiveKey];
+  cart[qtyActiveKey] = {
+    key: qtyActiveKey, name: mod.name, qty,
+    setup: mod.setup, monthly: mod.monthly,
+    setupTotal: tieredTotal(mod.setup, qty),
+    monthlyTotal: tieredTotal(mod.monthly, qty)
+  };
+  // Mark cart button on the card as in-cart
+  document.querySelectorAll('.industry-card').forEach(card => {
+    const onclickAttr = card.getAttribute('onclick') || '';
+    const match = onclickAttr.match(/'(\w+)'/);
+    if (match && match[1] === qtyActiveKey) {
+      const btn = card.querySelector('.cart-btn');
+      if (btn) btn.classList.add('in-cart');
+    }
+  });
+  closeQtyPopup();
+  updateCartBubble();
+}
+
+function updateCartBubble() {
+  const keys = Object.keys(cart);
+  const count = keys.length;
+  const bubble = document.getElementById('cartBubble');
+  document.getElementById('cartCount').textContent = count;
+  if (count > 0) bubble.classList.add('visible');
+  else bubble.classList.remove('visible');
+  // Sync nav badge
+  const badge = document.getElementById('navCartBadge');
+  if (badge) {
+    badge.textContent = count;
+    if (count > 0) badge.classList.add('has-items');
+    else badge.classList.remove('has-items');
+  }
+}
+
+function openCartDrawer() {
+  renderCartDrawer();
+  document.getElementById('cartDrawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCartDrawer() {
+  document.getElementById('cartDrawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function removeFromCart(key) {
+  delete cart[key];
+  // Remove in-cart highlight
+  document.querySelectorAll('.industry-card').forEach(card => {
+    const onclickAttr = card.getAttribute('onclick') || '';
+    const match = onclickAttr.match(/'(\w+)'/);
+    if (match && match[1] === key) {
+      const btn = card.querySelector('.cart-btn');
+      if (btn) btn.classList.remove('in-cart');
+    }
+  });
+  updateCartBubble();
+  renderCartDrawer();
+}
+
+function renderCartDrawer() {
+  const keys = Object.keys(cart);
+  const itemsEl = document.getElementById('cartItems');
+  const totalsEl = document.getElementById('cartTotals');
+
+  if (keys.length === 0) {
+    itemsEl.innerHTML = '<div class="cart-empty">Your cart is empty.<br>Click the cart icon on any module to add it.</div>';
+    totalsEl.innerHTML = '';
+    return;
+  }
+
+  let totalSetup = 0, totalMonthly = 0;
+  itemsEl.innerHTML = keys.map(key => {
+    const item = cart[key];
+    const setupCost = item.setupTotal;
+    const monthlyCost = item.monthlyTotal;
+    totalSetup += setupCost;
+    totalMonthly += monthlyCost;
+    const breakdown = tierBreakdown(item.monthly, item.qty);
+    return `<div class="cart-item">
+      <div class="cart-item-info">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-detail">${item.qty} ${item.qty === 1 ? 'person' : 'people'}</div>
+        <div class="cart-item-detail" style="font-size:0.72rem;margin-top:2px;opacity:0.7;">${breakdown}</div>
+      </div>
+      <div class="cart-item-price">
+        <div class="cart-item-setup">$${setupCost.toFixed(2)} setup</div>
+        <div class="cart-item-monthly">$${monthlyCost.toFixed(2)}/mo</div>
+      </div>
+      <button class="cart-item-remove" onclick="removeFromCart('${key}')" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+
+  totalsEl.innerHTML = `
+    <div class="cart-total-row"><span>One-time setup total:</span><span>$${totalSetup.toFixed(2)}</span></div>
+    <div class="cart-total-row main"><span>Monthly total:</span><span>$${totalMonthly.toFixed(2)}/mo</span></div>
+  `;
+}
+
+function passCartToCheckout() {
+  localStorage.setItem('orby_cart', JSON.stringify(cart));
+}
+</script>
+
+<!-- ── Quantity picker popup ── -->
+<div class="qty-overlay" id="qtyOverlay" onclick="if(event.target===this)closeQtyPopup()">
+  <div class="qty-box">
+    <button class="qty-close" onclick="closeQtyPopup()">✕</button>
+    <h3 id="qtyModuleName"></h3>
+    <div class="qty-module-price" id="qtyModulePrice"></div>
+    <div class="qty-label">How many people need this module?</div>
+    <div class="qty-input-row">
+      <input class="qty-input" type="number" id="qtyInput" min="1" max="9999" value="1" oninput="updateQtyPreview()">
+      <div class="qty-cost-preview" id="qtyCostPreview"></div>
+    </div>
+    <div style="font-size:0.78rem;color:var(--text-muted);">You can always add more seats for different modules later.</div>
+    <div class="qty-actions">
+      <button class="btn btn-outline" onclick="closeQtyPopup()">Cancel</button>
+      <button class="btn btn-gold" onclick="confirmAddToCart()">Add to Cart</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Floating cart bubble ── -->
+<button class="cart-bubble" id="cartBubble" onclick="openCartDrawer()">
+  <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
+  My Cart
+  <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<!-- ── Cart drawer ── -->
+<div class="cart-drawer-overlay" id="cartDrawerOverlay" onclick="if(event.target===this)closeCartDrawer()">
+  <div class="cart-drawer">
+    <div class="cart-drawer-header">
+      <h3>My Orby Cart</h3>
+      <button class="cart-drawer-close" onclick="closeCartDrawer()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-drawer-footer">
+      <div class="cart-totals" id="cartTotals"></div>
+      <button class="btn btn-gold" style="width:100%;justify-content:center;" onclick="closeCartDrawer();openLegalModal()">Review Terms &amp; Proceed →</button>
+      <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;margin-top:10px;">You'll review and agree to our terms before being taken to payment.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Industry detail modal ── -->
+<div class="ind-overlay" id="indOverlay" onclick="closeIndustry(event)">
+  <div class="ind-modal" id="indModal">
+    <button class="ind-modal-close" onclick="closeIndustry()">✕</button>
+    <h2 id="indTitle"></h2>
+    <div class="ind-price-line" id="indPriceLine"></div>
+    <div class="ind-desc" id="indDesc"></div>
+    <ul class="ind-features" id="indFeatures"></ul>
+    <div id="indSubmodsSection" style="display:none">
+      <div class="ind-submods-title" id="indSubmodsTitle"></div>
+      <div class="ind-submods-grid" id="indSubmodsGrid"></div>
+    </div>
+    <a href="/checkout" class="btn btn-gold" style="width:100%;justify-content:center;">Get Started with This Module</a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     LEGAL AGREEMENT MODAL
+     Opens when user clicks "Review Terms & Proceed" from cart.
+     All 9 sections must be checked before payment is enabled.
+══════════════════════════════════════════════════════════ -->
+<button class="legal-close-top" id="legalCloseTop" onclick="closeLegalModal()" title="Back to cart">✕</button>
+
+<div class="legal-overlay" id="legalOverlay">
+  <div class="legal-modal">
+
+    <div class="legal-header">
+      <div class="orby-wordmark">MY ORBY</div>
+      <h1>Terms of Service &amp; User Agreement</h1>
+      <p>Please read each section carefully and check the box at the bottom of each one to confirm you understand and agree. You must agree to all sections before proceeding to payment.</p>
+    </div>
+
+    <div class="legal-progress-bar">
+      <div class="legal-progress-fill" id="legalProgressFill"></div>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="legal-section" id="lsec-1">
+      <div class="legal-section-num">Section 1 of 9</div>
+      <h2>What My Orby Is — and Is Not</h2>
+      <p>My Orby ("Orby") is an artificial intelligence software application designed to serve as a personal and professional assistant. Orby is <strong>not</strong> a licensed physician, attorney, accountant, financial advisor, therapist, mental health counselor, pharmacist, or any other credentialed or licensed professional in any field.</p>
+      <p>Orby's responses are generated by AI software and are intended for general organizational, informational, and productivity purposes only. Using My Orby does <strong>not</strong> create any professional-client relationship of any kind — including but not limited to: attorney-client, doctor-patient, therapist-client, financial advisor-client, or accountant-client relationships.</p>
+      <div class="highlight-box">Orby is a very capable AI assistant. She is not a replacement for a licensed professional. Treat everything she tells you as a helpful starting point — not a final answer.</div>
+      <div class="legal-agree-row" onclick="toggleLegal(1)">
+        <input type="checkbox" id="lchk-1" onchange="updateLegalProgress()">
+        <label for="lchk-1">I understand that My Orby is an AI assistant, not a licensed professional of any kind, and that no professional-client relationship is created by using this software.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 2 -->
+    <div class="legal-section" id="lsec-2">
+      <div class="legal-section-num">Section 2 of 9</div>
+      <h2>Medical &amp; Health Disclaimer</h2>
+      <p>My Orby may provide general health information, wellness tips, medication reminders, symptom descriptions, and health tracking features. <strong>This is not medical advice.</strong> Orby is not a licensed physician, nurse practitioner, registered nurse, pharmacist, or any other healthcare professional.</p>
+      <p>You must <strong>not</strong> rely on Orby as a substitute for professional medical diagnosis, treatment, or advice. Never disregard or delay seeking professional medical advice because of something Orby said. Always consult a qualified, licensed healthcare provider before:</p>
+      <ul>
+        <li>Making any changes to medications, dosages, or treatment plans</li>
+        <li>Acting on any symptom information or health assessment provided by Orby</li>
+        <li>Starting, stopping, or changing any medical treatment or therapy</li>
+        <li>Making decisions about surgery, procedures, or specialist referrals</li>
+      </ul>
+      <div class="highlight-box">🚨 In a medical emergency, call 911 or your local emergency services immediately. Do not consult Orby. My Orby and its owners bear no liability for any health outcomes, injuries, or damages resulting from reliance on information provided by the software.</div>
+      <div class="legal-agree-row" onclick="toggleLegal(2)">
+        <input type="checkbox" id="lchk-2" onchange="updateLegalProgress()">
+        <label for="lchk-2">I understand that Orby does not provide medical advice. I will always consult a licensed healthcare provider for medical decisions and will not rely on Orby in a medical emergency.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="legal-section" id="lsec-3">
+      <div class="legal-section-num">Section 3 of 9</div>
+      <h2>Legal Disclaimer</h2>
+      <p>My Orby may assist with general legal questions, document templates, legal research summaries, and general legal information. <strong>This is not legal advice.</strong> Orby is not a licensed attorney, paralegal, or legal representative. No attorney-client relationship is formed by using My Orby — including when using the Legal Pro module or any legal industry add-on.</p>
+      <p>Legal documents, contracts, letters, or templates generated by Orby are <strong>starting-point templates only</strong>. They have not been reviewed by a licensed attorney, are not jurisdiction-specific unless explicitly stated, and may not reflect current law in your state or country.</p>
+      <p>You should always consult a licensed attorney in your jurisdiction before:</p>
+      <ul>
+        <li>Signing, filing, or submitting any legal document</li>
+        <li>Taking or refraining from any legal action</li>
+        <li>Relying on any legal interpretation or analysis provided by Orby</li>
+        <li>Using any Orby-generated document in a legal proceeding</li>
+      </ul>
+      <div class="highlight-box">My Orby and its owners bear no liability for any legal outcomes, losses, penalties, or damages resulting from reliance on information or documents generated by the software.</div>
+      <div class="legal-agree-row" onclick="toggleLegal(3)">
+        <input type="checkbox" id="lchk-3" onchange="updateLegalProgress()">
+        <label for="lchk-3">I understand that Orby does not provide legal advice, that no attorney-client relationship is formed, and that I will consult a licensed attorney before acting on any legal information or document generated by Orby.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="legal-section" id="lsec-4">
+      <div class="legal-section-num">Section 4 of 9</div>
+      <h2>Financial, Accounting &amp; Tax Disclaimer</h2>
+      <p>My Orby may assist with budgeting, expense tracking, invoicing, financial organization, cash flow overviews, and general financial information. <strong>This is not financial, accounting, tax, or investment advice.</strong> Orby is not a Certified Public Accountant (CPA), Certified Financial Planner (CFP), licensed investment advisor, tax attorney, or any registered financial professional.</p>
+      <p>Financial figures, calculations, reports, budgets, and projections generated by Orby should be treated as organizational tools and rough guides only. They are <strong>not</strong> suitable for:</p>
+      <ul>
+        <li>Filing tax returns or supporting tax positions</li>
+        <li>Audits, financial statements, or official reporting</li>
+        <li>Investment or retirement decisions</li>
+        <li>Loan applications or financial disclosures</li>
+        <li>Any purpose requiring CPA certification or professional sign-off</li>
+      </ul>
+      <p>Always have a licensed CPA, accountant, or qualified financial advisor review any financial information before using it for official, legal, or business-critical purposes.</p>
+      <div class="highlight-box">My Orby and its owners bear no liability for any financial losses, tax penalties, audit findings, or damages resulting from reliance on financial information provided by the software.</div>
+      <div class="legal-agree-row" onclick="toggleLegal(4)">
+        <input type="checkbox" id="lchk-4" onchange="updateLegalProgress()">
+        <label for="lchk-4">I understand that Orby does not provide financial, accounting, tax, or investment advice, and that I will consult a licensed CPA or financial advisor before acting on any financial information generated by Orby.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="legal-section" id="lsec-5">
+      <div class="legal-section-num">Section 5 of 9</div>
+      <h2>Mental Health &amp; Wellness Disclaimer</h2>
+      <p>My Orby may provide general wellness suggestions, mood tracking, stress management tips, and supportive conversation. <strong>This is not mental health treatment, psychotherapy, or counseling.</strong> Orby is not a licensed therapist, psychologist, psychiatrist, licensed clinical social worker (LCSW), or any other mental health professional.</p>
+      <p>Orby is not equipped to handle mental health crises, suicidal ideation, severe depression, trauma responses, or psychiatric emergencies. If you or someone you know is experiencing a mental health crisis:</p>
+      <div class="highlight-box">🚨 Call or text 988 (Suicide &amp; Crisis Lifeline) or call 911 immediately. Do not rely on Orby in a crisis situation. Always consult a licensed mental health professional for diagnosis, treatment, or therapy.</div>
+      <p>Using Orby's wellness features does not constitute mental health treatment and no therapist-client relationship is formed at any time.</p>
+      <div class="legal-agree-row" onclick="toggleLegal(5)">
+        <input type="checkbox" id="lchk-5" onchange="updateLegalProgress()">
+        <label for="lchk-5">I understand that Orby does not provide mental health treatment or therapy, that no therapist-client relationship is formed, and that I will contact a licensed mental health professional or emergency services in a crisis.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 6 -->
+    <div class="legal-section" id="lsec-6">
+      <div class="legal-section-num">Section 6 of 9</div>
+      <h2>AI Limitations &amp; Accuracy</h2>
+      <p>My Orby is powered by large language model (LLM) artificial intelligence. AI technology has well-documented limitations that you must understand before using this software:</p>
+      <ul>
+        <li><strong>AI makes mistakes.</strong> Orby can and will produce responses that are incorrect, outdated, incomplete, misleading, or inappropriate for your specific situation.</li>
+        <li><strong>AI is not always current.</strong> Orby may not have up-to-date information on laws, medical guidelines, market prices, regulations, or current events.</li>
+        <li><strong>AI can be confidently wrong.</strong> Orby may state incorrect information with high apparent confidence. Do not assume that a confident, well-written answer is a correct one.</li>
+        <li><strong>AI responses vary.</strong> The same question may get different answers at different times.</li>
+        <li><strong>Context matters.</strong> Poorly worded or incomplete questions may lead to inaccurate or unhelpful responses.</li>
+      </ul>
+      <div class="highlight-box">The golden rule: Use Orby to get organized, save time, and get started — then verify anything important with a qualified human before acting on it. She is a very capable assistant. She is not infallible.</div>
+      <p>My Orby makes no warranty, express or implied, that information provided by Orby is accurate, complete, current, or fit for any particular purpose.</p>
+      <div class="legal-agree-row" onclick="toggleLegal(6)">
+        <input type="checkbox" id="lchk-6" onchange="updateLegalProgress()">
+        <label for="lchk-6">I understand that AI technology makes mistakes, that Orby's responses may be incorrect or outdated, and that I will independently verify any important information before relying on it.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 7 -->
+    <div class="legal-section" id="lsec-7">
+      <div class="legal-section-num">Section 7 of 9</div>
+      <h2>Software License &amp; Subscription Terms</h2>
+      <p>By completing your purchase you are acquiring:</p>
+      <ul>
+        <li>A <strong>limited, non-exclusive, non-transferable</strong> license to install and use My Orby software on your personal devices.</li>
+        <li>Access to Orby's AI capabilities subject to a <strong>monthly service fee</strong> that renews automatically each month until cancelled.</li>
+      </ul>
+      <p><strong>What you may not do:</strong> resell, sublicense, rent, lease, reverse-engineer, decompile, disassemble, copy, or redistribute My Orby software or any portion of it. You may not use My Orby to build a competing product or service.</p>
+      <p><strong>Subscription cancellation:</strong> You may cancel your monthly subscription at any time through your account settings or by contacting support. Cancellation takes effect at the end of the current billing period. You will retain access through the end of the period you have paid for.</p>
+      <p><strong>Changes to the service:</strong> My Orby reserves the right to modify, update, add, or remove features at any time with reasonable notice. We reserve the right to terminate accounts that violate these terms.</p>
+      <div class="legal-agree-row" onclick="toggleLegal(7)">
+        <input type="checkbox" id="lchk-7" onchange="updateLegalProgress()">
+        <label for="lchk-7">I understand the software license terms, that my subscription renews monthly until I cancel, and that I may not resell or redistribute the software.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 8 -->
+    <div class="legal-section" id="lsec-8">
+      <div class="legal-section-num">Section 8 of 9</div>
+      <h2>Refund Policy &amp; Limitation of Liability</h2>
+      <p><strong>30-Day Money-Back Guarantee:</strong> If you are not satisfied with My Orby for any reason within 30 days of your initial purchase, contact our support team for a full refund of the one-time license fee. Industry module setup fees are non-refundable after a module has been configured and activated. Monthly service fees are non-refundable once a billing period has begun.</p>
+      <p><strong>Limitation of Liability:</strong> TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, My Orby, its owners, officers, employees, and affiliates shall not be liable for any direct, indirect, incidental, consequential, special, exemplary, or punitive damages arising out of or related to your use of the software — including but not limited to:</p>
+      <ul>
+        <li>Damages from decisions made based on Orby's responses (medical, legal, financial, or otherwise)</li>
+        <li>Loss of data, profits, business, or goodwill</li>
+        <li>Business interruption or system failure</li>
+        <li>Any outcome resulting from AI errors, inaccuracies, or omissions</li>
+      </ul>
+      <p>Our total liability to you for any claim arising from your use of My Orby shall not exceed the total fees you paid to My Orby in the twelve (12) months preceding the claim.</p>
+      <div class="highlight-box">You agree to use My Orby as a tool to assist and organize — not as the final authority on decisions with serious consequences. You retain full responsibility for decisions you make using information provided by Orby.</div>
+      <div class="legal-agree-row" onclick="toggleLegal(8)">
+        <input type="checkbox" id="lchk-8" onchange="updateLegalProgress()">
+        <label for="lchk-8">I understand the refund policy and that My Orby's liability is limited. I accept full responsibility for decisions I make using information provided by the software.</label>
+      </div>
+    </div>
+
+    <!-- SECTION 9 -->
+    <div class="legal-section" id="lsec-9">
+      <div class="legal-section-num">Section 9 of 9</div>
+      <h2>Governing Law, Disputes &amp; Final Agreement</h2>
+      <p>These Terms of Service are governed by the laws of the United States and the state in which My Orby LLC is registered, without regard to conflict-of-law principles.</p>
+      <p><strong>Dispute Resolution:</strong> Before filing any legal action, you agree to first attempt to resolve any dispute through good-faith written notice to My Orby support. If a dispute cannot be resolved informally within 30 days, it shall be submitted to binding individual arbitration under the rules of the American Arbitration Association (AAA). <strong>You waive your right to a jury trial and to participate in any class action lawsuit or class-wide arbitration against My Orby.</strong></p>
+      <p><strong>Severability:</strong> If any provision of these terms is found to be unenforceable, the remaining provisions will continue in full force and effect.</p>
+      <p><strong>Entire Agreement:</strong> These terms, together with your purchase confirmation, constitute the entire agreement between you and My Orby regarding use of the software and supersede all prior discussions or representations.</p>
+      <p><strong>By checking the box below, you confirm that:</strong></p>
+      <ul>
+        <li>You are at least 18 years of age</li>
+        <li>You have read, understood, and agree to all sections of this agreement</li>
+        <li>You are authorized to enter into this agreement on behalf of yourself or your organization</li>
+        <li>You understand that this is a legally binding agreement</li>
+      </ul>
+      <div class="legal-agree-row" onclick="toggleLegal(9)">
+        <input type="checkbox" id="lchk-9" onchange="updateLegalProgress()">
+        <label for="lchk-9">I have read and agree to the governing law, dispute resolution terms, and confirm this is a legally binding agreement. I am 18 or older and authorized to make this purchase.</label>
+      </div>
+    </div>
+
+  </div><!-- /.legal-modal -->
+</div><!-- /.legal-overlay -->
+
+<!-- Sticky footer (always visible while modal is open) -->
+<div class="legal-sticky-footer" id="legalFooter">
+  <div class="legal-footer-status" id="legalFooterStatus">
+    <strong id="legalCheckedCount">0</strong> of 9 sections agreed
+  </div>
+  <button class="legal-proceed-btn" id="legalProceedBtn" onclick="proceedToPayment()">
+    Agree &amp; Proceed to Payment →
+  </button>
+</div>
+
+<script>
+// ── Legal Agreement Modal ──────────────────────────────────────────────────
+
+const LEGAL_TOTAL = 9;
+
+function openLegalModal() {
+  document.getElementById('legalOverlay').classList.add('open');
+  document.getElementById('legalFooter').classList.add('visible');
+  document.getElementById('legalCloseTop').classList.add('visible');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('legalOverlay').scrollTop = 0;
+  updateLegalProgress();
+}
+
+function closeLegalModal() {
+  document.getElementById('legalOverlay').classList.remove('open');
+  document.getElementById('legalFooter').classList.remove('visible');
+  document.getElementById('legalCloseTop').classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+function toggleLegal(n) {
+  const chk = document.getElementById('lchk-' + n);
+  chk.checked = !chk.checked;
+  updateLegalProgress();
+}
+
+function updateLegalProgress() {
+  let checked = 0;
+  for (let i = 1; i <= LEGAL_TOTAL; i++) {
+    const chk = document.getElementById('lchk-' + i);
+    const sec = document.getElementById('lsec-' + i);
+    if (chk && chk.checked) {
+      checked++;
+      sec.classList.add('agreed');
+    } else if (sec) {
+      sec.classList.remove('agreed');
+    }
+  }
+  const pct = (checked / LEGAL_TOTAL) * 100;
+  document.getElementById('legalProgressFill').style.width = pct + '%';
+  document.getElementById('legalCheckedCount').textContent = checked;
+  const btn = document.getElementById('legalProceedBtn');
+  if (checked === LEGAL_TOTAL) {
+    btn.classList.add('ready');
+    document.getElementById('legalFooterStatus').innerHTML =
+      '<strong style="color:var(--gold-light)">✓ All sections agreed — you\'re ready to proceed!</strong>';
+  } else {
+    btn.classList.remove('ready');
+    document.getElementById('legalFooterStatus').innerHTML =
+      '<strong id="legalCheckedCount">' + checked + '</strong> of 9 sections agreed';
+  }
+}
+
+function proceedToPayment() {
+  let checked = 0;
+  for (let i = 1; i <= LEGAL_TOTAL; i++) {
+    if (document.getElementById('lchk-' + i).checked) checked++;
+  }
+  if (checked < LEGAL_TOTAL) return;
+  // Build cart query string and pass to Stripe/checkout
+  passCartToCheckout();
+  closeLegalModal();
+  window.location.href = '/checkout?' + buildCartQuery();
+}
+
+function buildCartQuery() {
+  const params = new URLSearchParams();
+  Object.entries(cart).forEach(([key, item]) => {
+    params.append('module', key + ':' + item.qty);
+  });
+  params.set('agreed', '1');
+  return params.toString();
+}
+</script>
+
+</body>
+</html>

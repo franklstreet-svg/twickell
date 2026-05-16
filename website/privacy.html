@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacy Policy — My Orby</title>
+  <meta name="description" content="My Orby Privacy Policy — How your data is handled, what we collect, and what stays on your device." />
+  <style>
+    :root {
+      --bg:        #0a0f1e;
+      --surface:   #111827;
+      --surface2:  #1a2235;
+      --gold:      #d4a017;
+      --gold-light:#f0c040;
+      --gold-glow: rgba(212, 160, 23, 0.35);
+      --text:      #e8eaf0;
+      --text-muted:#8892a4;
+      --border:    rgba(212, 160, 23, 0.18);
+      --radius:    12px;
+      --radius-lg: 20px;
+      --font:      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --transition: 0.22s ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--gold-light); text-decoration: none; transition: color var(--transition); }
+    a:hover { color: #fff; }
+
+    /* NAV */
+    #nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 15, 30, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 24px;
+    }
+    .nav-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color var(--transition);
+    }
+    .nav-back:hover { color: var(--gold-light); }
+    .nav-logo-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    /* ORB */
+    .orb {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow: 0 0 10px var(--gold), 0 0 20px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3);
+      flex-shrink: 0;
+    }
+
+    /* MAIN LAYOUT */
+    .page-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 60px 24px 80px;
+    }
+
+    .page-header {
+      margin-bottom: 48px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .gold-accent { color: var(--gold-light); }
+    .meta-line {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .page-header .intro {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.75;
+      max-width: 700px;
+    }
+
+    /* SECTIONS */
+    .legal-section {
+      margin-bottom: 48px;
+    }
+    .legal-section h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(212, 160, 23, 0.15);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .legal-section p {
+      color: var(--text);
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 14px;
+    }
+    .legal-section p:last-child { margin-bottom: 0; }
+    .legal-section h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 20px 0 10px;
+    }
+
+    /* DATA TABLE / CARDS */
+    .data-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .data-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+    }
+    .data-card-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: 10px;
+    }
+    .data-card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 8px;
+    }
+    .data-card p:last-child { margin-bottom: 0; }
+
+    /* HIGHLIGHT BOX */
+    .highlight-box {
+      background: rgba(74, 222, 128, 0.06);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+      border-left: 4px solid #4ade80;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .highlight-box p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .highlight-box p:last-child { margin-bottom: 0; }
+
+    /* CAUTION BOX */
+    .caution-box {
+      background: rgba(212, 160, 23, 0.06);
+      border: 1px solid rgba(212, 160, 23, 0.35);
+      border-left: 4px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .caution-box p {
+      font-size: 0.97rem;
+      line-height: 1.8;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    .caution-box p:last-child { margin-bottom: 0; }
+
+    /* RIGHTS LIST */
+    .rights-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 16px 0;
+    }
+    .rights-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 0.97rem;
+      color: var(--text);
+      line-height: 1.7;
+    }
+    .rights-list li::before {
+      content: '→';
+      color: var(--gold);
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 40px 0 28px;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 32px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .footer-brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      transition: color var(--transition);
+    }
+    .footer-links a:hover { color: var(--gold-light); }
+    .footer-bottom {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 24px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .page-wrap { padding: 40px 16px 60px; }
+      .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-back">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to My Orby
+    </a>
+    <a href="/" class="footer-brand-wrap" style="text-decoration:none;">
+      <div class="orb"></div>
+      <span class="nav-logo-text">My Orby</span>
+    </a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="page-wrap">
+
+  <div class="page-header">
+    <h1>Privacy <span class="gold-accent">Policy</span></h1>
+    <p class="meta-line">Last Updated: May 15, 2026 &nbsp;&middot;&nbsp; Effective: May 15, 2026</p>
+    <p class="intro">At My Orby, privacy is not an afterthought — it is a core design principle. My Orby is built to run locally on your computer, which means the vast majority of your personal data never leaves your device. This Privacy Policy explains what data we collect, how we use it, what stays on your machine, and what rights you have.</p>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="legal-section">
+    <h2><span class="section-num">1</span> Overview — A Locally-Installed AI</h2>
+    <div class="highlight-box">
+      <p><strong>The short version:</strong> My Orby is software that runs on your computer. Your conversations, memories, reminders, notes, family information, health data, and other personal content are stored on your device, not on our servers. We receive very limited technical data necessary to operate the service, and we do not sell your information to anyone.</p>
+    </div>
+    <p>My Orby is designed on a "local-first" architecture. Unlike cloud-based AI services that store all of your data on remote servers, the Software stores your personal information in a database on your own Windows PC. This means that if our servers were ever compromised, your personal conversations and data would not be exposed, because we do not have them.</p>
+    <p>This Privacy Policy applies to the My Orby software application, the My Orby website (myorby.com), the My Orby bridge server infrastructure, and all optional software modules. It does not govern the practices of third-party services that My Orby integrates with, including Anthropic's API, Stripe's payment processing, or Microsoft's text-to-speech service. Each of those services has its own privacy policy.</p>
+    <p>By using the Software or visiting our website, you acknowledge that you have read and understood this Privacy Policy. This Privacy Policy is incorporated by reference into our Terms of Service.</p>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="legal-section">
+    <h2><span class="section-num">2</span> Information We Collect</h2>
+    <p>We categorize the data associated with My Orby into three groups: data that stays on your device, data that our servers receive, and data handled by third parties on our behalf.</p>
+
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-title">Stays On Your Device — We Never See This</div>
+        <p>All of the following is stored exclusively on your computer in the My Orby local database. My Orby's servers do not receive, store, or process any of this data:</p>
+        <p>Your personal conversations with Orby and all conversation history; reminders, recurring tasks, and task notes; calendar events and scheduling information; personal notes and their tags; shopping lists; financial tracking data including income, expenses, and account information; health information including symptoms, medications, and medical notes; family member information and relationship notes; children's school records, grades, and activity tracking; allowance and chore tracking; journal entries and mood logs; habit and fitness tracking data; pet care records; home maintenance records and warranties; vehicle service records; gift ideas and personal notes about contacts; travel plans and trip history; recipe collections; any other personal content you input into the Software.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Technical Data Our Bridge Server Receives</div>
+        <p>To operate the bridge server infrastructure — which connects your local Software to Anthropic's AI API and delivers software updates — our servers receive a limited set of technical information. This does not include the content of your conversations or your personal data.</p>
+        <p><strong>Anonymous Instance Identifier:</strong> A randomly generated alphanumeric identifier assigned to your installation of the Software. This ID allows the bridge server to authenticate your license. It is not linked to your name, email address, or any personally identifying information beyond what is needed for license validation.</p>
+        <p><strong>Software Version:</strong> The version number of the My Orby software you are running. Used to determine whether updates are available and to diagnose version-specific issues.</p>
+        <p><strong>Health and Error Pings:</strong> Periodic automated messages sent by the Software to indicate that it is functioning normally or to report errors. These pings contain diagnostic codes, error types, and technical metadata. They do not contain your name, conversation content, or personal information.</p>
+        <p><strong>License Validation Requests:</strong> Periodic requests to verify that your license key is valid and active. These requests include your license key and instance identifier.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Account and Payment Data</div>
+        <p><strong>Email Address:</strong> When you create an account or make a purchase, you provide your email address. We use this address to deliver your license key, send service communications, and provide notice of updates to these policies.</p>
+        <p><strong>Payment Information:</strong> All payment processing is handled by Stripe, Inc. When you enter your credit card or payment information, that information goes directly to Stripe. My Orby never receives, stores, or has access to your full credit card number, CVV, or bank account details. My Orby receives from Stripe only a transaction confirmation, your email address, and a Stripe customer identifier for subscription management.</p>
+        <p><strong>Purchase Records:</strong> My Orby maintains records of your purchases, license keys issued, modules purchased, and subscription status. These records are necessary for account management and customer support.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Website and Marketing Data</div>
+        <p>When you visit myorby.com, standard web server logs may record your IP address, browser type, pages visited, and timestamps. If My Orby implements web analytics tools in the future, this Privacy Policy will be updated to describe them. At this time, My Orby does not use third-party behavioral advertising, retargeting, or tracking pixels on its website.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="legal-section">
+    <h2><span class="section-num">3</span> How the AI Works — Your Conversations and Anthropic</h2>
+    <p>Understanding how the AI conversation feature works is important to understanding your privacy when using Orby.</p>
+    <p>When you type or speak a message to Orby and Orby generates a response, the following sequence occurs: (1) your message, along with relevant context that Orby needs to answer helpfully (such as information about the current date, your active module context, or relevant facts from your local database that Orby selects to include), is assembled into a prompt by the Software running on your computer; (2) this assembled prompt is transmitted over an encrypted connection through My Orby's bridge server to Anthropic, PBC's API; (3) Anthropic's servers generate a response using the Claude AI model; (4) the response is returned through the bridge server to your Software; and (5) Orby displays and/or speaks the response to you. The conversation exchange is then stored in the local database on your device.</p>
+    <div class="caution-box">
+      <p><strong>What this means for your privacy:</strong> The content of your AI conversations — your messages and Orby's responses — is transmitted to Anthropic's servers for the purpose of generating responses. My Orby does not store the content of these messages on its own servers. However, Anthropic does receive and process your messages. Anthropic's data practices are governed by Anthropic's own privacy policy, available at anthropic.com/privacy. My Orby encourages you to review Anthropic's privacy policy. My Orby is not responsible for Anthropic's data handling practices.</p>
+    </div>
+    <p>My Orby's bridge server acts as a relay for AI queries. The bridge server receives encrypted AI query packets but is architecturally designed not to log or store the content of individual AI queries. However, aggregate and anonymized usage statistics — such as the total number of queries processed per time period — may be retained for infrastructure planning purposes.</p>
+    <p>If you are concerned about sensitive information being transmitted to Anthropic, you should be aware that: (a) information you choose to share with Orby in conversation may be included in the context sent to Anthropic; (b) information stored in your local database is only sent to Anthropic when Orby determines it is relevant to your query and includes it in the context — this selection happens locally on your device; (c) you can control what you share with Orby by choosing what information you input into the Software.</p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="legal-section">
+    <h2><span class="section-num">4</span> Data We Do Not Collect</h2>
+    <div class="highlight-box">
+      <p>My Orby does not sell, rent, or trade your personal data to any third party under any circumstances.</p>
+      <p>My Orby does not share your personal information with advertisers, data brokers, marketing companies, or analytics firms for commercial purposes.</p>
+      <p>My Orby does not build behavioral profiles of you for the purpose of targeted advertising, credit scoring, insurance rating, employment screening, or any other commercial profiling purpose.</p>
+      <p>My Orby does not access, read, scan, or transmit your local files, documents, photos, or other data stored on your computer beyond what the Software explicitly stores in its own local database with your knowledge.</p>
+      <p>My Orby does not monitor your other applications, websites you visit, or activities outside the My Orby Software.</p>
+    </div>
+    <p>The locally-installed design of My Orby is not merely a feature — it is the foundational reason why we collect so little data. We have deliberately chosen an architecture that keeps your personal life on your machine. We believe that your conversations with your AI companion are private and should remain so.</p>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="legal-section">
+    <h2><span class="section-num">5</span> How We Use the Data We Do Collect</h2>
+    <p>The limited data that My Orby's servers do receive is used exclusively for the following purposes:</p>
+    <p><strong>License Management:</strong> We use your email address, license key, and instance identifier to verify that your license is active and valid, to manage your subscription, and to deliver license keys and purchase confirmations.</p>
+    <p><strong>Software Operations:</strong> Health pings and error reports are used to monitor the operational health of the Software, identify bugs and errors, and improve Software reliability. These are reviewed in aggregate and anonymized form.</p>
+    <p><strong>Updates and Communications:</strong> We use your email address to notify you of available Software updates, changes to these policies, billing events, and other important service communications. We do not send marketing emails beyond what is reasonably related to your use of the Software.</p>
+    <p><strong>Customer Support:</strong> When you contact us for support, we use the information you provide — including your email address, license key, and any details about your issue — to assist you.</p>
+    <p><strong>Legal Compliance:</strong> We may use or disclose data as required by applicable law, regulation, legal process, or governmental request, or to enforce our Terms of Service, or to protect the rights, property, or safety of My Orby, our users, or others.</p>
+    <p>My Orby does not use your data for any purpose beyond those listed above without obtaining your separate consent.</p>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="legal-section">
+    <h2><span class="section-num">6</span> Children's Privacy</h2>
+    <p>The My Orby software is intended for use by adults and is not directed at children under the age of thirteen (13). My Orby does not knowingly collect personal information from children under 13 years of age.</p>
+    <p>While the Software includes family-oriented modules designed to help parents manage household activities involving children (such as the School Tracker, Chore Tracker, and Allowance Manager), these modules are operated by the adult account holder and parents or guardians on behalf of their children. The adult account holder is responsible for ensuring appropriate use of the Software with respect to minors in their household.</p>
+    <p>If you are a parent or guardian and you believe that your child under the age of 13 has provided personal information to My Orby without your consent, please contact us immediately at privacy@myorby.com. My Orby will take steps to promptly remove any such information from its records.</p>
+    <p>If My Orby discovers that it has inadvertently collected personal information from a child under 13, it will delete that information as promptly as practicable.</p>
+  </div>
+
+  <!-- SECTION 7 -->
+  <div class="legal-section">
+    <h2><span class="section-num">7</span> California Privacy Rights (CCPA)</h2>
+    <p>If you are a resident of the State of California, you have certain rights under the California Consumer Privacy Act of 2018, as amended by the California Privacy Rights Act of 2020 (collectively, the "CCPA"), with respect to your personal information.</p>
+    <h3>Your CCPA Rights</h3>
+    <ul class="rights-list">
+      <li><strong>Right to Know:</strong> You have the right to request that My Orby disclose to you the categories and specific pieces of personal information we have collected about you, the categories of sources from which we collected it, the business or commercial purposes for collecting it, and the categories of third parties with whom we share it.</li>
+      <li><strong>Right to Delete:</strong> You have the right to request that My Orby delete personal information that we have collected from you, subject to certain exceptions permitted by law (such as information required to complete a transaction, detect security incidents, or comply with a legal obligation).</li>
+      <li><strong>Right to Correct:</strong> You have the right to request that My Orby correct inaccurate personal information we maintain about you.</li>
+      <li><strong>Right to Opt Out of Sale or Sharing:</strong> You have the right to opt out of the sale or sharing of your personal information. My Orby does not sell or share personal information for cross-context behavioral advertising. Accordingly, there is nothing for you to opt out of with respect to the sale or sharing of your data, but we acknowledge this right.</li>
+      <li><strong>Right to Non-Discrimination:</strong> My Orby will not discriminate against you for exercising any of your CCPA rights. We will not deny you the Software or Service, charge you a different price, or provide you with a lesser quality of service because you exercised your privacy rights.</li>
+    </ul>
+    <h3>How to Submit a CCPA Request</h3>
+    <p>To exercise any of your CCPA rights, please contact us at privacy@myorby.com with the subject line "CCPA Privacy Request." Please include your name, email address associated with your account, and the specific right you wish to exercise. My Orby will respond to verifiable consumer requests within forty-five (45) days as required by the CCPA. My Orby reserves the right to extend this period by an additional forty-five (45) days where reasonably necessary, provided we give you notice of the extension.</p>
+    <p>My Orby will take reasonable steps to verify your identity before fulfilling a CCPA request to protect against unauthorized disclosure of your information.</p>
+  </div>
+
+  <!-- SECTION 8 -->
+  <div class="legal-section">
+    <h2><span class="section-num">8</span> European Users — GDPR</h2>
+    <p>If you are located in the European Economic Area ("EEA"), the United Kingdom, or Switzerland, the General Data Protection Regulation ("GDPR") and applicable local data protection laws may apply to My Orby's processing of your personal data.</p>
+    <h3>Our Legal Bases for Processing</h3>
+    <p>My Orby processes minimal personal data about European users. Where we do process personal data, we rely on the following legal bases under the GDPR:</p>
+    <ul class="rights-list">
+      <li><strong>Contract Performance (Article 6(1)(b)):</strong> Processing your email address, license key, and account information is necessary to perform the contract we have with you — delivering the Software, managing your subscription, and providing customer support.</li>
+      <li><strong>Legitimate Interests (Article 6(1)(f)):</strong> Processing anonymized technical data (health pings, error reports, instance identifiers) is necessary for My Orby's legitimate interests in operating, maintaining, and improving the Software, provided those interests are not overridden by your fundamental rights.</li>
+      <li><strong>Legal Obligation (Article 6(1)(c)):</strong> We may process personal data where required by applicable law.</li>
+    </ul>
+    <h3>Your GDPR Rights</h3>
+    <ul class="rights-list">
+      <li><strong>Right of Access (Article 15):</strong> You have the right to obtain confirmation of whether My Orby processes personal data about you and, if so, to access that data and receive a copy.</li>
+      <li><strong>Right to Rectification (Article 16):</strong> You have the right to have inaccurate personal data corrected and incomplete personal data completed.</li>
+      <li><strong>Right to Erasure (Article 17):</strong> You have the right to request the deletion of your personal data in certain circumstances, such as where the data is no longer necessary for the purposes for which it was collected.</li>
+      <li><strong>Right to Restriction of Processing (Article 18):</strong> You have the right to request that My Orby restrict the processing of your personal data in certain circumstances.</li>
+      <li><strong>Right to Data Portability (Article 20):</strong> Where processing is based on your consent or contract performance, you have the right to receive your personal data in a structured, commonly used, machine-readable format and to transmit it to another controller.</li>
+      <li><strong>Right to Object (Article 21):</strong> You have the right to object to processing based on legitimate interests at any time on grounds relating to your particular situation.</li>
+    </ul>
+    <h3>International Data Transfers</h3>
+    <p>My Orby is based in the United States. When you use the Software and your queries are processed through Anthropic's API, your data is transferred to and processed in the United States. My Orby relies on standard contractual clauses and other appropriate transfer mechanisms to the extent required by applicable law for any transfers of personal data from the EEA to the United States.</p>
+    <p>To exercise your GDPR rights, please contact us at privacy@myorby.com. You also have the right to lodge a complaint with your local data protection supervisory authority.</p>
+  </div>
+
+  <!-- SECTION 9 -->
+  <div class="legal-section">
+    <h2><span class="section-num">9</span> Data Security</h2>
+    <p><strong>Local Data Security.</strong> Data stored on your computer in the My Orby local database is subject to the same security as your device itself. The security of your locally-stored data depends on your device's security — including your operating system's built-in protections, your user account password, disk encryption (such as BitLocker on Windows), and your personal security practices. My Orby strongly recommends enabling full-disk encryption on your computer and using a strong account password. My Orby is not responsible for the security of your locally-stored data.</p>
+    <p><strong>Bridge Server Security.</strong> Communications between the Software and the My Orby bridge server are encrypted using industry-standard Transport Layer Security (TLS). My Orby uses industry-standard security measures to protect its bridge server infrastructure from unauthorized access, including firewalls, access controls, and security monitoring.</p>
+    <p><strong>AI Query Encryption.</strong> AI queries transmitted from your Software through the bridge server to Anthropic's API are transmitted over encrypted connections.</p>
+    <p><strong>No System Is Perfectly Secure.</strong> While My Orby takes security seriously and implements reasonable technical and organizational measures, no security system is impenetrable and My Orby cannot guarantee the absolute security of any data. My Orby is not responsible for any breach of security caused by circumstances beyond its reasonable control, including attacks by sophisticated threat actors, zero-day vulnerabilities, or failures of third-party infrastructure.</p>
+    <div class="caution-box">
+      <p><strong>Backup Your Data.</strong> Because your My Orby data is stored locally on your computer, a hard drive failure, system crash, theft, or loss of your device could result in permanent loss of all data stored by the Software. My Orby strongly recommends maintaining regular backups of your data to an external drive, cloud backup service, or other backup solution. My Orby is not responsible for data loss resulting from device failure or loss.</p>
+    </div>
+    <p><strong>Data Breach Notification.</strong> In the event of a data breach that My Orby discovers and that affects personal data under My Orby's control, My Orby will notify affected users and applicable regulatory authorities as required by applicable law.</p>
+  </div>
+
+  <!-- SECTION 10 -->
+  <div class="legal-section">
+    <h2><span class="section-num">10</span> Third-Party Services and Their Privacy Policies</h2>
+    <p>My Orby integrates with several third-party services to provide the Software's functionality. Each of these third-party services operates under its own privacy policy and terms of service, which are independent of this Privacy Policy. My Orby is not responsible for the privacy practices of these third-party services.</p>
+
+    <div class="data-cards">
+      <div class="data-card">
+        <div class="data-card-title">Anthropic, PBC — AI Model Provider</div>
+        <p>Orby's AI conversation capabilities are powered by Anthropic's Claude AI model. When you interact with Orby, your messages and context are transmitted to Anthropic's API. Anthropic's privacy practices are governed by Anthropic's Privacy Policy, available at <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener noreferrer">anthropic.com/privacy</a>.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Stripe, Inc. — Payment Processing</div>
+        <p>All payment transactions are processed by Stripe. When you provide payment information, it goes directly to Stripe. Stripe's privacy practices are governed by Stripe's Privacy Policy, available at <a href="https://stripe.com/privacy" target="_blank" rel="noopener noreferrer">stripe.com/privacy</a>.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Microsoft — Text-to-Speech Voice</div>
+        <p>Orby's voice output is provided by Microsoft Edge Text-to-Speech technology. Use of voice features is subject to Microsoft's applicable privacy practices and terms of service.</p>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-title">Optional Module Service Providers</div>
+        <p>Certain optional add-on modules may integrate with additional third-party services, which may include OpenAI, LLC; Meshy.ai; Runway ML; and others. My Orby will disclose the applicable third-party integrations at the time you purchase any such module. Each provider's privacy practices are governed by that provider's own privacy policy.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 11 -->
+  <div class="legal-section">
+    <h2><span class="section-num">11</span> Changes to This Privacy Policy</h2>
+    <p>My Orby may update this Privacy Policy from time to time to reflect changes in our practices, the Software, applicable law, or for other operational, legal, or regulatory reasons. When we make changes to this Privacy Policy, we will update the "Last Updated" date at the top of this page.</p>
+    <p><strong>Notice of Material Changes.</strong> For material changes to this Privacy Policy that affect how we handle personal data in a meaningful way, My Orby will provide advance notice via email to the address associated with your account, or via an in-app notification, or both. Material changes will not take effect until the notice period has passed.</p>
+    <p>Your continued use of the Software after a modified Privacy Policy has taken effect constitutes your acceptance of the updated Privacy Policy. If you do not agree to the updated Privacy Policy, you should cease using the Software and contact us regarding your options.</p>
+    <p>We encourage you to periodically review this Privacy Policy to stay informed about our data practices.</p>
+  </div>
+
+  <!-- SECTION 12 -->
+  <div class="legal-section">
+    <h2><span class="section-num">12</span> Retention of Data</h2>
+    <p><strong>Your Local Data.</strong> Data stored locally on your device persists as long as the Software is installed and you choose to keep it. If you uninstall the Software, your local data may remain on your device unless you explicitly delete the application data directory. My Orby recommends reviewing the Software's documentation for instructions on completely removing all locally stored data if you wish to do so.</p>
+    <p><strong>Account and Transaction Records.</strong> My Orby retains your email address, license records, and transaction history for as long as your account is active and for a reasonable period afterward as required for accounting, legal compliance, and dispute resolution purposes. Typically, this period is seven (7) years following the end of your relationship with My Orby, consistent with standard commercial record retention practices.</p>
+    <p><strong>Technical Data.</strong> Anonymized health pings and error log data are retained for a period sufficient to identify and resolve technical issues, typically not longer than twelve (12) months in identifiable form, after which they may be retained in further aggregated and anonymized form for historical analysis.</p>
+  </div>
+
+  <!-- SECTION 13 -->
+  <div class="legal-section">
+    <h2><span class="section-num">13</span> Contact — Privacy Questions and Requests</h2>
+    <p>If you have questions, concerns, or requests related to this Privacy Policy or My Orby's privacy practices, please contact us:</p>
+    <div class="caution-box">
+      <p><strong>My Orby — Privacy Inquiries</strong></p>
+      <p>Email: <a href="mailto:privacy@myorby.com">privacy@myorby.com</a></p>
+      <p>General Support: <a href="mailto:support@myorby.com">support@myorby.com</a></p>
+    </div>
+    <p>Please include your name, the email address associated with your account, and a clear description of your privacy question or request. My Orby will respond to your inquiry within a reasonable time and in accordance with applicable law.</p>
+    <p>If you are a California resident and wish to exercise CCPA rights, please use the subject line "CCPA Privacy Request." If you are an EEA resident and wish to exercise GDPR rights, please use the subject line "GDPR Data Request."</p>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="footer-brand-wrap" style="text-decoration:none;">
+      <div class="orb"></div>
+      <span>My Orby</span>
+    </a>
+    <ul class="footer-links">
+      <li><a href="/">Home</a></li>
+      <li><a href="/terms.html">Terms of Service</a></li>
+      <li><a href="/privacy.html">Privacy Policy</a></li>
+      <li><a href="/refund.html">Refund Policy</a></li>
+      <li><a href="mailto:privacy@myorby.com">Privacy Contact</a></li>
+    </ul>
+  </div>
+  <div class="footer-bottom">
+    &copy; 2026 My Orby. All rights reserved. This Privacy Policy was last updated May 15, 2026.
+  </div>
+</footer>
+
+</body>
+</html>
