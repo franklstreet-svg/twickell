@@ -2207,30 +2207,41 @@
     if (!voiceOn && currentAudio) { currentAudio.pause(); currentAudio = null; isSpeaking = false; }
   }
 
-  async function speak(text) {
+  function _playOne(text, ttsKey) {
+    return new Promise(resolve => {
+      fetch('/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, tts_key: ttsKey })
+      }).then(r => r.ok ? r.blob() : null).then(blob => {
+        if (!blob) { resolve(); return; }
+        const url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        currentAudio.onended = currentAudio.onerror = () => {
+          URL.revokeObjectURL(url); currentAudio = null; resolve();
+        };
+        currentAudio.play();
+      }).catch(() => resolve());
+    });
+  }
+
+  async function speak(text, sentences, keys) {
     if (!voiceOn) return;
     if (currentAudio) { currentAudio.pause(); currentAudio = null; }
     isSpeaking = true;
     clearSilenceTimer();
+    if (micOn && recognition) try { recognition.stop(); } catch(_) {}
+    const parts = (sentences && sentences.length) ? sentences : [text];
+    const ks    = keys || [];
     try {
-      const res = await fetch('/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text })
-      });
-      if (!res.ok) { isSpeaking = false; return; }
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      currentAudio = new Audio(url);
-      currentAudio.onended = currentAudio.onerror = () => {
-        URL.revokeObjectURL(url);
-        currentAudio = null;
-        isSpeaking = false;
-        if (micOn && recognition) try { recognition.start(); } catch(_) {}
-      };
-      if (micOn && recognition) try { recognition.stop(); } catch(_) {}
-      currentAudio.play();
-    } catch(e) { isSpeaking = false; }
+      for (let i = 0; i < parts.length; i++) {
+        if (!isSpeaking) break;
+        await _playOne(parts[i], ks[i] || '');
+      }
+    } finally {
+      isSpeaking = false;
+      if (micOn && recognition) try { recognition.start(); } catch(_) {}
+    }
   }
 
   /* ── Voice input (mic) ─────────────────────────────────── */
@@ -2352,7 +2363,7 @@
         const reply = data.response || "I'm having a little trouble — try again in a second!";
         appendMessage('orby', reply);
         chatHistory.push({ role: 'assistant', content: reply });
-        speak(reply);
+        speak(reply, data.sentences, data.tts_keys);
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
       }

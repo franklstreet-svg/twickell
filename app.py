@@ -1,7 +1,11 @@
 """Standalone server for the My Orby marketing website — runs on port 5001."""
 import os
+import re
 import json
+import time
+import hashlib
 import asyncio
+import threading
 import logging
 import requests as _requests
 import edge_tts
@@ -17,6 +21,27 @@ async def _synthesize(text):
         if chunk['type'] == 'audio':
             audio += chunk['data']
     return audio
+
+def _split_sentences(text):
+    parts = re.split(r'(?<=[.!?])\s+', text.strip())
+    return [p.strip() for p in parts if p.strip()]
+
+_tts_cache = {}
+_tts_lock  = threading.Lock()
+
+def _prefetch_sentences(sentences, keys):
+    try:
+        loop = asyncio.new_event_loop()
+        for sentence, key in zip(sentences, keys):
+            try:
+                audio = loop.run_until_complete(_synthesize(sentence))
+                with _tts_lock:
+                    _tts_cache[key] = audio
+            except Exception as e:
+                log.warning('TTS prefetch failed: %s', e)
+        loop.close()
+    except Exception as e:
+        log.warning('TTS prefetch thread error: %s', e)
 
 load_dotenv()
 log = logging.getLogger(__name__)
@@ -142,7 +167,10 @@ def demo_chat():
             reply = fn(messages)
             if reply:
                 log.info('demo_chat served by %s', tier)
-                return jsonify({'response': reply})
+                sentences = _split_sentences(reply)
+                keys = [hashlib.md5(f"{reply}:{i}".encode()).hexdigest()[:10] for i in range(len(sentences))]
+                threading.Thread(target=_prefetch_sentences, args=(sentences, keys), daemon=True).start()
+                return jsonify({'response': reply, 'sentences': sentences, 'tts_keys': keys})
         except Exception as e:
             log.warning('demo_chat %s failed: %s', tier, e)
 
@@ -151,10 +179,21 @@ def demo_chat():
 
 @app.route('/tts', methods=['POST'])
 def tts():
-    data = request.get_json(silent=True) or {}
-    text = (data.get('text') or '').strip()
+    data    = request.get_json(silent=True) or {}
+    text    = (data.get('text') or '').strip()
+    tts_key = data.get('tts_key', '')
     if not text:
         return '', 400
+
+    if tts_key:
+        deadline = time.time() + 4.0
+        while time.time() < deadline:
+            with _tts_lock:
+                if tts_key in _tts_cache:
+                    audio = _tts_cache.pop(tts_key)
+                    return Response(audio, mimetype='audio/mpeg')
+            time.sleep(0.05)
+
     try:
         audio = asyncio.run(_synthesize(text))
         return Response(audio, mimetype='audio/mpeg')
