@@ -98,7 +98,10 @@ def _chat_phi3(messages):
 
 def _chat_huggingface(messages):
     hf_token = os.getenv('HF_TOKEN', '')
-    hf_model = os.getenv('HF_MODEL', 'microsoft/Phi-3-mini-4k-instruct')
+    hf_model = os.getenv('HF_MODEL', 'meta-llama/Llama-3.1-8B-Instruct')
+    hf_url   = os.getenv('HF_URL', 'https://router.huggingface.co/v1/chat/completions')
+    if not hf_token:
+        raise ValueError('HF_TOKEN not set')
     headers = {'Authorization': f'Bearer {hf_token}'}
     payload = {
         'model': hf_model,
@@ -106,12 +109,7 @@ def _chat_huggingface(messages):
         'max_tokens': 300,
         'temperature': 0.7,
     }
-    r = _requests.post(
-        f'https://api-inference.huggingface.co/models/{hf_model}/v1/chat/completions',
-        headers=headers,
-        json=payload,
-        timeout=30,
-    )
+    r = _requests.post(hf_url, headers=headers, json=payload, timeout=30)
     r.raise_for_status()
     return r.json()['choices'][0]['message']['content']
 
