@@ -121,6 +121,24 @@ def _chat_phi3(messages):
     return r.json()['choices'][0]['message']['content']
 
 
+def _chat_groq(messages):
+    api_key = os.getenv('GROQ_API_KEY', '')
+    model   = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
+    if not api_key:
+        raise ValueError('GROQ_API_KEY not set')
+    payload = {
+        'model': model,
+        'messages': [{'role': 'system', 'content': DEMO_SYSTEM}] + messages,
+        'max_tokens': 300,
+        'temperature': 0.7,
+    }
+    r = _requests.post('https://api.groq.com/openai/v1/chat/completions',
+        headers={'Authorization': f'Bearer {api_key}'},
+        json=payload, timeout=30)
+    r.raise_for_status()
+    return r.json()['choices'][0]['message']['content']
+
+
 def _chat_huggingface(messages):
     hf_token = os.getenv('HF_TOKEN', '')
     hf_model = os.getenv('HF_MODEL', 'meta-llama/Llama-3.1-8B-Instruct')
@@ -162,7 +180,7 @@ def demo_chat():
     messages = data.get('history', [])
     messages.append({'role': 'user', 'content': user_message})
 
-    for tier, fn in [('phi3', _chat_phi3), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+    for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
         try:
             reply = fn(messages)
             if reply:
