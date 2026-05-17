@@ -1062,10 +1062,9 @@ def demo_chat():
             reply = fn(messages, system=system)
             if reply:
                 log.info('demo_chat tier=%s module=%s', tier, bool(module_result))
-                sentences = _split_sentences(reply)
-                keys = [hashlib.md5(f"{reply}:{i}".encode()).hexdigest()[:10] for i in range(len(sentences))]
-                threading.Thread(target=_prefetch_sentences, args=(sentences, keys), daemon=True).start()
-                return jsonify({'response': reply, 'sentences': sentences, 'tts_keys': keys})
+                tts_key = hashlib.md5(reply.encode()).hexdigest()[:10]
+                threading.Thread(target=_prefetch_sentences, args=([reply], [tts_key]), daemon=True).start()
+                return jsonify({'response': reply, 'sentences': [reply], 'tts_keys': [tts_key]})
         except Exception as e:
             log.warning('demo_chat %s failed: %s', tier, e)
 
@@ -1214,15 +1213,14 @@ def builder_chat():
     config_update = _parse_config_update(raw_reply)
     reply = _strip_config(raw_reply)
 
-    sentences = _split_sentences(reply)
-    keys = [hashlib.md5(f"builder:{reply}:{i}".encode()).hexdigest()[:10] for i in range(len(sentences))]
-    threading.Thread(target=_prefetch_sentences, args=(sentences, keys), daemon=True).start()
+    tts_key = hashlib.md5(f"builder:{reply}".encode()).hexdigest()[:10]
+    threading.Thread(target=_prefetch_sentences, args=([reply], [tts_key]), daemon=True).start()
 
     return jsonify({
         'response': reply,
         'config_update': config_update,
-        'sentences': sentences,
-        'tts_keys': keys,
+        'sentences': [reply],
+        'tts_keys': [tts_key],
     })
 
 
