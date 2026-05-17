@@ -45,8 +45,10 @@ def _to_ssml(text: str) -> str:
         'xmlns:mstts="https://www.w3.org/2001/mstts" '
         'xml:lang="en-US">'
         f'<voice name="{ORBY_VOICE}">'
-        '<mstts:express-as style="cheerful" styledegree="1.5">'
+        '<mstts:express-as style="cheerful" styledegree="1.2">'
+        '<prosody rate="+15%" pitch="+10Hz">'
         f'{safe}'
+        '</prosody>'
         '</mstts:express-as>'
         '</voice></speak>'
     )
