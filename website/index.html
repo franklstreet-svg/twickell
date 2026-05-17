@@ -2220,7 +2220,9 @@
         currentAudio.onended = currentAudio.onerror = () => {
           URL.revokeObjectURL(url); currentAudio = null; resolve();
         };
-        currentAudio.play();
+        currentAudio.play().catch(() => {
+          URL.revokeObjectURL(url); currentAudio = null; resolve();
+        });
       }).catch(() => resolve());
     });
   }
@@ -2233,12 +2235,15 @@
     if (micOn && recognition) try { recognition.stop(); } catch(_) {}
     const parts = (sentences && sentences.length) ? sentences : [text];
     const ks    = keys || [];
+    // Safety net — never leave isSpeaking stuck longer than 30s
+    const safetyTimer = setTimeout(() => { isSpeaking = false; }, 30000);
     try {
       for (let i = 0; i < parts.length; i++) {
         if (!isSpeaking) break;
         await _playOne(parts[i], ks[i] || '');
       }
     } finally {
+      clearTimeout(safetyTimer);
       isSpeaking = false;
       if (micOn && recognition) try { recognition.start(); } catch(_) {}
     }
@@ -2290,10 +2295,13 @@
         : confirmedText;
     };
 
+    let _srRestartDelay = 150;
     recognition.onerror = (e) => {
       if (e.error === 'not-allowed') {
         chatInput.placeholder = 'Microphone blocked — check browser settings';
         micOff();
+      } else if (e.error === 'network') {
+        _srRestartDelay = 1500;  // back off on network errors
       } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
         console.warn('Speech error:', e.error);
       }
@@ -2301,7 +2309,9 @@
 
     recognition.onend = () => {
       if (micOn && !isSpeaking) {
-        setTimeout(() => { if (micOn && !isSpeaking) try { recognition.start(); } catch(_) {} }, 150);
+        const delay = _srRestartDelay;
+        _srRestartDelay = 150;
+        setTimeout(() => { if (micOn && !isSpeaking) try { recognition.start(); } catch(_) {} }, delay);
       }
     };
   }
