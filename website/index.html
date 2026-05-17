@@ -1592,6 +1592,57 @@
 }
 .legal-close-top.visible { display: flex; }
 .legal-close-top:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+
+    /* ── FLOATING CART ── */
+    #floatCart {
+      position: fixed; bottom: 24px; right: 24px; z-index: 1000;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    }
+    #floatCartPanel {
+      background: #111827; border: 1px solid rgba(212,160,23,0.3);
+      border-radius: 16px; width: 300px; padding: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      display: none;
+    }
+    .fc-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 12px;
+    }
+    .fc-header span { font-size: 0.9rem; font-weight: 700; color: #f0c040; }
+    .fc-close { background: none; border: none; color: #8892a4; cursor: pointer; font-size: 1.2rem; }
+    .fc-items { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; max-height: 200px; overflow-y: auto; }
+    .fc-item {
+      background: #1a2235; border-radius: 8px; padding: 8px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem;
+    }
+    .fc-item-label { color: #e8eaf0; font-weight: 600; }
+    .fc-item-price { color: #f0c040; font-size: 0.75rem; }
+    .fc-totals { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px; margin-bottom: 12px; }
+    .fc-total-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: #8892a4; padding: 3px 0; }
+    .fc-total-row .fc-val { font-weight: 700; }
+    .fc-val-setup { color: #f0c040; }
+    .fc-val-monthly { color: #2dd4bf; }
+    .fc-buy-btn {
+      width: 100%; padding: 11px; border: none; border-radius: 10px;
+      background: linear-gradient(135deg, #d4a017, #f0c040);
+      color: #0a0f1e; font-weight: 800; font-size: 0.9rem; cursor: pointer;
+    }
+    .fc-buy-btn:hover { opacity: 0.9; }
+    #floatCartBtn {
+      background: linear-gradient(135deg, #d4a017, #f0c040);
+      border: none; border-radius: 50px; padding: 12px 20px;
+      color: #0a0f1e; font-weight: 800; font-size: 0.9rem;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 20px rgba(212,160,23,0.4);
+      display: none;
+    }
+    #floatCartBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+    #fcBadge {
+      background: #0a0f1e; color: #f0c040; border-radius: 50%;
+      width: 22px; height: 22px; font-size: 0.75rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -2383,6 +2434,94 @@
     if (recognition) try { recognition.abort(); } catch(_) {}
   }
 
+  /* ── Demo Cart ─────────────────────────────────────────── */
+  const DEMO_CATALOG = {
+    base:          {label:'My Orby — Founding Member', setup:24.99,  monthly:9.99},
+    business_pro:  {label:'Business Pro',              setup:149,    monthly:39},
+    legal_pro:     {label:'Legal Pro',                 setup:349,    monthly:149},
+    medical_pro:   {label:'Medical Pro',               setup:349,    monthly:149},
+    therapy_pro:   {label:'Therapy & Counseling Pro',  setup:199,    monthly:79},
+    realestate_pro:{label:'Real Estate Pro',           setup:199,    monthly:79},
+    restaurant_pro:{label:'Restaurant Pro',            setup:199,    monthly:79},
+    retail_pro:    {label:'Retail Pro',                setup:149,    monthly:49},
+    salon_pro:     {label:'Salon & Spa Pro',           setup:99,     monthly:49},
+    contractor_pro:{label:'Contractor Pro',            setup:249,    monthly:99},
+    trade_pro:     {label:'Trade Specialties Pro',     setup:99,     monthly:39},
+    accounting_pro:{label:'Accounting Pro',            setup:249,    monthly:99},
+    hr_pro:        {label:'HR Professional',           setup:149,    monthly:59},
+    property_mgmt: {label:'Property Management Pro',  setup:149,    monthly:59},
+    inventory_pro: {label:'Inventory Pro',             setup:149,    monthly:49},
+    product_dev:   {label:'Product Development',       setup:99,     monthly:39},
+    deep_memory:   {label:'Deep Memory',               setup:49,     monthly:19},
+    social_media:  {label:'Social Media Manager',      setup:99,     monthly:39},
+    image_studio:  {label:'AI Image Studio',           setup:49,     monthly:19},
+    creator_3d:    {label:'3D Creator',                setup:49,     monthly:29},
+    video_studio:  {label:'AI Video Studio',           setup:49,     monthly:29},
+  };
+
+  let demoCart = [];
+  let fcOpen = false;
+
+  function renderDemoCart() {
+    const items = document.getElementById('fcItems');
+    const btn   = document.getElementById('floatCartBtn');
+    const badge = document.getElementById('fcBadge');
+    if (!demoCart.length) { btn.style.display = 'none'; return; }
+    btn.style.display = 'flex';
+    badge.textContent = demoCart.length;
+    items.innerHTML = '';
+    let setup = 0, monthly = 0;
+    demoCart.forEach(item => {
+      setup   += item.setup   || 0;
+      monthly += item.monthly || 0;
+      const d = document.createElement('div');
+      d.className = 'fc-item';
+      d.innerHTML = `<span class="fc-item-label">${item.label}</span><span class="fc-item-price">$${(item.setup||0).toFixed(2)}</span>`;
+      items.appendChild(d);
+    });
+    document.getElementById('fcSetup').textContent   = '$' + setup.toFixed(2);
+    document.getElementById('fcMonthly').textContent = '$' + monthly.toFixed(2) + '/mo';
+  }
+
+  function applyConfigUpdate(update) {
+    if (!update) return;
+    (update.add || []).forEach(item => {
+      if (!demoCart.find(c => c.id === item.id)) {
+        const def = DEMO_CATALOG[item.id];
+        if (def) demoCart.push({id: item.id, ...def});
+      }
+    });
+    (update.remove || []).forEach(item => {
+      if (item.id !== 'base') demoCart = demoCart.filter(c => c.id !== item.id);
+    });
+    renderDemoCart();
+  }
+
+  function applyPageAction(action) {
+    if (!action) return;
+    if (action.scroll) {
+      const map = {
+        pricing: '#pricing', modules: '#modules',
+        industry: '#pricing', demo: '#demo'
+      };
+      const target = map[action.scroll] || ('#' + action.scroll);
+      const el = document.querySelector(target);
+      if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+    }
+  }
+
+  function toggleCart() {
+    fcOpen = !fcOpen;
+    document.getElementById('floatCartPanel').style.display = fcOpen ? 'block' : 'none';
+  }
+
+  function closeCart() { fcOpen = false; document.getElementById('floatCartPanel').style.display = 'none'; }
+
+  function goToCart() {
+    localStorage.setItem('orby_cart', JSON.stringify(demoCart));
+    window.location.href = '/cart';
+  }
+
   /* ── Send ──────────────────────────────────────────────── */
   async function sendMessage() {
     const text = chatInput.value.trim();
@@ -2417,6 +2556,8 @@
         appendMessage('orby', reply);
         chatHistory.push({ role: 'assistant', content: reply });
         speak(data.sentences, data.tts_keys);
+        if (data.config_update) applyConfigUpdate(data.config_update);
+        if (data.page_action)   applyPageAction(data.page_action);
         _maybeShowBuyCta();
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
@@ -3354,6 +3495,32 @@ function buildCartQuery() {
   return params.toString();
 }
 </script>
+
+<!-- ── FLOATING CART ── -->
+<div id="floatCart">
+  <div id="floatCartPanel">
+    <div class="fc-header">
+      <span>Your Orby</span>
+      <button class="fc-close" onclick="toggleCart()">×</button>
+    </div>
+    <div class="fc-items" id="fcItems"></div>
+    <div class="fc-totals">
+      <div class="fc-total-row">
+        <span>Due today</span>
+        <span class="fc-val fc-val-setup" id="fcSetup">—</span>
+      </div>
+      <div class="fc-total-row">
+        <span>Monthly (locked forever)</span>
+        <span class="fc-val fc-val-monthly" id="fcMonthly">—</span>
+      </div>
+    </div>
+    <button class="fc-buy-btn" onclick="goToCart()">Review My Orby →</button>
+  </div>
+  <button id="floatCartBtn" onclick="toggleCart()">
+    🛒 My Orby
+    <span id="fcBadge">1</span>
+  </button>
+</div>
 
 </body>
 </html>
