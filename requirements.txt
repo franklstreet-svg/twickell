@@ -4,3 +4,4 @@ edge-tts==7.2.8
 python-dotenv==1.2.2
 gunicorn==26.0.0
 requests==2.32.3
+duckduckgo-search==6.3.7
