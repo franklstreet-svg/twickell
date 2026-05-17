@@ -205,16 +205,20 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
         return f'[WEATHER]\n{weather_skill.get_weather(location)}'
 
     # ── World Clock ──────────────────────────────────────────────────────────
-    if _x(r'\b(what time is it|current time|time (?:in|at)|time zone|timezone|clock)\b', m):
+    if _x(r'\b(what time is it|current time|time (?:in|at)|time zone|timezone|world clock)\b', m):
         if _x(r'\b(world clock|all (?:the )?times|major cities|time (?:around|across) the world)\b', m):
             return world_clock.world_clock_snapshot()
-        loc_m = _x(r'\btime (?:is it )?in\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or \
-                _x(r'\btime (?:is it )?(?:at|for)\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or \
-                _x(r'\bin\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg)
+        loc_m = (_x(r'\btime (?:is it )?in\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or
+                 _x(r'\btime (?:is it )?(?:at|for)\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or
+                 _x(r'\bin\s+([A-Za-z ,]+?)(?:\?|\.|\s*$)', msg))
         if loc_m:
             location = loc_m.group(1).strip()
-            return world_clock.get_world_time(location)
-        return world_clock.world_clock_snapshot()
+            if len(location) > 2:
+                return world_clock.get_world_time(location)
+        from datetime import datetime as _wdt, timezone as _wtz
+        _utc = _wdt.now(_wtz.utc)
+        return (f'[WORLD CLOCK]\nCurrent UTC time: {_utc.strftime("%I:%M %p")} on {_utc.strftime("%A, %B %d, %Y")} (UTC)\n'
+                f'Ask me "what time is it in [your city]" and I\'ll give you exact local time.')
 
     # ── Morning Briefing ─────────────────────────────────────────────────────
     if _x(r'\b(morning briefing|good morning|start my day|what.?s? on (today|my agenda|my schedule))\b', m):
@@ -888,9 +892,14 @@ def demo_chat():
         log.warning('Module error: %s', e)
         module_result = None
 
-    from datetime import datetime as _dt
-    _today = _dt.now().strftime('%A, %B %d, %Y')
-    system = DEMO_SYSTEM + f'\n\nToday\'s date: {_today}. Always use this date — never guess the year.'
+    from datetime import datetime as _dt, timezone as _tz
+    _now_utc = _dt.now(_tz.utc)
+    _today = _now_utc.strftime('%A, %B %d, %Y')
+    _time_utc = _now_utc.strftime('%I:%M %p UTC')
+    system = (DEMO_SYSTEM +
+              f'\n\nRight now it is {_today}, {_time_utc}. '
+              f'Always use this exact date and UTC time. '
+              f'When someone asks the time without a city, tell them what UTC time it is and ask which city they\'re in so you can give their local time.')
     if module_result:
         system += f'\n\n{module_result}\nWeave this into your response naturally.'
 
