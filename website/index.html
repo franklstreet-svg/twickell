@@ -2518,22 +2518,22 @@
 
   function autoScrollFromReply(text) {
     const t = text.toLowerCase();
-    // Scroll to industry modules section when Orby says she's showing them
+    // Scroll to industry modules/pricing section
     const industryTriggers = [
       'industry-specific modules', 'industry specific modules',
       'industry modules', 'show you our industry', 'take a look at these',
-      'take a look at our', 'which industry', 'what industry'
+      'take a look at our industry', 'which industry are you in', 'what industry are you in'
     ];
     if (industryTriggers.some(k => t.includes(k))) {
       const el = document.querySelector('#pricing');
-      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 600);
+      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 1800);
       return;
     }
-    // Scroll back to chat when wrapping up or asking basic questions
-    const demoTriggers = ['what questions do you have', 'what\'s on your mind', 'try me out'];
+    // Scroll back to chat
+    const demoTriggers = ['what questions do you have', "what's on your mind", 'try me out'];
     if (demoTriggers.some(k => t.includes(k))) {
       const el = document.querySelector('#demo');
-      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 600);
+      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 1800);
     }
   }
 
@@ -2546,7 +2546,7 @@
       };
       const target = map[action.scroll] || ('#' + action.scroll);
       const el = document.querySelector(target);
-      if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+      if (el) setTimeout(() => el.scrollIntoView({behavior: 'smooth', block: 'start'}), 1800);
     }
   }
 
