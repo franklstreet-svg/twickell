@@ -2251,41 +2251,44 @@
     document.getElementById('spkIconOn').style.display  = voiceOn ? '' : 'none';
     document.getElementById('spkIconOff').style.display = voiceOn ? 'none' : '';
     btn.classList.toggle('spk-off', !voiceOn);
-    if (!voiceOn) { window.speechSynthesis.cancel(); isSpeaking = false; }
+    if (!voiceOn) {
+      isSpeaking = false;
+      if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+    }
   }
 
-  function _pickVoice() {
-    const voices = window.speechSynthesis.getVoices();
-    return voices.find(v => /zira|aria|jenny|samantha/i.test(v.name) && v.lang.startsWith('en'))
-        || voices.find(v => v.lang === 'en-US' && v.localService)
-        || voices.find(v => v.lang.startsWith('en'))
-        || null;
-  }
-
-  function speak(text, sentences) {
+  async function speak(sentences, keys) {
     if (!voiceOn) return;
-    window.speechSynthesis.cancel();
     isSpeaking = true;
     clearSilenceTimer();
     if (micOn && recognition) try { recognition.stop(); } catch(_) {}
-    const parts = (sentences && sentences.length) ? sentences : [text];
-    let i = 0;
-    function next() {
-      if (!isSpeaking || i >= parts.length) {
-        isSpeaking = false;
-        if (micOn && recognition) try { recognition.start(); } catch(_) {}
-        return;
-      }
-      const utt = new SpeechSynthesisUtterance(parts[i++]);
-      const v = _pickVoice();
-      if (v) utt.voice = v;
-      utt.rate = 1.05;
-      utt.onend = utt.onerror = next;
-      window.speechSynthesis.speak(utt);
+
+    const parts = (Array.isArray(sentences) && sentences.length) ? sentences : [sentences];
+    const ttsKeys = keys || [];
+
+    for (let i = 0; i < parts.length; i++) {
+      if (!isSpeaking) break;
+      try {
+        const res = await fetch('/tts', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({text: parts[i], tts_key: ttsKeys[i] || ''})
+        });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        await new Promise(r => {
+          currentAudio = new Audio(url);
+          currentAudio.onended = r;
+          currentAudio.onerror = r;
+          currentAudio.play().catch(r);
+        });
+        URL.revokeObjectURL(url);
+      } catch(e) {}
     }
-    // voices may not be loaded yet on first call
-    if (window.speechSynthesis.getVoices().length) { next(); }
-    else { window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.onvoiceschanged = null; next(); }; }
+
+    isSpeaking = false;
+    if (micOn && recognition) try { recognition.start(); } catch(_) {}
   }
 
   /* ── Voice input (mic) ─────────────────────────────────── */
@@ -2413,7 +2416,7 @@
         const reply = data.response || "I'm having a little trouble — try again in a second!";
         appendMessage('orby', reply);
         chatHistory.push({ role: 'assistant', content: reply });
-        speak(reply, data.sentences);
+        speak(data.sentences, data.tts_keys);
         _maybeShowBuyCta();
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
