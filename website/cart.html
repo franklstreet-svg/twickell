@@ -77,6 +77,14 @@
     .li-setup   { font-size: 0.85rem; color: var(--gold-light); font-weight: 700; }
     .li-monthly { font-size: 0.75rem; color: var(--teal-light); margin-top: 2px; }
 
+    .remove-btn {
+      background: none; border: 1px solid rgba(255,255,255,0.12); color: var(--text-muted);
+      border-radius: 6px; width: 24px; height: 24px; font-size: 1rem; line-height: 1;
+      cursor: pointer; flex-shrink: 0; transition: all 0.15s; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .remove-btn:hover { border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1); }
+
     .totals {
       background: var(--surface2);
       border: 1px solid var(--border-p);
@@ -191,7 +199,12 @@
   }
 
   function render() {
-    if (!cart.length) return;
+    if (!cart.length) {
+      document.getElementById('lineItems').innerHTML = '<div class="empty-state">Cart is empty. <a href="/builder">Build your Orby →</a></div>';
+      document.getElementById('totals').style.display = 'none';
+      document.getElementById('proceedBtn').style.display = 'none';
+      return;
+    }
 
     const container = document.getElementById('lineItems');
     container.innerHTML = '';
@@ -213,6 +226,7 @@
           <div class="li-setup">${fmt(item.setup || 0)}</div>
           <div class="li-monthly">${fmt(item.monthly || 0)}/mo</div>
         </div>
+        ${item.id !== 'base' ? `<button class="remove-btn" title="Remove" onclick="removeItem('${item.id}')">×</button>` : ''}
       `;
       container.appendChild(div);
     });
@@ -222,6 +236,15 @@
     document.getElementById('totalFinal').textContent    = fmt(totalSetup) + ' + ' + fmt(totalMonthly) + '/mo';
     document.getElementById('totals').style.display      = 'block';
     document.getElementById('proceedBtn').style.display  = 'block';
+  }
+
+  function removeItem(id) {
+    const idx = cart.findIndex(c => c.id === id);
+    if (idx > -1) {
+      cart.splice(idx, 1);
+      localStorage.setItem('orby_cart', JSON.stringify(cart));
+      render();
+    }
   }
 
   function proceed() {
