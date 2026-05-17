@@ -893,13 +893,20 @@ def demo_chat():
         module_result = None
 
     from datetime import datetime as _dt, timezone as _tz
-    _now_utc = _dt.now(_tz.utc)
-    _today = _now_utc.strftime('%A, %B %d, %Y')
-    _time_utc = _now_utc.strftime('%I:%M %p UTC')
+    from zoneinfo import ZoneInfo as _ZI, ZoneInfoNotFoundError as _ZIE
+    _user_tz_name = (data.get('timezone') or '').strip()
+    try:
+        _user_tz = _ZI(_user_tz_name) if _user_tz_name else _tz.utc
+    except (_ZIE, Exception):
+        _user_tz = _tz.utc
+    _now_local = _dt.now(_user_tz)
+    _today = _now_local.strftime('%A, %B %d, %Y')
+    _time_local = _now_local.strftime('%I:%M %p')
+    _tz_label = _user_tz_name if _user_tz_name else 'UTC'
     system = (DEMO_SYSTEM +
-              f'\n\nRight now it is {_today}, {_time_utc}. '
-              f'Always use this exact date and UTC time. '
-              f'When someone asks the time without a city, tell them what UTC time it is and ask which city they\'re in so you can give their local time.')
+              f'\n\nRight now it is {_today}, {_time_local} ({_tz_label}). '
+              f'Always use this exact date and time — never guess. '
+              f'When someone asks the time without a city, tell them their local time above.')
     if module_result:
         system += f'\n\n{module_result}\nWeave this into your response naturally.'
 
