@@ -2524,14 +2524,45 @@
     if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
   }
 
+  // Sub-module keyword map — what Orby might say → which key to open
+  const SUBMOD_KEYWORDS = {
+    legal_injury:      ['accident & injury','accident and injury','personal injury','accident injury'],
+    legal_criminal:    ['criminal defense','criminal defence'],
+    legal_family:      ['family law','divorce','custody'],
+    legal_realestate:  ['real estate law','real estate attorney'],
+    legal_corporate:   ['corporate & business','corporate law','corporate and business'],
+    legal_techip:      ['tech & ip','intellectual property','tech and ip'],
+    legal_immigration: ['immigration law','immigration'],
+    legal_estate:      ['estate planning','wills','probate'],
+    medical_notes:     ['medical notes','soap notes','prior auth'],
+    therapy_notes:     ['therapy notes','session notes','therapy session'],
+    realestate_docs:   ['real estate documents','real estate docs'],
+    restaurant_docs:   ['restaurant documents','restaurant docs'],
+    retail_docs:       ['retail documents','retail docs'],
+    contractor_docs:   ['contractor documents','contractor docs'],
+    accounting_docs:   ['accounting documents','accounting docs'],
+    hr_docs:           ['hr documents','hr docs'],
+    property_docs:     ['property documents','property docs'],
+  };
+
   function autoScrollFromReply(text) {
     const t = text.toLowerCase();
-    // Open Business Pro detail modal when Orby starts describing it
+
+    // Check sub-module keywords first (most specific)
+    for (const [key, keywords] of Object.entries(SUBMOD_KEYWORDS)) {
+      if (keywords.some(k => t.includes(k))) {
+        setTimeout(() => openModuleDetail(key), 800);
+        return;
+      }
+    }
+
+    // Open Business Pro detail modal
     const bizTriggers = ['business pro', 'business add-on', '$149 setup and $39'];
     if (bizTriggers.some(k => t.includes(k))) {
-      setTimeout(() => openIndustry('business_pro'), 800);
+      setTimeout(() => openModuleDetail('business_pro'), 800);
       return;
     }
+
     // Scroll to industry modules tab
     const industryTriggers = [
       'industry-specific modules', 'industry specific modules',
@@ -2542,6 +2573,7 @@
       setTimeout(showIndustryModules, 1800);
       return;
     }
+
     const demoTriggers = ['what questions do you have', "what's on your mind", 'try me out'];
     if (demoTriggers.some(k => t.includes(k))) {
       const el = document.querySelector('#demo');
@@ -2552,7 +2584,7 @@
   function applyPageAction(action) {
     if (!action) return;
     if (action.show) {
-      setTimeout(() => openIndustry(action.show), 800);
+      setTimeout(() => openModuleDetail(action.show), 800);
     }
     if (action.scroll) {
       const map = {
@@ -2981,19 +3013,17 @@ const INDUSTRY_DATA = {
   }
 };
 
-function openIndustry(key) {
-  const d = INDUSTRY_DATA[key];
-  if (!d) return;
-  document.getElementById('indTitle').textContent = d.title;
-  document.getElementById('indPriceLine').textContent = d.price;
-  document.getElementById('indDesc').textContent = d.desc;
+function _populateIndModal(title, price, desc, features, submods, submodsTitle) {
+  document.getElementById('indTitle').textContent = title;
+  document.getElementById('indPriceLine').textContent = price;
+  document.getElementById('indDesc').textContent = desc;
   const fl = document.getElementById('indFeatures');
-  fl.innerHTML = d.features.map(f => `<li>${f}</li>`).join('');
+  fl.innerHTML = (features || []).map(f => `<li>${f}</li>`).join('');
   const subSec = document.getElementById('indSubmodsSection');
-  if (d.submods && d.submods.length) {
-    document.getElementById('indSubmodsTitle').textContent = d.submodsTitle || 'Available Add-On Modules';
+  if (submods && submods.length) {
+    document.getElementById('indSubmodsTitle').textContent = submodsTitle || 'Available Add-On Modules';
     const sg = document.getElementById('indSubmodsGrid');
-    sg.innerHTML = d.submods.map(s =>
+    sg.innerHTML = submods.map(s =>
       `<div class="ind-submod-card" style="position:relative;padding-bottom:${s.key ? '42px' : '14px'};">
         <h4>${s.name}</h4>
         <div class="sub-price">${s.price}</div>
@@ -3009,6 +3039,34 @@ function openIndustry(key) {
   }
   document.getElementById('indOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+function openIndustry(key) {
+  const d = INDUSTRY_DATA[key];
+  if (!d) return;
+  _populateIndModal(d.title, d.price, d.desc, d.features, d.submods, d.submodsTitle);
+}
+
+// Opens any module or sub-module by key — used by Orby's page actions
+function openModuleDetail(key) {
+  // Top-level industry/module key
+  if (INDUSTRY_DATA[key]) { openIndustry(key); return; }
+  // Search sub-modules across all industries
+  for (const industry of Object.values(INDUSTRY_DATA)) {
+    if (!industry.submods) continue;
+    const s = industry.submods.find(sm => sm.key === key);
+    if (s) {
+      _populateIndModal(
+        s.name,
+        s.price,
+        s.desc,
+        s.features || [],
+        [],   // no nested sub-mods
+        null
+      );
+      return;
+    }
+  }
 }
 
 function closeIndustry(e) {
