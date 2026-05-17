@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms & Agreement — My Orby</title>
+  <style>
+    :root {
+      --bg:           #0a0f1e;
+      --surface:      #111827;
+      --surface2:     #1a2235;
+      --gold:         #d4a017;
+      --gold-light:   #f0c040;
+      --gold-glow:    rgba(212,160,23,0.3);
+      --purple:       #7c3aed;
+      --purple-light: #a855f7;
+      --teal:         #0d9488;
+      --teal-light:   #2dd4bf;
+      --teal-glow:    rgba(13,148,136,0.25);
+      --text:         #e8eaf0;
+      --text-muted:   #8892a4;
+      --border:       rgba(212,160,23,0.15);
+      --border-p:     rgba(124,58,237,0.2);
+      --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; padding: 40px 20px; }
+
+    .step-bar {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 32px; flex-wrap: wrap; justify-content: center;
+    }
+    .step { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid; }
+    .step-done   { background: rgba(13,148,136,0.15); border-color: var(--teal-light); color: var(--teal-light); }
+    .step-active { background: rgba(124,58,237,0.15); border-color: var(--purple-light); color: var(--purple-light); }
+    .step-next   { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--text-muted); }
+    .step-sep    { color: var(--text-muted); font-size: 0.7rem; }
+
+    .page-wrap { max-width: 680px; margin: 0 auto; }
+
+    .page-header { text-align: center; margin-bottom: 32px; }
+    .page-header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+    .page-header p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+
+    /* Legal sections */
+    .legal-section {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .legal-section.accepted { border-color: var(--teal); }
+
+    .section-header {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 18px 20px;
+      cursor: pointer;
+    }
+    .section-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--surface2);
+      border: 1px solid var(--border-p);
+      color: var(--purple-light);
+      font-size: 0.75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+      transition: all 0.2s;
+    }
+    .legal-section.accepted .section-num {
+      background: rgba(13,148,136,0.2);
+      border-color: var(--teal);
+      color: var(--teal-light);
+    }
+    .section-title-wrap { flex: 1; }
+    .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 3px; }
+    .section-summary { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+    .section-toggle { color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; margin-top: 4px; }
+
+    .section-body {
+      display: none;
+      padding: 0 20px 18px 62px;
+      font-size: 0.85rem; color: var(--text-muted); line-height: 1.7;
+    }
+    .section-body.open { display: block; }
+    .section-body p { margin-bottom: 10px; }
+    .section-body p:last-child { margin-bottom: 0; }
+
+    .check-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .check-row input[type="checkbox"] {
+      width: 20px; height: 20px; flex-shrink: 0;
+      accent-color: var(--teal); cursor: pointer;
+    }
+    .check-row label {
+      font-size: 0.85rem; color: var(--text); cursor: pointer; line-height: 1.4;
+    }
+
+    /* Progress bar */
+    .progress-wrap { margin-bottom: 20px; }
+    .progress-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .progress-track { height: 4px; background: var(--surface2); border-radius: 2px; }
+    .progress-fill { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--purple), var(--teal-light)); transition: width 0.3s; }
+
+    /* Bottom action */
+    .action-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .action-card p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+
+    .name-email { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+    .name-email input {
+      flex: 1; min-width: 160px;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 11px 14px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .name-email input:focus { border-color: var(--purple-light); }
+    .name-email input::placeholder { color: var(--text-muted); }
+
+    .btn-accept {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border: none; border-radius: 12px;
+      color: #0a0f1e; font-family: var(--font); font-size: 1rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-accept:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .btn-accept:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    .btn-back {
+      width: 100%; padding: 12px; margin-top: 10px;
+      background: transparent; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px; color: var(--text-muted);
+      font-family: var(--font); font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-back:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    .governing-law { text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 14px; }
+
+    #statusMsg { font-size: 0.85rem; color: var(--teal-light); text-align: center; margin-top: 10px; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="step-bar">
+  <span class="step step-done">1 · Demo</span>
+  <span class="step-sep">›</span>
+  <span class="step step-done">2 · Build</span>
+  <span class="step-sep">›</span>
+  <span class="step step-done">3 · Cart</span>
+  <span class="step-sep">›</span>
+  <span class="step step-active">4 · Legal</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">5 · Pay</span>
+</div>
+
+<div class="page-wrap">
+
+  <div class="page-header">
+    <h1>Review &amp; Accept Terms</h1>
+    <p>No surprises. Read each section and check the box when you understand it.<br>All 6 must be accepted before payment.</p>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Sections accepted</span>
+      <span id="progressText">0 of 6</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="legal-section" id="sec1">
+    <div class="section-header" onclick="toggle(1)">
+      <div class="section-num">1</div>
+      <div class="section-title-wrap">
+        <div class="section-title">What You Are Purchasing</div>
+        <div class="section-summary">My Orby software license and ongoing service subscription.</div>
+      </div>
+      <span class="section-toggle" id="tog1">▼</span>
+    </div>
+    <div class="section-body" id="body1">
+      <p>You are purchasing a software license and subscription service for My Orby ("Orby"), an AI companion application developed by Orbi AI. The license fee is a one-time payment that grants you a personal, non-transferable right to use the Orby software. The monthly subscription covers ongoing AI model access, updates, and support.</p>
+      <p>The Founding Member price you pay today is locked in for the life of your subscription. As long as your subscription remains active, your monthly rate will never increase. Founding Member pricing is limited to the first 500 customers and is available until all spots are claimed.</p>
+      <p>Orby is designed to run locally on your computer. Your personal data and memories stay on your device. Orbi AI does not collect or store your personal Orby data on its servers.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb1" onchange="onCheck(1)">
+      <label for="cb1">I understand what I am purchasing — a My Orby license and monthly subscription at the Founding Member rate.</label>
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="legal-section" id="sec2">
+    <div class="section-header" onclick="toggle(2)">
+      <div class="section-num">2</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Auto-Renewal &amp; Cancellation</div>
+        <div class="section-summary">Your monthly subscription renews automatically. Here's how to cancel.</div>
+      </div>
+      <span class="section-toggle" id="tog2">▼</span>
+    </div>
+    <div class="section-body" id="body2">
+      <p>Your My Orby subscription renews automatically each month on the date of your original purchase. Your payment method will be charged the monthly subscription fee each billing cycle until you cancel.</p>
+      <p>You may cancel your subscription at any time by contacting Orbi AI support at franklstreet@yahoo.com. Upon cancellation, your subscription will remain active through the end of the current billing period. No partial-month refunds are issued for subscription fees already charged.</p>
+      <p>If a payment fails, Orbi AI will attempt to charge the payment method on file. If payment cannot be collected after reasonable attempts, your subscription may be suspended. Founding Member pricing is retained only while the subscription remains continuously active — a lapse in payment and reactivation may result in current pricing.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb2" onchange="onCheck(2)">
+      <label for="cb2">I understand my subscription auto-renews monthly and I may cancel at any time by contacting Orbi AI.</label>
+    </div>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="legal-section" id="sec3">
+    <div class="section-header" onclick="toggle(3)">
+      <div class="section-num">3</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Not Professional Advice</div>
+        <div class="section-summary">Orby is an AI assistant — not a doctor, lawyer, or financial advisor.</div>
+      </div>
+      <span class="section-toggle" id="tog3">▼</span>
+    </div>
+    <div class="section-body" id="body3">
+      <p>Orby is an artificial intelligence application designed to assist with everyday tasks, information retrieval, and personal organization. Orby is not a licensed medical professional, attorney, financial advisor, therapist, or certified expert in any professional field.</p>
+      <p>Any information Orby provides — including health-related information, legal information, financial guidance, or advice of any kind — is for general informational and organizational purposes only and does not constitute professional advice. You should not rely on Orby as a substitute for advice from a qualified professional.</p>
+      <p>Industry-specific modules (such as Legal Pro or Medical Pro) are tools to assist with document organization and workflow — they do not replace the judgment of a licensed professional, and their outputs should be reviewed by a qualified expert before use in any formal, legal, or clinical context.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb3" onchange="onCheck(3)">
+      <label for="cb3">I understand Orby is an AI assistant and not a substitute for professional advice from a licensed expert.</label>
+    </div>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="legal-section" id="sec4">
+    <div class="section-header" onclick="toggle(4)">
+      <div class="section-num">4</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Limitation of Liability</div>
+        <div class="section-summary">Our liability is limited to the amount you have paid us.</div>
+      </div>
+      <span class="section-toggle" id="tog4">▼</span>
+    </div>
+    <div class="section-body" id="body4">
+      <p>To the fullest extent permitted by law, Orbi AI's total liability to you for any claims arising out of or related to these terms, the My Orby software, or any services provided shall not exceed the total amount you have actually paid to Orbi AI in the twelve (12) months preceding the claim.</p>
+      <p>In no event shall Orbi AI be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, loss of data, loss of business, or any other damages arising from your use of Orby, even if Orbi AI has been advised of the possibility of such damages.</p>
+      <p>Orby is provided "as is" without warranty of any kind. Orbi AI makes no guarantee that Orby will be uninterrupted, error-free, or completely secure. Use of Orby is at your own risk.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb4" onchange="onCheck(4)">
+      <label for="cb4">I understand Orbi AI's liability is limited to the amount I have paid, and the software is provided as-is.</label>
+    </div>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="legal-section" id="sec5">
+    <div class="section-header" onclick="toggle(5)">
+      <div class="section-num">5</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Arbitration &amp; Governing Law</div>
+        <div class="section-summary">Disputes go to binding arbitration in Nevada — no class actions.</div>
+      </div>
+      <span class="section-toggle" id="tog5">▼</span>
+    </div>
+    <div class="section-body" id="body5">
+      <p>These terms are governed by the laws of the State of Nevada, without regard to its conflict of law provisions. Any dispute, claim, or controversy arising out of or relating to these terms or your use of My Orby shall be resolved by binding individual arbitration in Reno, Nevada, under the rules of the American Arbitration Association.</p>
+      <p><strong>YOU WAIVE YOUR RIGHT TO A JURY TRIAL.</strong> By accepting these terms, you agree that all disputes will be resolved through binding arbitration on an individual basis. You also waive any right to bring or participate in any class action, collective action, or representative proceeding.</p>
+      <p>Nothing in this section prevents either party from seeking emergency injunctive relief in a court of competent jurisdiction to protect intellectual property rights or confidential information while arbitration is pending.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb5" onchange="onCheck(5)">
+      <label for="cb5">I agree to resolve disputes through binding individual arbitration in Nevada and waive my right to class action litigation.</label>
+    </div>
+  </div>
+
+  <!-- SECTION 6 -->
+  <div class="legal-section" id="sec6">
+    <div class="section-header" onclick="toggle(6)">
+      <div class="section-num">6</div>
+      <div class="section-title-wrap">
+        <div class="section-title">Refund Policy</div>
+        <div class="section-summary">Setup fees are non-refundable. Monthly fees may be prorated.</div>
+      </div>
+      <span class="section-toggle" id="tog6">▼</span>
+    </div>
+    <div class="section-body" id="body6">
+      <p>The one-time license fee and any module setup fees are non-refundable once payment is processed and the software license has been issued. These fees cover the cost of software licensing, configuration, and delivery of your Orby.</p>
+      <p>If you cancel your subscription within the first 7 days of your original purchase and have not used the software, you may request a full refund of the first month's subscription fee by contacting franklstreet@yahoo.com. After 7 days, no refunds will be issued for subscription fees that have been charged.</p>
+      <p>Orbi AI reserves the right to refuse a refund if there is evidence of abuse, excessive usage prior to a refund request, or violation of these terms.</p>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="cb6" onchange="onCheck(6)">
+      <label for="cb6">I understand that setup fees are non-refundable and I have read the full refund policy.</label>
+    </div>
+  </div>
+
+  <!-- ACTION CARD -->
+  <div class="action-card">
+    <p>Enter your name and email to record your legal acceptance. These will also be used to deliver your license and for account purposes.</p>
+
+    <div class="name-email">
+      <input type="text" id="legalName" placeholder="Your full name" required />
+      <input type="email" id="legalEmail" placeholder="Email address" required />
+    </div>
+
+    <button class="btn-accept" id="acceptBtn" onclick="accept()" disabled>
+      Accept All Terms &amp; Proceed to Payment →
+    </button>
+    <button class="btn-back" onclick="window.location.href='/cart'">← Back to Cart</button>
+
+    <p class="governing-law">Governing law: State of Nevada. Terms version: 2026-05.</p>
+    <p id="statusMsg"></p>
+  </div>
+
+</div>
+
+<script>
+  const TOTAL = 6;
+  let accepted = new Set();
+
+  function toggle(n) {
+    const body = document.getElementById('body' + n);
+    const tog  = document.getElementById('tog' + n);
+    const isOpen = body.classList.toggle('open');
+    tog.textContent = isOpen ? '▲' : '▼';
+  }
+
+  function onCheck(n) {
+    const cb = document.getElementById('cb' + n);
+    const sec = document.getElementById('sec' + n);
+    if (cb.checked) {
+      accepted.add(n);
+      sec.classList.add('accepted');
+      const num = sec.querySelector('.section-num');
+      num.textContent = '✓';
+    } else {
+      accepted.delete(n);
+      sec.classList.remove('accepted');
+      sec.querySelector('.section-num').textContent = n;
+    }
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const count = accepted.size;
+    document.getElementById('progressText').textContent = count + ' of ' + TOTAL;
+    document.getElementById('progressFill').style.width = (count / TOTAL * 100) + '%';
+    document.getElementById('acceptBtn').disabled = (count < TOTAL);
+  }
+
+  async function accept() {
+    const name  = document.getElementById('legalName').value.trim();
+    const email = document.getElementById('legalEmail').value.trim();
+
+    if (!name || !email) {
+      document.getElementById('statusMsg').style.display = 'block';
+      document.getElementById('statusMsg').style.color = '#f87171';
+      document.getElementById('statusMsg').textContent = 'Please enter your name and email.';
+      return;
+    }
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+      document.getElementById('statusMsg').style.display = 'block';
+      document.getElementById('statusMsg').style.color = '#f87171';
+      document.getElementById('statusMsg').textContent = 'Please enter a valid email address.';
+      return;
+    }
+
+    document.getElementById('acceptBtn').disabled = true;
+    document.getElementById('statusMsg').style.display = 'block';
+    document.getElementById('statusMsg').style.color = 'var(--teal-light)';
+    document.getElementById('statusMsg').textContent = 'Recording your acceptance...';
+
+    const cart = JSON.parse(localStorage.getItem('orby_cart') || '[]');
+    const cartSummary = cart.map(i => i.label).join(', ');
+
+    try {
+      const res = await fetch('/api/legal_accept', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, email, cart_summary: cartSummary, terms_version: '2026-05'})
+      });
+      const data = await res.json();
+
+      if (!data.acceptance_id) throw new Error('No acceptance ID returned');
+
+      localStorage.setItem('orby_acceptance_id', data.acceptance_id);
+      localStorage.setItem('orby_buyer_name', name);
+      localStorage.setItem('orby_buyer_email', email);
+
+      document.getElementById('statusMsg').textContent = 'Accepted. Proceeding to payment...';
+
+      // Proceed to Stripe checkout
+      const checkoutRes = await fetch('/api/create_checkout', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          cart,
+          acceptance_id: data.acceptance_id,
+          name,
+          email,
+        })
+      });
+      const checkoutData = await checkoutRes.json();
+
+      if (checkoutData.url) {
+        window.location.href = checkoutData.url;
+      } else {
+        throw new Error(checkoutData.error || 'Could not create checkout session');
+      }
+    } catch(e) {
+      document.getElementById('statusMsg').style.color = '#f87171';
+      document.getElementById('statusMsg').textContent = 'Error: ' + e.message + '. Please try again.';
+      document.getElementById('acceptBtn').disabled = false;
+    }
+  }
+
+  // Open first section by default
+  toggle(1);
+</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to My Orby!</title>
+  <style>
+    :root {
+      --bg:           #0a0f1e;
+      --surface:      #111827;
+      --surface2:     #1a2235;
+      --gold:         #d4a017;
+      --gold-light:   #f0c040;
+      --gold-glow:    rgba(212,160,23,0.3);
+      --purple:       #7c3aed;
+      --purple-light: #a855f7;
+      --teal:         #0d9488;
+      --teal-light:   #2dd4bf;
+      --teal-glow:    rgba(13,148,136,0.25);
+      --text:         #e8eaf0;
+      --text-muted:   #8892a4;
+      --border:       rgba(212,160,23,0.15);
+      --border-t:     rgba(13,148,136,0.25);
+      --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 48px 20px; }
+
+    .orb-wrap { position: relative; margin-bottom: 20px; }
+    .orb {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow: 0 0 30px var(--gold), 0 0 80px var(--gold-glow), inset 0 4px 8px rgba(255,255,255,0.3);
+      animation: orb-pulse 3s ease-in-out infinite;
+    }
+    @keyframes orb-pulse {
+      0%,100% { box-shadow: 0 0 30px var(--gold), 0 0 80px var(--gold-glow), inset 0 4px 8px rgba(255,255,255,0.3); }
+      50%      { box-shadow: 0 0 50px var(--gold), 0 0 120px var(--gold-glow), inset 0 4px 8px rgba(255,255,255,0.3); }
+    }
+    .confetti-ring {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 110px; height: 110px; border-radius: 50%;
+      border: 2px solid rgba(212,160,23,0.3);
+      animation: ring-pulse 2s ease-out infinite;
+    }
+    @keyframes ring-pulse {
+      0%   { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
+      100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+    }
+
+    h1 { font-size: 2rem; font-weight: 900; text-align: center; margin-bottom: 6px; }
+    .welcome-sub { color: var(--teal-light); text-align: center; font-size: 1rem; margin-bottom: 36px; font-weight: 500; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%; max-width: 520px;
+      padding: 32px;
+      margin-bottom: 20px;
+    }
+
+    .section-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); margin-bottom: 10px;
+    }
+
+    /* License key */
+    .license-box {
+      background: var(--surface2);
+      border: 1px solid var(--border-t);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 20px;
+    }
+    .license-key {
+      font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--teal-light); letter-spacing: 0.06em;
+    }
+    .copy-btn {
+      background: rgba(13,148,136,0.15); border: 1px solid var(--border-t);
+      color: var(--teal-light); border-radius: 8px;
+      padding: 7px 14px; font-size: 0.8rem; font-weight: 600;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .copy-btn:hover { background: rgba(13,148,136,0.25); }
+    .copy-btn.copied { color: var(--gold-light); border-color: rgba(212,160,23,0.3); background: rgba(212,160,23,0.1); }
+
+    /* QR section */
+    .qr-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 14px; margin-bottom: 24px;
+    }
+    #qrcode {
+      background: #fff;
+      padding: 12px;
+      border-radius: 12px;
+      display: inline-block;
+    }
+    .qr-caption { font-size: 0.8rem; color: var(--text-muted); text-align: center; line-height: 1.5; }
+
+    /* What happens next */
+    .next-steps { display: flex; flex-direction: column; gap: 12px; }
+    .next-step {
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 800;
+      background: rgba(124,58,237,0.2);
+      border: 1px solid rgba(124,58,237,0.4);
+      color: var(--purple-light);
+    }
+    .step-text { font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; padding-top: 4px; }
+    .step-text strong { color: var(--text); }
+
+    .btn-home {
+      width: 100%; max-width: 520px; padding: 15px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border: none; border-radius: 12px;
+      color: #0a0f1e; font-family: var(--font); font-size: 1rem; font-weight: 800;
+      cursor: pointer; text-decoration: none; display: block; text-align: center;
+      transition: all 0.2s;
+    }
+    .btn-home:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .email-notice {
+      text-align: center; font-size: 0.82rem; color: var(--text-muted);
+      max-width: 440px; line-height: 1.5; margin-top: 16px;
+    }
+    .email-notice strong { color: var(--teal-light); }
+
+    #loadingMsg { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 40px; }
+    #errorMsg   { text-align: center; color: #f87171; font-size: 0.9rem; padding: 20px; display: none; }
+  </style>
+</head>
+<body>
+
+<div id="loadingMsg">Loading your delivery...</div>
+<div id="errorMsg"></div>
+
+<div id="mainContent" style="display:none; width:100%; display:none; flex-direction:column; align-items:center;">
+
+  <div class="orb-wrap">
+    <div class="orb"></div>
+    <div class="confetti-ring"></div>
+  </div>
+
+  <h1>You're in!</h1>
+  <p class="welcome-sub" id="welcomeSub">Welcome to the Orby family.</p>
+
+  <!-- License Key -->
+  <div class="card">
+    <div class="section-label">Your License Key</div>
+    <div class="license-box">
+      <div class="license-key" id="licenseKeyDisplay">—</div>
+      <button class="copy-btn" id="copyBtn" onclick="copyKey()">Copy</button>
+    </div>
+
+    <div class="section-label">Your Orby QR Code</div>
+    <div class="qr-wrap">
+      <div id="qrcode"></div>
+      <p class="qr-caption">
+        This QR code is your Orby's DNA.<br>
+        The installer scans it and Orby configures herself exactly as you built her.
+      </p>
+    </div>
+  </div>
+
+  <!-- What Happens Next -->
+  <div class="card">
+    <div class="section-label" style="margin-bottom:16px">What Happens Next</div>
+    <div class="next-steps">
+      <div class="next-step">
+        <div class="step-num">1</div>
+        <div class="step-text"><strong>Check your email.</strong> A copy of your license key and QR code has been sent to the email you provided.</div>
+      </div>
+      <div class="next-step">
+        <div class="step-num">2</div>
+        <div class="step-text"><strong>Download Orby</strong> when the Windows installer is ready. You'll be notified at your email address — Founding Members get access first.</div>
+      </div>
+      <div class="next-step">
+        <div class="step-num">3</div>
+        <div class="step-text"><strong>Scan the QR code</strong> during installation. Orby will read it and configure herself with exactly the modules you selected — no manual setup.</div>
+      </div>
+      <div class="next-step">
+        <div class="step-num">4</div>
+        <div class="step-text"><strong>Your Orby is yours.</strong> She lives on your computer, not in the cloud. Your data stays private. She's always there, even offline.</div>
+      </div>
+    </div>
+  </div>
+
+  <a href="/" class="btn-home">Back to Home</a>
+
+  <p class="email-notice">
+    Your license key: <strong id="licenseKeySmall">—</strong><br>
+    Save this somewhere safe. You'll need it for installation.
+  </p>
+
+</div>
+
+<!-- QR code library (lightweight, CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session_id') || '';
+
+  async function loadDelivery() {
+    if (!sessionId) {
+      showError('No session ID found. Please contact support.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/generate_delivery', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId})
+      });
+      const data = await res.json();
+
+      if (!data.ok || !data.license_key) {
+        throw new Error(data.error || 'Could not retrieve delivery');
+      }
+
+      showDelivery(data);
+    } catch(e) {
+      showError('Error loading your delivery: ' + e.message + '. Please email franklstreet@yahoo.com and we\'ll get you sorted immediately.');
+    }
+  }
+
+  function showDelivery(data) {
+    document.getElementById('loadingMsg').style.display = 'none';
+
+    const name = data.customer_name || localStorage.getItem('orby_buyer_name') || '';
+    if (name) {
+      document.getElementById('welcomeSub').textContent = 'Welcome to the Orby family, ' + name.split(' ')[0] + '.';
+    }
+
+    document.getElementById('licenseKeyDisplay').textContent = data.license_key;
+    document.getElementById('licenseKeySmall').textContent   = data.license_key;
+
+    // Generate QR code
+    try {
+      new QRCode(document.getElementById('qrcode'), {
+        text: data.manifest_json,
+        width: 180,
+        height: 180,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+    } catch(e) {
+      document.getElementById('qrcode').innerHTML = '<div style="color:#8892a4;font-size:0.8rem;padding:20px">QR code unavailable — your license key above is all you need.</div>';
+    }
+
+    const main = document.getElementById('mainContent');
+    main.style.display = 'flex';
+  }
+
+  function showError(msg) {
+    document.getElementById('loadingMsg').style.display = 'none';
+    const err = document.getElementById('errorMsg');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  function copyKey() {
+    const key = document.getElementById('licenseKeyDisplay').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    }).catch(() => {
+      alert('License key: ' + key);
+    });
+  }
+
+  loadDelivery();
+</script>
+</body>
+</html>

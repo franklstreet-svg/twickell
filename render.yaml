@@ -21,3 +21,7 @@ services:
         sync: false
       - key: GROQ_MODEL
         value: llama-3.1-8b-instant
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

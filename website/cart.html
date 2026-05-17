@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Your Orby — My Orby</title>
+  <style>
+    :root {
+      --bg:           #0a0f1e;
+      --surface:      #111827;
+      --surface2:     #1a2235;
+      --gold:         #d4a017;
+      --gold-light:   #f0c040;
+      --gold-glow:    rgba(212,160,23,0.3);
+      --purple:       #7c3aed;
+      --purple-light: #a855f7;
+      --teal:         #0d9488;
+      --teal-light:   #2dd4bf;
+      --text:         #e8eaf0;
+      --text-muted:   #8892a4;
+      --border:       rgba(212,160,23,0.15);
+      --border-p:     rgba(124,58,237,0.2);
+      --border-t:     rgba(13,148,136,0.2);
+      --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+
+    .step-bar {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 36px; flex-wrap: wrap; justify-content: center;
+    }
+    .step { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid; }
+    .step-done   { background: rgba(13,148,136,0.15); border-color: var(--teal-light); color: var(--teal-light); }
+    .step-active { background: rgba(212,160,23,0.15); border-color: var(--gold-light); color: var(--gold-light); }
+    .step-next   { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--text-muted); }
+    .step-sep    { color: var(--text-muted); font-size: 0.7rem; }
+
+    .orb {
+      width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 16px;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow: 0 0 24px var(--gold), 0 0 60px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3);
+      animation: orb-pulse 3s ease-in-out infinite;
+    }
+    @keyframes orb-pulse {
+      0%,100% { box-shadow: 0 0 24px var(--gold), 0 0 60px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3); }
+      50%      { box-shadow: 0 0 40px var(--gold), 0 0 90px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%; max-width: 560px;
+      padding: 36px 32px;
+    }
+
+    h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .subtitle { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    .line-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+    .line-item {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+    }
+    .line-item.base { border: 1px solid rgba(212,160,23,0.2); }
+    .line-item.addon { border: 1px solid var(--border-t); }
+
+    .li-info { flex: 1; min-width: 0; }
+    .li-label { font-size: 0.9rem; font-weight: 600; }
+    .li-sub   { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+
+    .li-prices { text-align: right; flex-shrink: 0; }
+    .li-setup   { font-size: 0.85rem; color: var(--gold-light); font-weight: 700; }
+    .li-monthly { font-size: 0.75rem; color: var(--teal-light); margin-top: 2px; }
+
+    .totals {
+      background: var(--surface2);
+      border: 1px solid var(--border-p);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .total-row {
+      display: flex; justify-content: space-between;
+      padding: 6px 0; font-size: 0.9rem; color: var(--text-muted);
+    }
+    .total-row.final {
+      border-top: 1px solid rgba(255,255,255,0.08);
+      margin-top: 8px; padding-top: 12px;
+      font-size: 1rem; font-weight: 700; color: var(--text);
+    }
+    .val-setup   { color: var(--gold-light); font-weight: 700; }
+    .val-monthly { color: var(--teal-light); font-weight: 700; }
+
+    .btn {
+      width: 100%; padding: 15px;
+      border: none; border-radius: 12px;
+      font-family: var(--font); font-size: 1rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 10px;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .btn-gold:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 24px var(--gold-glow); }
+    .btn-ghost {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1); font-weight: 600;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    .fine-print { text-align: center; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; margin-top: 12px; }
+    .founding-badge {
+      display: inline-block;
+      background: rgba(212,160,23,0.12);
+      border: 1px solid var(--gold);
+      border-radius: 20px;
+      color: var(--gold-light);
+      font-size: 0.75rem; font-weight: 700;
+      padding: 4px 14px; letter-spacing: 0.05em; text-transform: uppercase;
+      margin: 0 auto 20px; display: block; text-align: center; width: fit-content;
+    }
+    .empty-state {
+      text-align: center; padding: 40px 0; color: var(--text-muted);
+    }
+    .empty-state a { color: var(--purple-light); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="step-bar">
+  <span class="step step-done">1 · Demo</span>
+  <span class="step-sep">›</span>
+  <span class="step step-done">2 · Build</span>
+  <span class="step-sep">›</span>
+  <span class="step step-active">3 · Cart</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">4 · Legal</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">5 · Pay</span>
+</div>
+
+<div class="card">
+  <div class="orb"></div>
+  <div class="founding-badge">Founding Member — Limited Spots</div>
+  <h1>Your Orby</h1>
+  <p class="subtitle">Review everything before you lock in founding member pricing.</p>
+
+  <div class="line-items" id="lineItems">
+    <div class="empty-state">
+      Nothing in cart. <a href="/builder">Go back and build your Orby →</a>
+    </div>
+  </div>
+
+  <div class="totals" id="totals" style="display:none">
+    <div class="total-row">
+      <span>Due today (license + setup)</span>
+      <span class="val-setup" id="totalSetup">—</span>
+    </div>
+    <div class="total-row">
+      <span>Monthly — locked for life</span>
+      <span class="val-monthly" id="totalMonthly">—</span>
+    </div>
+    <div class="total-row final">
+      <span>Starting today</span>
+      <span id="totalFinal">—</span>
+    </div>
+  </div>
+
+  <button class="btn btn-gold" id="proceedBtn" onclick="proceed()" style="display:none">
+    Proceed to Terms & Legal →
+  </button>
+  <button class="btn btn-ghost" onclick="window.location.href='/builder'">← Change My Orby</button>
+
+  <p class="fine-print">
+    Founding member pricing is locked forever — your monthly rate never increases.<br>
+    You'll accept terms on the next screen before payment.
+  </p>
+</div>
+
+<script>
+  const cart = JSON.parse(localStorage.getItem('orby_cart') || '[]');
+
+  function fmt(n) {
+    return '$' + (n % 1 === 0 ? n.toFixed(2) : n.toFixed(2));
+  }
+
+  function render() {
+    if (!cart.length) return;
+
+    const container = document.getElementById('lineItems');
+    container.innerHTML = '';
+
+    let totalSetup = 0, totalMonthly = 0;
+
+    cart.forEach(item => {
+      totalSetup   += item.setup   || 0;
+      totalMonthly += item.monthly || 0;
+
+      const div = document.createElement('div');
+      div.className = 'line-item ' + (item.id === 'base' ? 'base' : 'addon');
+      div.innerHTML = `
+        <div class="li-info">
+          <div class="li-label">${item.label}</div>
+          ${item.sub ? `<div class="li-sub">${item.sub}</div>` : ''}
+        </div>
+        <div class="li-prices">
+          <div class="li-setup">${fmt(item.setup || 0)}</div>
+          <div class="li-monthly">${fmt(item.monthly || 0)}/mo</div>
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    document.getElementById('totalSetup').textContent    = fmt(totalSetup);
+    document.getElementById('totalMonthly').textContent  = fmt(totalMonthly) + '/mo';
+    document.getElementById('totalFinal').textContent    = fmt(totalSetup) + ' + ' + fmt(totalMonthly) + '/mo';
+    document.getElementById('totals').style.display      = 'block';
+    document.getElementById('proceedBtn').style.display  = 'block';
+  }
+
+  function proceed() {
+    window.location.href = '/legal';
+  }
+
+  render();
+</script>
+</body>
+</html>

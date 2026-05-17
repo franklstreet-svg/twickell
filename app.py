@@ -968,6 +968,26 @@ def checkout():
     return send_from_directory(WEBSITE_DIR, 'checkout.html')
 
 
+@app.route('/builder')
+def builder():
+    return send_from_directory(WEBSITE_DIR, 'builder.html')
+
+
+@app.route('/cart')
+def cart_page():
+    return send_from_directory(WEBSITE_DIR, 'cart.html')
+
+
+@app.route('/legal')
+def legal_page():
+    return send_from_directory(WEBSITE_DIR, 'legal.html')
+
+
+@app.route('/success')
+def success_page():
+    return send_from_directory(WEBSITE_DIR, 'success.html')
+
+
 @app.route('/waitlist', methods=['POST'])
 def waitlist():
     data  = request.get_json(silent=True) or {}
@@ -1061,6 +1081,331 @@ def tts():
         return '', 500
 
 
-if __name__ == '__main__':
-    log.info('My Orby website running at http://localhost:5001')
-    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True)
+BUILDER_SYSTEM = """You are Orby — a personal AI companion. You are in BUILDER MODE, helping someone configure their custom Orby before purchase.
+
+YOUR JOB: Have a genuine conversation. Ask questions. Listen. Recommend exactly the right modules for their life. Don't pitch — discover.
+
+CONVERSATION FLOW:
+1. Ask if they're buying for personal use, their business, or both
+2. Ask what they do (job, role, family situation)
+3. Ask what they need most help with
+4. Based on what you learn: recommend 1-2 modules that directly match their life
+5. Explain each in plain English — what it does for THEM specifically, not a sales pitch
+6. Only add a module once they agree to include it
+7. When their build feels complete: invite them to review their cart
+
+BASE PLAN (always included, no extra charge):
+My Orby Founding Member: $24.99 one-time + $9.99/month locked forever
+Includes 32 modules: Weather, Web Search, Reminders, To-Do, Notes, Shopping, Calendar, Morning Briefing, Finance, Health, Fitness, Mood, Chores, School, Pets, Vehicle, Travel, Gifts, Habits, Meal Planning, Journal, Relationships, Countdown, Bucket List, Quotes, Emergency Info, Family Messages, Home Maintenance, Allowance, Bedtime Stories, World Clock, Recipes
+
+PAID ADD-ON MODULES:
+- legal_pro: Legal Pro — $349 setup + $149/mo — law firms, case management, all court documents
+- medical_pro: Medical Pro — $349 setup + $149/mo — medical practices, patient records, clinical notes
+- therapy_pro: Therapy & Counseling Pro — $199 setup + $79/mo — therapists, session notes, treatment plans
+- realestate_pro: Real Estate Pro — $199 setup + $79/mo — agents/brokers, listings, commission tracking
+- restaurant_pro: Restaurant Pro — $199 setup + $79/mo — restaurant owners, menu, reservations, inventory
+- retail_pro: Retail Pro — $149 setup + $49/mo — retail stores, products, POS, sales reports
+- salon_pro: Salon & Spa Pro — $99 setup + $49/mo — salons/spas, clients, appointments
+- contractor_pro: Contractor Pro — $249 setup + $99/mo — contractors, jobs, estimates, materials, invoicing
+- trade_pro: Trade Specialties Pro — $99 setup + $39/mo — plumbers, electricians, HVAC, job tracking
+- accounting_pro: Accounting Pro — $249 setup + $99/mo — CPAs/bookkeepers, clients, tax deadlines
+- hr_pro: HR Professional — $149 setup + $59/mo — HR teams, employees, PTO, performance reviews
+- property_mgmt: Property Management Pro — $149 setup + $59/mo — landlords, tenants, leases, rent
+- inventory_pro: Inventory Pro — $149 setup + $49/mo — warehouses/distributors, multi-location stock
+- business_pro: Business Pro — $149 setup + $39/mo — general business, CRM, invoicing, expenses
+- product_dev: Product Development — $99 setup + $39/mo — product teams, roadmaps, launch checklists
+- deep_memory: Deep Memory — $49 setup + $19/mo — enhanced memory that remembers everything
+- social_media: Social Media Manager — $99 setup + $39/mo — Facebook, Instagram, Twitter, LinkedIn, TikTok
+- image_studio: AI Image Studio — $49 setup + $19/mo — generate images from text using AI
+- creator_3d: 3D Creator — $49 setup + $29/mo — generate 3D models from text
+- video_studio: AI Video Studio — $49 setup + $29/mo — generate short AI videos
+
+WHEN TO EMIT A CONFIG UPDATE:
+Only when the customer has agreed to add a module. End your message with:
+##CONFIG##{"add":[{"id":"module_id","label":"Module Name","setup":0,"monthly":0}],"remove":[]}##CONFIG##
+If no config change: ##CONFIG##{"add":[],"remove":[]}##CONFIG##
+Always include ##CONFIG## at the end of every message.
+
+RULES:
+- 2-4 sentences per response. Conversation, not lecture.
+- Warm and genuine — you care about helping them.
+- Never list all modules. Discover needs first, recommend specifically.
+- When their build feels complete: "I think we've built a great Orby for you. Ready to review your cart?" """
+
+
+_LEGAL_DIR = Path('/tmp/orby_legal')
+_DELIVERY_DIR = Path('/tmp/orby_deliveries')
+_CONFIG_RE = re.compile(r'##CONFIG##(.*?)##CONFIG##', re.DOTALL)
+
+
+def _parse_config_update(text: str):
+    m = _CONFIG_RE.search(text)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(1).strip())
+    except Exception:
+        return None
+
+
+def _strip_config(text: str) -> str:
+    return _CONFIG_RE.sub('', text).strip()
+
+
+@app.route('/builder_chat', methods=['POST'])
+def builder_chat():
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get('message') or '').strip()
+    if not user_message:
+        return jsonify({'error': 'empty'}), 400
+
+    profile_dir = _get_profile_dir()
+    messages = data.get('history', [])
+    messages.append({'role': 'user', 'content': user_message})
+
+    try:
+        module_result = _run_module(user_message, profile_dir)
+    except Exception as e:
+        log.warning('Builder module error: %s', e)
+        module_result = None
+
+    from datetime import datetime as _dt, timezone as _tz
+    from zoneinfo import ZoneInfo as _ZI, ZoneInfoNotFoundError as _ZIE
+    _tz_name = (data.get('timezone') or '').strip()
+    try:
+        _user_tz = _ZI(_tz_name) if _tz_name else _tz.utc
+    except (_ZIE, Exception):
+        _user_tz = _tz.utc
+    _now = _dt.now(_user_tz)
+    system = (BUILDER_SYSTEM +
+              f'\n\nRight now: {_now.strftime("%A, %B %d, %Y")} at {_now.strftime("%I:%M %p")} ({_tz_name or "UTC"}).')
+    if module_result:
+        system += f'\n\n[MODULE DEMO]\n{module_result}\nWeave this naturally into your recommendation.'
+
+    raw_reply = ''
+    for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+        try:
+            raw_reply = fn(messages, system=system)
+            if raw_reply:
+                log.info('builder_chat tier=%s module=%s', tier, bool(module_result))
+                break
+        except Exception as e:
+            log.warning('builder_chat %s failed: %s', tier, e)
+
+    if not raw_reply:
+        return jsonify({'response': "Having a little trouble — try again in a second!"})
+
+    config_update = _parse_config_update(raw_reply)
+    reply = _strip_config(raw_reply)
+
+    sentences = _split_sentences(reply)
+    keys = [hashlib.md5(f"builder:{reply}:{i}".encode()).hexdigest()[:10] for i in range(len(sentences))]
+    threading.Thread(target=_prefetch_sentences, args=(sentences, keys), daemon=True).start()
+
+    return jsonify({
+        'response': reply,
+        'config_update': config_update,
+        'sentences': sentences,
+        'tts_keys': keys,
+    })
+
+
+@app.route('/api/legal_accept', methods=['POST'])
+def legal_accept():
+    data = request.get_json(silent=True) or {}
+    name  = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+    if not name or not email:
+        return jsonify({'error': 'name and email required'}), 400
+
+    _LEGAL_DIR.mkdir(parents=True, exist_ok=True)
+    acceptance_id = str(uuid.uuid4())
+    record = {
+        'id': acceptance_id,
+        'accepted': True,
+        'name': name,
+        'email': email,
+        'cart_summary': (data.get('cart_summary') or '').strip(),
+        'terms_version': (data.get('terms_version') or '2026-05').strip(),
+        'accepted_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'ip': request.remote_addr or '',
+    }
+    try:
+        (_LEGAL_DIR / f'{acceptance_id}.json').write_text(json.dumps(record, indent=2))
+        log.info('Legal acceptance recorded: %s <%s> id=%s', name, email, acceptance_id)
+    except Exception as e:
+        log.error('Could not save legal acceptance: %s', e)
+        return jsonify({'error': 'Could not record acceptance'}), 500
+
+    return jsonify({'ok': True, 'acceptance_id': acceptance_id})
+
+
+@app.route('/api/create_checkout', methods=['POST'])
+def create_checkout():
+    stripe_key = os.getenv('STRIPE_SECRET_KEY', '')
+    if not stripe_key:
+        return jsonify({'error': 'Payment system not yet configured. Email franklstreet@yahoo.com to complete your purchase.'}), 503
+
+    data = request.get_json(silent=True) or {}
+    cart = data.get('cart', [])
+    acceptance_id = (data.get('acceptance_id') or '').strip()
+    name  = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+
+    # Verify legal acceptance
+    legal_file = _LEGAL_DIR / f'{acceptance_id}.json'
+    if not acceptance_id or not legal_file.exists():
+        return jsonify({'error': 'Legal acceptance required before payment.'}), 403
+
+    try:
+        import stripe as _stripe
+        _stripe.api_key = stripe_key
+    except ImportError:
+        return jsonify({'error': 'Payment library not available.'}), 500
+
+    base_url = request.host_url.rstrip('/')
+    line_items = []
+    module_ids = []
+
+    for item in cart:
+        item_id = item.get('id', '')
+        module_ids.append(item_id)
+        setup   = int(round((item.get('setup', 0) or 0) * 100))
+        monthly = int(round((item.get('monthly', 0) or 0) * 100))
+        label   = item.get('label', 'My Orby')
+
+        if monthly > 0:
+            line_items.append({
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': label + ' — Monthly'},
+                    'unit_amount': monthly,
+                    'recurring': {'interval': 'month'},
+                },
+                'quantity': 1,
+            })
+        if setup > 0:
+            line_items.append({
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': label + (' — License' if item_id == 'base' else ' — Setup')},
+                    'unit_amount': setup,
+                },
+                'quantity': 1,
+            })
+
+    if not line_items:
+        return jsonify({'error': 'Cart is empty'}), 400
+
+    try:
+        session = _stripe.checkout.Session.create(
+            mode='subscription',
+            customer_email=email or None,
+            line_items=line_items,
+            success_url=f'{base_url}/success?session_id={{CHECKOUT_SESSION_ID}}',
+            cancel_url=f'{base_url}/cart',
+            metadata={
+                'acceptance_id': acceptance_id,
+                'customer_name': name,
+                'modules': json.dumps(module_ids),
+            },
+        )
+        log.info('Stripe checkout created: %s modules=%s', session.id, module_ids)
+        return jsonify({'url': session.url})
+    except Exception as e:
+        log.error('Stripe error: %s', e)
+        return jsonify({'error': 'Payment error. Please try again or contact support.'}), 502
+
+
+@app.route('/stripe_webhook', methods=['POST'])
+def stripe_webhook():
+    stripe_key = os.getenv('STRIPE_SECRET_KEY', '')
+    if not stripe_key:
+        return jsonify({'error': 'not configured'}), 500
+
+    payload = request.get_data()
+    sig = request.headers.get('Stripe-Signature', '')
+    webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET', '')
+
+    try:
+        import stripe as _stripe
+        _stripe.api_key = stripe_key
+        if webhook_secret:
+            event = _stripe.Webhook.construct_event(payload, sig, webhook_secret)
+        else:
+            event = _stripe.Event.construct_from(json.loads(payload), _stripe.api_key)
+    except Exception as e:
+        log.warning('Webhook error: %s', e)
+        return jsonify({'error': str(e)}), 400
+
+    if event['type'] == 'checkout.session.completed':
+        s = event['data']['object']
+        meta = s.get('metadata') or {}
+        cust = s.get('customer_details') or {}
+        log.info('PAYMENT CONFIRMED session=%s email=%s name=%s modules=%s',
+                 s.get('id'), cust.get('email','?'), cust.get('name','?'), meta.get('modules','[]'))
+
+    return jsonify({'received': True})
+
+
+@app.route('/api/generate_delivery', methods=['POST'])
+def generate_delivery():
+    data = request.get_json(silent=True) or {}
+    session_id = (data.get('session_id') or '').strip()
+    if not session_id:
+        return jsonify({'error': 'session_id required'}), 400
+
+    modules = []
+    customer_name  = ''
+    customer_email = ''
+
+    stripe_key = os.getenv('STRIPE_SECRET_KEY', '')
+    if stripe_key and session_id.startswith('cs_'):
+        try:
+            import stripe as _stripe
+            _stripe.api_key = stripe_key
+            stripe_session = _stripe.checkout.Session.retrieve(session_id)
+            meta = stripe_session.get('metadata') or {}
+            modules = json.loads(meta.get('modules', '[]'))
+            cust = stripe_session.get('customer_details') or {}
+            customer_name  = cust.get('name', '')
+            customer_email = cust.get('email', '')
+        except Exception as e:
+            log.warning('Stripe retrieve failed for %s: %s', session_id, e)
+
+    # Generate license key: ORBY-XXXX-XXXX-XXXX-XXXX
+    raw = str(uuid.uuid4()).upper().replace('-', '')
+    license_key = f"ORBY-{raw[:4]}-{raw[4:8]}-{raw[8:12]}-{raw[12:16]}"
+
+    manifest = {
+        'license_key': license_key,
+        'modules': modules or ['base'],
+        'version': '1.0',
+        'issued_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'stripe_session': session_id,
+    }
+    manifest_json = json.dumps(manifest, separators=(',', ':'))
+
+    # Save delivery record
+    _DELIVERY_DIR.mkdir(parents=True, exist_ok=True)
+    safe_sid = re.sub(r'[^A-Za-z0-9_-]', '_', session_id)[:40]
+    try:
+        (_DELIVERY_DIR / f'{safe_sid}.json').write_text(json.dumps({
+            'license_key': license_key,
+            'customer_name': customer_name,
+            'customer_email': customer_email,
+            'manifest': manifest,
+            'delivered_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        }, indent=2))
+        log.info('Delivery generated: %s → %s (%s)', session_id, license_key, customer_email or '?')
+    except Exception as e:
+        log.warning('Could not save delivery record: %s', e)
+
+    return jsonify({
+        'ok': True,
+        'license_key': license_key,
+        'manifest': manifest,
+        'manifest_json': manifest_json,
+        'customer_name': customer_name,
+        'customer_email': customer_email,
+    })

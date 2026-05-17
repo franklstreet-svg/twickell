@@ -2044,7 +2044,7 @@
           <li>30-day money-back guarantee</li>
         </ul>
         <div style="display:flex;gap:10px;margin-top:0;">
-          <a href="/checkout" class="btn btn-gold" style="flex:1;justify-content:center;">Get Started — Founding Member</a>
+          <a href="/builder" class="btn btn-gold" style="flex:1;justify-content:center;">Build My Orby →</a>
           <button class="btn btn-gold" style="padding:0 14px;min-width:48px;justify-content:center;" onclick="openQtyPopup('orby_home',event)" title="Add to cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           </button>
@@ -2070,7 +2070,7 @@
           <li>Works alongside any Industry module</li>
         </ul>
         <div style="display:flex;gap:10px;margin-top:0;">
-          <a href="/checkout?addon=business" class="btn btn-gold" style="flex:1;justify-content:center;">Add to My Orby</a>
+          <a href="/builder" class="btn btn-gold" style="flex:1;justify-content:center;">Add to My Orby →</a>
           <button class="btn btn-gold" style="padding:0 14px;min-width:48px;justify-content:center;" onclick="openQtyPopup('business',event)" title="Add to cart">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           </button>
@@ -2186,7 +2186,7 @@
     if (_msgCount === 3) {
       const cta = document.createElement('div');
       cta.className = 'chat-buy-cta';
-      cta.innerHTML = '<p>Ready to have Orby for real — on your own computer?</p><a href="/checkout">Get Started — Founding Member Deal →</a>';
+      cta.innerHTML = '<p>Ready to have Orby for real — on your own computer?</p><a href="/builder">Build My Orby — Founding Member Deal →</a>';
       document.getElementById('chatMessages').appendChild(cta);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -3073,7 +3073,7 @@ function passCartToCheckout() {
       <div class="ind-submods-title" id="indSubmodsTitle"></div>
       <div class="ind-submods-grid" id="indSubmodsGrid"></div>
     </div>
-    <a href="/checkout" class="btn btn-gold" style="width:100%;justify-content:center;">Get Started with This Module</a>
+    <a href="/builder" class="btn btn-gold" style="width:100%;justify-content:center;">Build My Orby with This Module →</a>
   </div>
 </div>
 
@@ -3339,7 +3339,7 @@ function proceedToPayment() {
   // Build cart query string and pass to Stripe/checkout
   passCartToCheckout();
   closeLegalModal();
-  window.location.href = '/checkout?' + buildCartQuery();
+  window.location.href = '/builder';
 }
 
 function buildCartQuery() {
