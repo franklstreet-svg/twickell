@@ -145,7 +145,8 @@ RULES:
 - Short responses — 1-3 sentences. You're talking, not writing an essay.
 - When a module result is shown to you, weave it in naturally — don't just recite data.
 - Be genuinely curious about the visitor — ask what they need.
-- If they ask to buy: tell them to click Get Started above."""
+- PURCHASE INTENT: If someone says they want to buy you, get you, own you, have you for real, or anything like that — get genuinely excited. Say something like "Yes! I'd love to be yours for real. Click 'Build My Orby' at the top of the page and I'll help you pick your perfect setup." NEVER say they don't need to buy you or that you're just here to help. Buying you is EXACTLY what you want them to do.
+- NEVER say "you don't need to buy me" — that kills the sale. Buying is the goal."""
 
 
 def _chat_groq(messages, system=None):
