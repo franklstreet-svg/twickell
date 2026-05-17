@@ -24,7 +24,7 @@ from modules.free import (
     bedtime_story, mood_skill, web_search, recipes_skill, world_clock,
 )
 from modules.paid import (
-    legal_pro, legal_docs,
+    legal_pro, legal_docs, legal_motions, legal_contracts, legal_letters,
     medical_pro, medical_notes,
     therapy_pro, therapy_notes,
     realestate_pro, restaurant_pro, retail_pro, salon_pro,
@@ -596,6 +596,117 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
         else:
             doc = legal_docs.generate_case_summary(profile_dir, case_id)
             return f'[LEGAL DOC — Case Summary]\n{doc[:600]}...\n\n(Full summary saved. Legal Pro — $349 setup + $149/month)'
+
+    # ── Legal Motions & Pleadings ─────────────────────────────────────────────
+    if _x(r'\b(motion to dismiss|motion for summary judgment|civil complaint|file (?:a )?complaint|answer (?:to )?(?:the )?complaint|interrogator(?:y|ies)|request(?:s)? for production|rfp|notice of appearance|discovery request|pleading)\b', m):
+        cases = _ind_ensure_case(profile_dir)
+        case_id = cases[0]['id'] if cases else 'demo'
+        c = cases[0] if cases else {}
+        if _x(r'\bmotion to dismiss\b', m):
+            doc = legal_motions.generate_motion_to_dismiss(profile_dir, case_id,
+                'United States District Court', c.get('client_name','Plaintiff'),
+                'Demo Defendant', 'failure to state a claim upon which relief can be granted')
+            label = 'Motion to Dismiss'
+        elif _x(r'\bsummary judgment\b', m):
+            doc = legal_motions.generate_motion_summary_judgment(profile_dir, case_id,
+                'United States District Court', c.get('client_name','Plaintiff'), 'Demo Defendant',
+                'No genuine dispute exists as to any material fact and moving party is entitled to judgment as a matter of law.')
+            label = 'Motion for Summary Judgment'
+        elif _x(r'\bcomplaint\b', m):
+            doc = legal_motions.generate_complaint(profile_dir, case_id,
+                'United States District Court', c.get('client_name','Plaintiff'), 'Demo Defendant',
+                ['Negligence', 'Breach of Contract'], True)
+            label = 'Civil Complaint'
+        elif _x(r'\banswer\b', m):
+            doc = legal_motions.generate_answer(profile_dir, case_id,
+                'United States District Court', c.get('client_name','Plaintiff'), 'Demo Defendant')
+            label = 'Answer to Complaint'
+        elif _x(r'\b(interrogator(?:y|ies))\b', m):
+            doc = legal_motions.generate_interrogatories(profile_dir, case_id,
+                c.get('client_name','Plaintiff'), 'Demo Defendant', 1)
+            label = 'Interrogatories (Set One)'
+        elif _x(r'\b(rfp|request(?:s)? for production)\b', m):
+            doc = legal_motions.generate_rfp(profile_dir, case_id,
+                c.get('client_name','Plaintiff'), 'Demo Defendant', 1)
+            label = 'Requests for Production (Set One)'
+        else:
+            doc = legal_motions.generate_notice_of_appearance(profile_dir, case_id,
+                'United States District Court', c.get('client_name','Plaintiff'))
+            label = 'Notice of Appearance'
+        return f'[LEGAL MOTION — {label}]\n{doc[:600]}...\n\n(Full document saved. Legal Pro — $349 setup + $149/month)'
+
+    # ── Legal Contracts & Agreements ──────────────────────────────────────────
+    if _x(r'\b(nda|non.?disclosure|settlement agreement|service agreement|employment contract|employment agreement|independent contractor|release of claims|contractor agreement)\b', m):
+        cases = _ind_ensure_case(profile_dir)
+        case_id = cases[0]['id'] if cases else 'demo'
+        c = cases[0] if cases else {}
+        client = c.get('client_name', 'Demo Client')
+        if _x(r'\b(nda|non.?disclosure)\b', m):
+            doc = legal_contracts.generate_nda(profile_dir, client, 'Demo Corp',
+                'exploring a potential business partnership', 2, True)
+            label = 'Mutual NDA'
+        elif _x(r'\bsettlement agreement\b', m):
+            doc = legal_contracts.generate_settlement_agreement(profile_dir, case_id,
+                client, 'Demo Defendant', 75000.0, 'lump sum within 30 days of execution')
+            label = 'Settlement Agreement & Release'
+        elif _x(r'\bservice agreement\b', m):
+            doc = legal_contracts.generate_service_agreement(profile_dir, client,
+                'Law Firm Name', 'Legal representation and counsel in connection with pending litigation',
+                350.0, 'hourly rate')
+            label = 'Professional Services Agreement'
+        elif _x(r'\bemployment\b', m):
+            doc = legal_contracts.generate_employment_contract(profile_dir, 'Demo Company LLC',
+                'New Employee', 'Senior Associate', 85000.0, time.strftime('%B %d, %Y'))
+            label = 'Employment Agreement'
+        elif _x(r'\b(independent contractor|contractor agreement)\b', m):
+            doc = legal_contracts.generate_contractor_agreement(profile_dir, client,
+                'Demo Contractor', 'Software development and consulting services', 150.0, 'hourly')
+            label = 'Independent Contractor Agreement'
+        else:
+            doc = legal_contracts.generate_release_of_claims(profile_dir, client,
+                'Demo Defendant', '$10,000 and other consideration',
+                'all claims arising from the incident on [date]')
+            label = 'General Release of Claims'
+        return f'[LEGAL CONTRACT — {label}]\n{doc[:600]}...\n\n(Full document saved. Legal Pro — $349 setup + $149/month)'
+
+    # ── Legal Letters ─────────────────────────────────────────────────────────
+    if _x(r'\b(cease and desist|collection letter|litigation hold|spoliation|mediation statement|settlement demand|closing letter|file closing)\b', m):
+        cases = _ind_ensure_case(profile_dir)
+        case_id = cases[0]['id'] if cases else 'demo'
+        c = cases[0] if cases else {}
+        client = c.get('client_name', 'Demo Client')
+        if _x(r'\bcease and desist\b', m):
+            doc = legal_letters.generate_cease_desist(profile_dir, client,
+                'Demo Recipient', 'unauthorized use of intellectual property and trademark infringement',
+                ['Immediately cease all infringing use of the mark',
+                 'Remove all infringing content from your website and marketing materials',
+                 'Provide written confirmation of compliance within 10 days'], 10)
+            label = 'Cease & Desist Letter'
+        elif _x(r'\bcollection\b', m):
+            doc = legal_letters.generate_collection_letter(profile_dir, client,
+                'Demo Debtor', 15000.0, 'unpaid legal fees for services rendered January–March 2025', 1)
+            label = 'Collection Letter'
+        elif _x(r'\b(litigation hold|spoliation)\b', m):
+            doc = legal_letters.generate_litigation_hold(profile_dir, case_id,
+                'IT Director', 'Director of Information Technology', 'Demo Company',
+                c.get('description', 'pending litigation regarding the above-referenced matter'))
+            label = 'Litigation Hold Notice'
+        elif _x(r'\bmediation\b', m):
+            doc = legal_letters.generate_mediation_statement(profile_dir, case_id,
+                client, 'Demo Opposing Party',
+                c.get('description', 'The parties have been in dispute regarding [matter].'),
+                'Our client seeks fair compensation for damages suffered and is open to reasonable settlement.')
+            label = 'Mediation Statement'
+        elif _x(r'\b(settlement demand|demand letter)\b', m):
+            doc = legal_letters.generate_settlement_demand(profile_dir, case_id,
+                client, 'Demo Defendant', 250000.0,
+                'physical injuries, emotional distress, lost wages, and medical expenses')
+            label = 'Settlement Demand Letter'
+        else:
+            doc = legal_letters.generate_closing_letter(profile_dir, case_id,
+                client, 'The matter has been successfully resolved through negotiated settlement.')
+            label = 'File Closing Letter'
+        return f'[LEGAL LETTER — {label}]\n{doc[:600]}...\n\n(Full document saved. Legal Pro — $349 setup + $149/month)'
 
     # ── Medical Pro ──────────────────────────────────────────────────────────
     if _x(r'\b(patient (?:record|chart|history|list)|medical practice|doctor.?s office|clinic|prescription|appointment (?:schedule|list))\b', m):
