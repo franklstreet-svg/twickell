@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Information — My Orby</title>
+  <style>
+    :root {
+      --bg:           #0a0f1e;
+      --surface:      #111827;
+      --surface2:     #1a2235;
+      --gold:         #d4a017;
+      --gold-light:   #f0c040;
+      --gold-glow:    rgba(212,160,23,0.3);
+      --purple:       #7c3aed;
+      --purple-light: #a855f7;
+      --teal:         #0d9488;
+      --teal-light:   #2dd4bf;
+      --text:         #e8eaf0;
+      --text-muted:   #8892a4;
+      --border:       rgba(212,160,23,0.15);
+      --border-p:     rgba(124,58,237,0.2);
+      --font:         -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+
+    .step-bar {
+      display: flex; gap: 8px; align-items: center;
+      margin-bottom: 36px; flex-wrap: wrap; justify-content: center;
+    }
+    .step { padding: 4px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid; }
+    .step-done   { background: rgba(13,148,136,0.15); border-color: var(--teal-light); color: var(--teal-light); }
+    .step-active { background: rgba(212,160,23,0.15); border-color: var(--gold-light); color: var(--gold-light); }
+    .step-next   { background: transparent; border-color: rgba(255,255,255,0.1); color: var(--text-muted); }
+    .step-sep    { color: var(--text-muted); font-size: 0.7rem; }
+
+    .orb {
+      width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 16px;
+      background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+      box-shadow: 0 0 24px var(--gold), 0 0 60px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3);
+      animation: orb-pulse 3s ease-in-out infinite;
+    }
+    @keyframes orb-pulse {
+      0%,100% { box-shadow: 0 0 24px var(--gold), 0 0 60px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3); }
+      50%      { box-shadow: 0 0 40px var(--gold), 0 0 90px var(--gold-glow), inset 0 3px 6px rgba(255,255,255,0.3); }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%; max-width: 560px;
+      padding: 36px 32px;
+    }
+
+    h1 { font-size: 1.6rem; font-weight: 800; text-align: center; margin-bottom: 4px; }
+    .subtitle { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    .build-notice {
+      background: rgba(13,148,136,0.08);
+      border: 1px solid rgba(13,148,136,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      font-size: 0.82rem;
+      color: var(--teal-light);
+      text-align: center;
+      line-height: 1.5;
+    }
+    .build-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--teal-light); margin-right: 6px;
+      animation: blink 1.2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .form-group { margin-bottom: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+    .form-row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+
+    label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.03em; text-transform: uppercase; }
+    label .req { color: var(--gold-light); margin-left: 2px; }
+
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.95rem;
+      padding: 11px 14px;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+    input:focus, select:focus { border-color: var(--gold); }
+    input::placeholder { color: var(--text-muted); }
+    select option { background: var(--surface2); }
+
+    .section-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-muted); margin: 24px 0 14px; padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .btn {
+      width: 100%; padding: 15px;
+      border: none; border-radius: 12px;
+      font-family: var(--font); font-size: 1rem; font-weight: 800;
+      cursor: pointer; transition: all 0.2s; margin-bottom: 10px;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0a0f1e;
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .btn-ghost {
+      background: transparent; color: var(--text-muted);
+      border: 1px solid rgba(255,255,255,0.1); font-weight: 600;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+    .error-msg { color: #f87171; font-size: 0.8rem; margin-top: 4px; }
+    .fine-print { text-align: center; font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="step-bar">
+  <span class="step step-done">1 · Demo</span>
+  <span class="step-sep">›</span>
+  <span class="step step-done">2 · Build</span>
+  <span class="step-sep">›</span>
+  <span class="step step-done">3 · Cart</span>
+  <span class="step-sep">›</span>
+  <span class="step step-active">4 · Your Info</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">5 · Legal</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">6 · Pay</span>
+</div>
+
+<div class="card">
+  <div class="orb"></div>
+  <h1>Tell Us About You</h1>
+  <p class="subtitle">While you fill this out, we'll start building your Orby.</p>
+
+  <div class="build-notice">
+    <span class="build-dot"></span>
+    Your Orby is being configured based on the modules you selected. This usually takes just a minute or two.
+  </div>
+
+  <form id="orderForm" onsubmit="submitForm(event)" novalidate>
+
+    <div class="section-label">Personal Information</div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>First Name <span class="req">*</span></label>
+        <input type="text" id="firstName" placeholder="Jane" autocomplete="given-name" required />
+      </div>
+      <div class="form-group">
+        <label>Last Name <span class="req">*</span></label>
+        <input type="text" id="lastName" placeholder="Smith" autocomplete="family-name" required />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Email Address <span class="req">*</span></label>
+      <input type="email" id="email" placeholder="jane@example.com" autocomplete="email" required />
+      <div class="error-msg" id="emailErr" style="display:none">Please enter a valid email address.</div>
+    </div>
+
+    <div class="form-group">
+      <label>Phone Number <span class="req">*</span></label>
+      <input type="tel" id="phone" placeholder="(555) 555-5555" autocomplete="tel" required />
+    </div>
+
+    <div class="section-label">Address</div>
+
+    <div class="form-group">
+      <label>Street Address <span class="req">*</span></label>
+      <input type="text" id="address" placeholder="123 Main Street" autocomplete="street-address" required />
+    </div>
+
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>City <span class="req">*</span></label>
+        <input type="text" id="city" placeholder="Reno" autocomplete="address-level2" required />
+      </div>
+      <div class="form-group">
+        <label>State <span class="req">*</span></label>
+        <input type="text" id="state" placeholder="NV" maxlength="2" autocomplete="address-level1" required />
+      </div>
+      <div class="form-group">
+        <label>ZIP <span class="req">*</span></label>
+        <input type="text" id="zip" placeholder="89501" maxlength="10" autocomplete="postal-code" required />
+      </div>
+    </div>
+
+    <div class="section-label">Business (Optional)</div>
+
+    <div class="form-group">
+      <label>Business Name</label>
+      <input type="text" id="businessName" placeholder="Smith & Associates" autocomplete="organization" />
+    </div>
+
+    <div class="form-group">
+      <label>Website</label>
+      <input type="url" id="website" placeholder="https://www.yoursite.com" autocomplete="url" />
+    </div>
+
+    <button type="submit" class="btn btn-gold" id="submitBtn">Continue to Terms &amp; Legal →</button>
+    <button type="button" class="btn btn-ghost" onclick="window.location.href='/cart'">← Back to Cart</button>
+
+    <p class="fine-print">Your information is used only to set up and deliver your Orby. We never sell your data.</p>
+  </form>
+</div>
+
+<script>
+  function submitForm(e) {
+    e.preventDefault();
+
+    const fields = {
+      firstName:    document.getElementById('firstName').value.trim(),
+      lastName:     document.getElementById('lastName').value.trim(),
+      email:        document.getElementById('email').value.trim(),
+      phone:        document.getElementById('phone').value.trim(),
+      address:      document.getElementById('address').value.trim(),
+      city:         document.getElementById('city').value.trim(),
+      state:        document.getElementById('state').value.trim(),
+      zip:          document.getElementById('zip').value.trim(),
+      businessName: document.getElementById('businessName').value.trim(),
+      website:      document.getElementById('website').value.trim(),
+    };
+
+    // basic validation
+    const required = ['firstName','lastName','email','phone','address','city','state','zip'];
+    for (const key of required) {
+      if (!fields[key]) {
+        document.getElementById(key).focus();
+        document.getElementById(key).style.borderColor = '#f87171';
+        return;
+      }
+    }
+
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email);
+    document.getElementById('emailErr').style.display = emailOk ? 'none' : 'block';
+    if (!emailOk) { document.getElementById('email').focus(); return; }
+
+    // save to localStorage and session
+    localStorage.setItem('orby_customer', JSON.stringify(fields));
+
+    fetch('/api/save_customer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fields)
+    }).catch(() => {}); // non-blocking — proceed regardless
+
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = 'Saving...';
+
+    setTimeout(() => { window.location.href = '/legal'; }, 400);
+  }
+
+  // pre-fill from localStorage if returning
+  const saved = JSON.parse(localStorage.getItem('orby_customer') || '{}');
+  if (saved.firstName) document.getElementById('firstName').value = saved.firstName;
+  if (saved.lastName)  document.getElementById('lastName').value  = saved.lastName;
+  if (saved.email)     document.getElementById('email').value     = saved.email;
+  if (saved.phone)     document.getElementById('phone').value     = saved.phone;
+  if (saved.address)   document.getElementById('address').value   = saved.address;
+  if (saved.city)      document.getElementById('city').value      = saved.city;
+  if (saved.state)     document.getElementById('state').value     = saved.state;
+  if (saved.zip)       document.getElementById('zip').value       = saved.zip;
+  if (saved.businessName) document.getElementById('businessName').value = saved.businessName;
+  if (saved.website)   document.getElementById('website').value   = saved.website;
+
+  // reset red borders on input
+  document.querySelectorAll('input').forEach(el => {
+    el.addEventListener('input', () => el.style.borderColor = '');
+  });
+</script>
+</body>
+</html>

@@ -1119,6 +1119,25 @@ def legal_page():
     return send_from_directory(WEBSITE_DIR, 'legal.html')
 
 
+@app.route('/orderinfo')
+def orderinfo_page():
+    return send_from_directory(WEBSITE_DIR, 'orderinfo.html')
+
+
+@app.route('/api/save_customer', methods=['POST'])
+def save_customer():
+    data = request.get_json(silent=True) or {}
+    required = ['firstName', 'lastName', 'email', 'phone', 'address', 'city', 'state', 'zip']
+    if not all(data.get(k, '').strip() for k in required):
+        return jsonify({'error': 'Missing required fields'}), 400
+    session['customer'] = {k: data.get(k, '').strip() for k in [
+        'firstName', 'lastName', 'email', 'phone',
+        'address', 'city', 'state', 'zip',
+        'businessName', 'website'
+    ]}
+    return jsonify({'ok': True})
+
+
 @app.route('/success')
 def success_page():
     return send_from_directory(WEBSITE_DIR, 'success.html')

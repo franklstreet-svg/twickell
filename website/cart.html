@@ -148,9 +148,11 @@
   <span class="step-sep">›</span>
   <span class="step step-active">3 · Cart</span>
   <span class="step-sep">›</span>
-  <span class="step step-next">4 · Legal</span>
+  <span class="step step-next">4 · Your Info</span>
   <span class="step-sep">›</span>
-  <span class="step step-next">5 · Pay</span>
+  <span class="step step-next">5 · Legal</span>
+  <span class="step-sep">›</span>
+  <span class="step step-next">6 · Pay</span>
 </div>
 
 <div class="card">
@@ -181,13 +183,13 @@
   </div>
 
   <button class="btn btn-gold" id="proceedBtn" onclick="proceed()" style="display:none">
-    Proceed to Terms & Legal →
+    Continue — Enter Your Information →
   </button>
   <button class="btn btn-ghost" onclick="window.location.href='/builder'">← Change My Orby</button>
 
   <p class="fine-print">
     Founding member pricing is locked forever — your monthly rate never increases.<br>
-    You'll accept terms on the next screen before payment.
+    You'll enter your information on the next screen, then review and accept terms before payment.
   </p>
 </div>
 
@@ -248,7 +250,7 @@
   }
 
   function proceed() {
-    window.location.href = '/legal';
+    window.location.href = '/orderinfo';
   }
 
   render();
