@@ -2524,6 +2524,14 @@
     if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
   }
 
+  function _closeAnyModal() {
+    const overlay = document.getElementById('indOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+
   // Sub-module keyword map — what Orby might say → which key to open
   const SUBMOD_KEYWORDS = {
     legal_injury:      ['accident & injury','accident and injury','personal injury','accident injury'],
@@ -2556,11 +2564,27 @@
       }
     }
 
-    // Open Business Pro detail modal
-    const bizTriggers = ['business pro', 'business add-on', '$149 setup and $39'];
-    if (bizTriggers.some(k => t.includes(k))) {
-      setTimeout(() => openModuleDetail('business_pro'), 800);
-      return;
+    // Open Business Pro or industry module detail modals
+    const moduleKeywords = [
+      { key: 'business_pro',  words: ['business pro', '$149 setup and $39'] },
+      { key: 'medical',       words: ['medical pro', 'medical practice'] },
+      { key: 'legal',         words: ['legal pro', 'practice management system for attorneys'] },
+      { key: 'therapy',       words: ['therapy pro', 'mental health practitioner'] },
+      { key: 'realestate',    words: ['real estate pro', 'agents and brokers'] },
+      { key: 'restaurant',    words: ['restaurant pro', 'food service'] },
+      { key: 'retail',        words: ['retail pro', 'store owners'] },
+      { key: 'salon',         words: ['salon pro', 'beauty business'] },
+      { key: 'contractor',    words: ['contractor pro', 'job management from estimate'] },
+      { key: 'accounting',    words: ['accounting pro', 'bookkeeping workflow'] },
+      { key: 'hr',            words: ['hr pro', 'employee records'] },
+      { key: 'property_mgmt', words: ['property management pro', 'tenants and leases'] },
+    ];
+    for (const { key, words } of moduleKeywords) {
+      if (words.some(w => t.includes(w))) {
+        _closeAnyModal();
+        setTimeout(() => openModuleDetail(key), 400);
+        return;
+      }
     }
 
     // Scroll to industry modules tab
@@ -2584,7 +2608,8 @@
   function applyPageAction(action) {
     if (!action) return;
     if (action.show) {
-      setTimeout(() => openModuleDetail(action.show), 800);
+      _closeAnyModal();
+      setTimeout(() => openModuleDetail(action.show), 400);
     }
     if (action.scroll) {
       const map = {
@@ -2617,6 +2642,13 @@
   async function sendMessage() {
     const text = chatInput.value.trim();
     if (!text || chatSend.disabled) return;
+
+    // Close any open module detail modal when user replies
+    const overlay = document.getElementById('indOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
 
     chatInput.value = '';
     confirmedText = '';
