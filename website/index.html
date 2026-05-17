@@ -2526,6 +2526,13 @@
 
   function autoScrollFromReply(text) {
     const t = text.toLowerCase();
+    // Open Business Pro detail modal when Orby starts describing it
+    const bizTriggers = ['business pro', 'business add-on', '$149 setup and $39'];
+    if (bizTriggers.some(k => t.includes(k))) {
+      setTimeout(() => openIndustry('business_pro'), 800);
+      return;
+    }
+    // Scroll to industry modules tab
     const industryTriggers = [
       'industry-specific modules', 'industry specific modules',
       'industry modules', 'show you our industry', 'take a look at these',
@@ -2544,6 +2551,9 @@
 
   function applyPageAction(action) {
     if (!action) return;
+    if (action.show) {
+      setTimeout(() => openIndustry(action.show), 800);
+    }
     if (action.scroll) {
       const map = {
         pricing: 'industry', modules: 'industry',
@@ -2638,6 +2648,21 @@
 
 /* ── Industry modal data ── */
 const INDUSTRY_DATA = {
+  business_pro: {
+    title: "Business Pro",
+    price: "$149 setup · $39/month",
+    desc: "Business Pro turns Orby into your full business manager. She tracks your customers and clients, creates invoices and quotes, logs every expense and generates monthly financial reports, and manages all your business tasks — all running privately on your own computer.",
+    features: [
+      "Customer & client tracking (CRM)",
+      "Invoice & quote creation",
+      "Expense logging & monthly reports",
+      "Business task management",
+      "Business dashboard — revenue, outstanding invoices, open tasks at a glance",
+      "Works alongside any industry module you add",
+      "Everything stays private — runs on your computer, not the cloud"
+    ],
+    submods: []
+  },
   legal: {
     title: "Legal Pro",
     price: "$349 setup · $149/month",
