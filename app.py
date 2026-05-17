@@ -21,7 +21,7 @@ from modules.free import (
     travel_skill, gifts_skill, habit_tracker, meal_planning, journal_skill,
     relationship_skill, countdown_skill, bucket_list, quotes_skill,
     emergency_info, family_msg, home_maintenance, allowance_skill,
-    bedtime_story, mood_skill, web_search, recipes_skill,
+    bedtime_story, mood_skill, web_search, recipes_skill, world_clock,
 )
 from modules.paid import (
     legal_pro, legal_docs,
@@ -131,6 +131,7 @@ ACTIVE MODULES (these actually work right now in this demo):
 - Allowance — kids' allowance tracking
 - Bedtime Stories — story library for kids
 - Web Search — search the web
+- World Clock — current time in any city or country in the world
 
 NOTE: Demo data is stored temporarily for this browser session only. On a real installed Orby, everything persists on their own computer — private, secure, never in the cloud.
 
@@ -202,6 +203,18 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
         loc_m = _x(r'\bin\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg)
         location = loc_m.group(1).strip() if loc_m else 'Reno, Nevada'
         return f'[WEATHER]\n{weather_skill.get_weather(location)}'
+
+    # ── World Clock ──────────────────────────────────────────────────────────
+    if _x(r'\b(what time is it|current time|time (?:in|at)|time zone|timezone|clock)\b', m):
+        if _x(r'\b(world clock|all (?:the )?times|major cities|time (?:around|across) the world)\b', m):
+            return world_clock.world_clock_snapshot()
+        loc_m = _x(r'\btime (?:is it )?in\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or \
+                _x(r'\btime (?:is it )?(?:at|for)\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg) or \
+                _x(r'\bin\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', msg)
+        if loc_m:
+            location = loc_m.group(1).strip()
+            return world_clock.get_world_time(location)
+        return world_clock.world_clock_snapshot()
 
     # ── Morning Briefing ─────────────────────────────────────────────────────
     if _x(r'\b(morning briefing|good morning|start my day|what.?s? on (today|my agenda|my schedule))\b', m):
@@ -875,7 +888,9 @@ def demo_chat():
         log.warning('Module error: %s', e)
         module_result = None
 
-    system = DEMO_SYSTEM
+    from datetime import datetime as _dt
+    _today = _dt.now().strftime('%A, %B %d, %Y')
+    system = DEMO_SYSTEM + f'\n\nToday\'s date: {_today}. Always use this date — never guess the year.'
     if module_result:
         system += f'\n\n{module_result}\nWeave this into your response naturally.'
 
