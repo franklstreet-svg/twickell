@@ -2564,20 +2564,21 @@
       }
     }
 
-    // Open Business Pro or industry module detail modals
+    // Open module detail modals — use description-only phrases, NOT module names
+    // (module names appear in confirmations like "I'll include Business Pro" and would re-open)
     const moduleKeywords = [
-      { key: 'business_pro',  words: ['business pro', '$149 setup and $39'] },
-      { key: 'medical',       words: ['medical pro', 'medical practice'] },
-      { key: 'legal',         words: ['legal pro', 'practice management system for attorneys'] },
-      { key: 'therapy',       words: ['therapy pro', 'mental health practitioner'] },
-      { key: 'realestate',    words: ['real estate pro', 'agents and brokers'] },
-      { key: 'restaurant',    words: ['restaurant pro', 'food service'] },
-      { key: 'retail',        words: ['retail pro', 'store owners'] },
-      { key: 'salon',         words: ['salon pro', 'beauty business'] },
-      { key: 'contractor',    words: ['contractor pro', 'job management from estimate'] },
-      { key: 'accounting',    words: ['accounting pro', 'bookkeeping workflow'] },
-      { key: 'hr',            words: ['hr pro', 'employee records'] },
-      { key: 'property_mgmt', words: ['property management pro', 'tenants and leases'] },
+      { key: 'business_pro',  words: ['full business brain', 'customer and client tracking, invoicing', '$149 setup and $39 a month'] },
+      { key: 'medical',       words: ['patient records, track appointments', 'medical practices — $349', '$349 setup + $149/month. i manage your patient'] },
+      { key: 'legal',         words: ['case files from intake to close', 'practice management system for attorneys', '$349 setup + $149/month. i manage your case'] },
+      { key: 'therapy',       words: ['client files, session schedules, billing', 'mental health practitioners — $199', '$199 setup + $79/month. i manage client files'] },
+      { key: 'realestate',    words: ['clients, listings, pipeline', '$199 setup + $79/month. i track clients, listings'] },
+      { key: 'restaurant',    words: ['reservations, staff scheduling, inventory, vendor', '$199 setup + $79/month. i handle reservations'] },
+      { key: 'retail',        words: ['inventory, track customers, handle purchase orders', '$149 setup + $49/month. i manage inventory'] },
+      { key: 'salon',         words: ['appointments, client profiles, staff scheduling', '$99 setup + $49/month. i manage appointments'] },
+      { key: 'contractor',    words: ['job management from estimate to invoice', '$249 setup + $99/month'] },
+      { key: 'accounting',    words: ['bookkeeping workflow, tax document', '$249 setup + $99/month. i manage client files'] },
+      { key: 'hr',            words: ['employee records, onboarding, performance review', '$149 setup + $59/month. i manage employee'] },
+      { key: 'property_mgmt', words: ['tenants and leases, manage maintenance', '$149 setup + $59/month. i track tenants'] },
     ];
     for (const { key, words } of moduleKeywords) {
       if (words.some(w => t.includes(w))) {
