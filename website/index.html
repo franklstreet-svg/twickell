@@ -2516,20 +2516,25 @@
     renderDemoCart();
   }
 
+  function showIndustryModules() {
+    // Switch to the Industry tab, then scroll to the modules section
+    const industryTabBtn = document.querySelector('[onclick*="tab-industry"]');
+    if (industryTabBtn) industryTabBtn.click();
+    const el = document.querySelector('#modules');
+    if (el) el.scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+
   function autoScrollFromReply(text) {
     const t = text.toLowerCase();
-    // Scroll to industry modules/pricing section
     const industryTriggers = [
       'industry-specific modules', 'industry specific modules',
       'industry modules', 'show you our industry', 'take a look at these',
       'take a look at our industry', 'which industry are you in', 'what industry are you in'
     ];
     if (industryTriggers.some(k => t.includes(k))) {
-      const el = document.querySelector('#pricing');
-      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 1800);
+      setTimeout(showIndustryModules, 1800);
       return;
     }
-    // Scroll back to chat
     const demoTriggers = ['what questions do you have', "what's on your mind", 'try me out'];
     if (demoTriggers.some(k => t.includes(k))) {
       const el = document.querySelector('#demo');
@@ -2541,12 +2546,16 @@
     if (!action) return;
     if (action.scroll) {
       const map = {
-        pricing: '#pricing', modules: '#modules',
-        industry: '#pricing', demo: '#demo'
+        pricing: 'industry', modules: 'industry',
+        industry: 'industry', demo: '#demo'
       };
-      const target = map[action.scroll] || ('#' + action.scroll);
-      const el = document.querySelector(target);
-      if (el) setTimeout(() => el.scrollIntoView({behavior: 'smooth', block: 'start'}), 1800);
+      const target = map[action.scroll] || action.scroll;
+      if (target === 'industry') {
+        setTimeout(showIndustryModules, 1800);
+      } else {
+        const el = document.querySelector(target);
+        if (el) setTimeout(() => el.scrollIntoView({behavior: 'smooth', block: 'start'}), 1800);
+      }
     }
   }
 
