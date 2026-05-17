@@ -2248,22 +2248,49 @@
   }
 
   function appendMessage(role, text) {
-    const wrap   = document.createElement('div');
+    const wrap = document.createElement('div');
     wrap.className = 'msg ' + role;
-
     if (role === 'orby') {
-      const orb  = document.createElement('div');
+      const orb = document.createElement('div');
       orb.className = 'orb orb-sm';
       wrap.appendChild(orb);
     }
-
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     bubble.textContent = text;
     wrap.appendChild(bubble);
-
     chatMessages.appendChild(wrap);
     scrollBottom();
+    return wrap;
+  }
+
+  function typewriterMessage(text, audioB64) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg orby';
+    const orb = document.createElement('div');
+    orb.className = 'orb orb-sm';
+    wrap.appendChild(orb);
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = '';
+    wrap.appendChild(bubble);
+    chatMessages.appendChild(wrap);
+
+    // Start audio immediately
+    speak(audioB64);
+
+    // Type out words one by one
+    const words = text.split(' ');
+    let i = 0;
+    const msPerWord = 65;
+    function typeNext() {
+      if (i < words.length) {
+        bubble.textContent += (i === 0 ? '' : ' ') + words[i++];
+        scrollBottom();
+        setTimeout(typeNext, msPerWord);
+      }
+    }
+    typeNext();
     return wrap;
   }
 
@@ -2555,9 +2582,8 @@
       if (res.ok) {
         const data = await res.json();
         const reply = data.response || "I'm having a little trouble — try again in a second!";
-        appendMessage('orby', reply);
+        typewriterMessage(reply, data.audio);
         chatHistory.push({ role: 'assistant', content: reply });
-        speak(data.audio);
         if (data.config_update) applyConfigUpdate(data.config_update);
         if (data.page_action)   applyPageAction(data.page_action);
         _maybeShowBuyCta();
