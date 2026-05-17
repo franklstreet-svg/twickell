@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Orby — Founding Member</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #D4AF37; --gold-light: #F5D66A;
+    --bg: #0d0d0d; --surface: #161616; --surface2: #1e1e1e;
+    --text: #f0ede6; --text-muted: #888;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card { background: var(--surface); border: 1px solid rgba(212,175,55,0.2); border-radius: 16px; max-width: 480px; width: 100%; padding: 40px 36px; text-align: center; }
+  .orb { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold)); margin: 0 auto 20px; box-shadow: 0 0 30px rgba(212,175,55,0.4); }
+  h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+  .badge { display: inline-block; background: rgba(212,175,55,0.15); border: 1px solid var(--gold); border-radius: 20px; color: var(--gold-light); font-size: 0.78rem; font-weight: 700; padding: 4px 14px; margin-bottom: 20px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .price-block { background: var(--surface2); border-radius: 12px; padding: 20px; margin: 24px 0; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .price-row:last-child { border-bottom: none; padding-top: 14px; margin-top: 4px; }
+  .price-row .label { color: var(--text-muted); font-size: 0.9rem; }
+  .price-row .value { font-weight: 700; color: var(--gold-light); }
+  .price-row.total .label { color: var(--text); font-weight: 700; font-size: 1rem; }
+  .price-row.total .value { font-size: 1.2rem; }
+  .was { text-decoration: line-through; color: var(--text-muted); font-weight: 400; font-size: 0.85rem; margin-left: 6px; }
+  form { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+  input { background: var(--surface2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: var(--text); font-size: 0.95rem; padding: 12px 14px; width: 100%; outline: none; }
+  input:focus { border-color: var(--gold); }
+  input::placeholder { color: var(--text-muted); }
+  .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-light)); border: none; border-radius: 10px; color: #1a1200; cursor: pointer; font-size: 1rem; font-weight: 800; padding: 14px; width: 100%; transition: opacity 0.2s; }
+  .btn-gold:hover { opacity: 0.9; }
+  .fine-print { color: var(--text-muted); font-size: 0.78rem; margin-top: 16px; line-height: 1.5; }
+  .back { display: inline-block; color: var(--text-muted); font-size: 0.85rem; margin-bottom: 24px; text-decoration: none; }
+  .back:hover { color: var(--gold-light); }
+  .success { display: none; text-align: center; padding: 20px 0; }
+  .success h2 { font-size: 1.4rem; margin-bottom: 10px; color: var(--gold-light); }
+  .success p { color: var(--text-muted); line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="/" class="back">← Back to My Orby</a>
+  <div class="orb"></div>
+  <h1>Get Orby</h1>
+  <div class="badge">Founding Member — Limited Spots</div>
+
+  <div class="price-block">
+    <div class="price-row">
+      <span class="label">One-time license</span>
+      <span class="value">$24.99 <span class="was">$49.99</span></span>
+    </div>
+    <div class="price-row">
+      <span class="label">Monthly service</span>
+      <span class="value">$9.99/mo <span class="was">$19.99</span></span>
+    </div>
+    <div class="price-row total">
+      <span class="label">Locked in for life</span>
+      <span class="value">50% off forever</span>
+    </div>
+  </div>
+
+  <div id="formWrap">
+    <form onsubmit="handleSubmit(event)">
+      <input type="text" id="fname" placeholder="Your name" required>
+      <input type="email" id="femail" placeholder="Email address" required>
+      <button type="submit" class="btn-gold">Reserve My Founding Member Spot →</button>
+    </form>
+    <p class="fine-print">No charge yet. Frank will reach out personally to complete your setup. Founding member pricing locked in forever — no credit card until you're ready.</p>
+  </div>
+
+  <div class="success" id="successMsg">
+    <h2>You're in! 🎉</h2>
+    <p>Frank will reach out to <span id="confirmEmail"></span> within 24 hours to get you set up.<br><br>Welcome to the founding member family.</p>
+  </div>
+</div>
+
+<script>
+async function handleSubmit(e) {
+  e.preventDefault();
+  const name  = document.getElementById('fname').value.trim();
+  const email = document.getElementById('femail').value.trim();
+  try {
+    await fetch('/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email })
+    });
+  } catch(_) {}
+  document.getElementById('formWrap').style.display = 'none';
+  document.getElementById('confirmEmail').textContent = email;
+  document.getElementById('successMsg').style.display = 'block';
+}
+</script>
+</body>
+</html>

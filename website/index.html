@@ -571,6 +571,27 @@
     .chat-input:focus { border-color: var(--gold); }
     .chat-input::placeholder { color: var(--text-muted); }
 
+    .quick-chip {
+      background: rgba(212,175,55,0.12);
+      border: 1px solid rgba(212,175,55,0.35);
+      border-radius: 20px;
+      color: var(--gold-light);
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .quick-chip:hover { background: rgba(212,175,55,0.25); }
+    .chat-buy-cta {
+      margin: 10px 12px;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+    .chat-buy-cta p { color: #1a1200; font-weight: 700; font-size: 0.9rem; margin: 0 0 8px; }
+    .chat-buy-cta a { background: #1a1200; color: var(--gold-light); border-radius: 8px; padding: 8px 18px; font-weight: 700; font-size: 0.85rem; text-decoration: none; display: inline-block; }
     .chat-send {
       background: linear-gradient(135deg, var(--gold), var(--gold-light));
       border: none;
@@ -1703,8 +1724,16 @@
         <div class="chat-messages" id="chatMessages">
           <div class="msg orby">
             <div class="orb orb-sm"></div>
-            <div class="msg-bubble">Hi! I'm Orby. You can ask me anything — what's on your mind?</div>
+            <div class="msg-bubble">Hey! I'm Orby — I live on your computer and actually help run your life. Reminders, schedules, weather, shopping lists, your kids' chores, your health, your finances — all of it. Try me. Ask me anything or tap one of the buttons below.</div>
           </div>
+        </div>
+        <div id="quickChips" style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 12px;">
+          <button class="quick-chip" onclick="sendChip(this,'What\'s the weather in Reno?')">🌤 Weather</button>
+          <button class="quick-chip" onclick="sendChip(this,'Remind me to follow up on this demo tomorrow')">⏰ Set a reminder</button>
+          <button class="quick-chip" onclick="sendChip(this,'Give me a morning briefing')">☀️ Morning briefing</button>
+          <button class="quick-chip" onclick="sendChip(this,'Add milk and eggs to my shopping list')">🛒 Shopping list</button>
+          <button class="quick-chip" onclick="sendChip(this,'What can you do?')">✨ What can you do?</button>
+          <button class="quick-chip" onclick="sendChip(this,'How much does Orby cost?')">💰 Pricing</button>
         </div>
         <div class="chat-input-area">
           <input
@@ -2144,6 +2173,24 @@
 
   // Conversation history for multi-turn context
   let chatHistory = [];
+  let _msgCount = 0;
+
+  function sendChip(btn, text) {
+    btn.closest('#quickChips').style.display = 'none';
+    document.getElementById('chatInput').value = text;
+    sendMessage();
+  }
+
+  function _maybeShowBuyCta() {
+    _msgCount++;
+    if (_msgCount === 3) {
+      const cta = document.createElement('div');
+      cta.className = 'chat-buy-cta';
+      cta.innerHTML = '<p>Ready to have Orby for real — on your own computer?</p><a href="/checkout">Get Started — Founding Member Deal →</a>';
+      document.getElementById('chatMessages').appendChild(cta);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  }
 
   function scrollBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -2366,6 +2413,7 @@
         appendMessage('orby', reply);
         chatHistory.push({ role: 'assistant', content: reply });
         speak(reply, data.sentences);
+        _maybeShowBuyCta();
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
       }

@@ -492,6 +492,29 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
     return None
 
 
+@app.route('/checkout')
+def checkout():
+    return send_from_directory(WEBSITE_DIR, 'checkout.html')
+
+
+@app.route('/waitlist', methods=['POST'])
+def waitlist():
+    data  = request.get_json(silent=True) or {}
+    name  = (data.get('name') or '').strip()
+    email = (data.get('email') or '').strip()
+    if email:
+        entry = {'name': name, 'email': email, 'ts': time.strftime('%Y-%m-%d %H:%M:%S')}
+        wl_path = Path(os.path.dirname(os.path.abspath(__file__))) / 'waitlist.json'
+        try:
+            existing = json.loads(wl_path.read_text()) if wl_path.exists() else []
+        except Exception:
+            existing = []
+        existing.append(entry)
+        wl_path.write_text(json.dumps(existing, indent=2))
+        log.info('Waitlist signup: %s <%s>', name, email)
+    return jsonify({'status': 'ok'})
+
+
 @app.route('/demo_chat', methods=['POST'])
 def demo_chat():
     data = request.get_json(silent=True) or {}
