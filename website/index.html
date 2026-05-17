@@ -2516,6 +2516,27 @@
     renderDemoCart();
   }
 
+  function autoScrollFromReply(text) {
+    const t = text.toLowerCase();
+    // Scroll to industry modules section when Orby says she's showing them
+    const industryTriggers = [
+      'industry-specific modules', 'industry specific modules',
+      'industry modules', 'show you our industry', 'take a look at these',
+      'take a look at our', 'which industry', 'what industry'
+    ];
+    if (industryTriggers.some(k => t.includes(k))) {
+      const el = document.querySelector('#pricing');
+      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 600);
+      return;
+    }
+    // Scroll back to chat when wrapping up or asking basic questions
+    const demoTriggers = ['what questions do you have', 'what\'s on your mind', 'try me out'];
+    if (demoTriggers.some(k => t.includes(k))) {
+      const el = document.querySelector('#demo');
+      if (el) setTimeout(() => el.scrollIntoView({behavior:'smooth', block:'start'}), 600);
+    }
+  }
+
   function applyPageAction(action) {
     if (!action) return;
     if (action.scroll) {
@@ -2576,6 +2597,7 @@
         chatHistory.push({ role: 'assistant', content: reply });
         if (data.config_update) applyConfigUpdate(data.config_update);
         if (data.page_action)   applyPageAction(data.page_action);
+        else autoScrollFromReply(reply);
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
       }
