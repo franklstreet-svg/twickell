@@ -34,27 +34,10 @@ from modules.paid import (
     image_studio, creator_3d, video_studio,
 )
 
-ORBY_VOICE = 'en-US-AriaNeural'
-
-def _to_ssml(text: str) -> str:
-    import html as _html
-    safe = _html.escape(text)
-    return (
-        '<speak version="1.0" '
-        'xmlns="http://www.w3.org/2001/10/synthesis" '
-        'xmlns:mstts="https://www.w3.org/2001/mstts" '
-        'xml:lang="en-US">'
-        f'<voice name="{ORBY_VOICE}">'
-        '<mstts:express-as style="cheerful" styledegree="1.2">'
-        '<prosody rate="+15%" pitch="+10Hz">'
-        f'{safe}'
-        '</prosody>'
-        '</mstts:express-as>'
-        '</voice></speak>'
-    )
+ORBY_VOICE = 'en-US-AvaNeural'
 
 async def _synthesize(text):
-    communicate = edge_tts.Communicate(_to_ssml(text), ORBY_VOICE)
+    communicate = edge_tts.Communicate(text, ORBY_VOICE)
     audio = b''
     async for chunk in communicate.stream():
         if chunk['type'] == 'audio':
