@@ -36,6 +36,20 @@ from modules.paid import (
 
 ORBY_VOICE = 'en-US-AvaNeural'
 
+def _clean_for_tts(text: str) -> str:
+    t = re.sub(r'##CONFIG##.*?##CONFIG##', '', text, flags=re.DOTALL)
+    t = re.sub(r'```[\s\S]*?```', '', t)
+    t = re.sub(r'`[^`]*`', '', t)
+    t = re.sub(r'\*\*(.+?)\*\*', r'\1', t)
+    t = re.sub(r'\*(.+?)\*', r'\1', t)
+    t = re.sub(r'__(.+?)__', r'\1', t)
+    t = re.sub(r'_(.+?)_', r'\1', t)
+    t = re.sub(r'^#+\s+', '', t, flags=re.MULTILINE)
+    t = re.sub(r'^\s*[-*•]\s+', '', t, flags=re.MULTILINE)
+    t = re.sub(r'https?://\S+', '', t)
+    t = re.sub(r'\s+', ' ', t).strip()
+    return t
+
 async def _synthesize(text):
     communicate = edge_tts.Communicate(text, ORBY_VOICE)
     audio = b''
@@ -56,7 +70,7 @@ def _prefetch_sentences(sentences, keys):
         loop = asyncio.new_event_loop()
         for sentence, key in zip(sentences, keys):
             try:
-                audio = loop.run_until_complete(_synthesize(sentence))
+                audio = loop.run_until_complete(_synthesize(_clean_for_tts(sentence)))
                 with _tts_lock:
                     _tts_cache[key] = audio
             except Exception as e:
@@ -1059,7 +1073,7 @@ def demo_chat():
 @app.route('/tts', methods=['POST'])
 def tts():
     data    = request.get_json(silent=True) or {}
-    text    = (data.get('text') or '').strip()
+    text    = _clean_for_tts((data.get('text') or '').strip())
     tts_key = data.get('tts_key', '')
     if not text:
         return '', 400
