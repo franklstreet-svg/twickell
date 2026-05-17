@@ -1206,8 +1206,12 @@ def demo_chat():
                 clean_reply   = _strip_commands(reply)
                 audio_b64 = ''
                 try:
-                    audio_bytes = asyncio.run(_synthesize(_clean_for_tts(clean_reply)))
-                    audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    _loop = asyncio.new_event_loop()
+                    try:
+                        audio_bytes = _loop.run_until_complete(_synthesize(_clean_for_tts(clean_reply)))
+                        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+                    finally:
+                        _loop.close()
                 except Exception as tts_e:
                     log.warning('TTS inline failed: %s', tts_e)
                 return jsonify({
@@ -1379,8 +1383,12 @@ def builder_chat():
 
     audio_b64 = ''
     try:
-        audio_bytes = asyncio.run(_synthesize(_clean_for_tts(reply)))
-        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+        _loop = asyncio.new_event_loop()
+        try:
+            audio_bytes = _loop.run_until_complete(_synthesize(_clean_for_tts(reply)))
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+        finally:
+            _loop.close()
     except Exception as tts_e:
         log.warning('Builder TTS inline failed: %s', tts_e)
 
