@@ -2308,36 +2308,25 @@
     }
   }
 
-  async function speak(sentences, keys) {
-    if (!voiceOn) return;
+  async function speak(audioB64) {
+    if (!voiceOn || !audioB64) return;
     isSpeaking = true;
     clearSilenceTimer();
     if (micOn && recognition) try { recognition.stop(); } catch(_) {}
-
-    const parts = (Array.isArray(sentences) && sentences.length) ? sentences : [sentences];
-    const ttsKeys = keys || [];
-
-    for (let i = 0; i < parts.length; i++) {
-      if (!isSpeaking) break;
-      try {
-        const res = await fetch('/tts', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({text: parts[i], tts_key: ttsKeys[i] || ''})
-        });
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        await new Promise(r => {
-          currentAudio = new Audio(url);
-          currentAudio.onended = r;
-          currentAudio.onerror = r;
-          currentAudio.play().catch(r);
-        });
-        URL.revokeObjectURL(url);
-      } catch(e) {}
-    }
-
+    try {
+      const bytes = atob(audioB64);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      const blob = new Blob([arr], {type: 'audio/mpeg'});
+      const url = URL.createObjectURL(blob);
+      await new Promise(r => {
+        currentAudio = new Audio(url);
+        currentAudio.onended = r;
+        currentAudio.onerror = r;
+        currentAudio.play().catch(r);
+      });
+      URL.revokeObjectURL(url);
+    } catch(e) {}
     isSpeaking = false;
     if (micOn && recognition) try { recognition.start(); } catch(_) {}
   }
@@ -2568,7 +2557,7 @@
         const reply = data.response || "I'm having a little trouble — try again in a second!";
         appendMessage('orby', reply);
         chatHistory.push({ role: 'assistant', content: reply });
-        speak(data.sentences, data.tts_keys);
+        speak(data.audio);
         if (data.config_update) applyConfigUpdate(data.config_update);
         if (data.page_action)   applyPageAction(data.page_action);
         _maybeShowBuyCta();

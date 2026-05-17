@@ -4,6 +4,7 @@ import re
 import json
 import uuid
 import time
+import base64
 import hashlib
 import asyncio
 import threading
@@ -1159,14 +1160,17 @@ def demo_chat():
                 config_update = _parse_config_update(reply)
                 page_action   = _parse_action(reply)
                 clean_reply   = _strip_commands(reply)
-                tts_key = hashlib.md5(clean_reply.encode()).hexdigest()[:10]
-                threading.Thread(target=_prefetch_sentences, args=([clean_reply], [tts_key]), daemon=True).start()
+                audio_b64 = ''
+                try:
+                    audio_bytes = asyncio.run(_synthesize(_clean_for_tts(clean_reply)))
+                    audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+                except Exception as tts_e:
+                    log.warning('TTS inline failed: %s', tts_e)
                 return jsonify({
                     'response': clean_reply,
                     'config_update': config_update,
                     'page_action': page_action,
-                    'sentences': [clean_reply],
-                    'tts_keys': [tts_key],
+                    'audio': audio_b64,
                 })
         except Exception as e:
             log.warning('demo_chat %s failed: %s', tier, e)
@@ -1329,14 +1333,17 @@ def builder_chat():
     config_update = _parse_config_update(raw_reply)
     reply = _strip_commands(raw_reply)
 
-    tts_key = hashlib.md5(f"builder:{reply}".encode()).hexdigest()[:10]
-    threading.Thread(target=_prefetch_sentences, args=([reply], [tts_key]), daemon=True).start()
+    audio_b64 = ''
+    try:
+        audio_bytes = asyncio.run(_synthesize(_clean_for_tts(reply)))
+        audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+    except Exception as tts_e:
+        log.warning('Builder TTS inline failed: %s', tts_e)
 
     return jsonify({
         'response': reply,
         'config_update': config_update,
-        'sentences': [reply],
-        'tts_keys': [tts_key],
+        'audio': audio_b64,
     })
 
 

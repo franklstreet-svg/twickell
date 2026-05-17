@@ -474,26 +474,21 @@
     if (el) el.remove();
   }
 
-  async function speak(sentences, keys) {
-    if (!voiceOn) return;
-    for (let i = 0; i < sentences.length; i++) {
-      try {
-        const res = await fetch('/tts', {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({text: sentences[i], tts_key: keys[i]||''})
-        });
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        await new Promise(r => {
-          const a = new Audio(url);
-          a.onended = r; a.onerror = r;
-          a.play().catch(r);
-        });
-        URL.revokeObjectURL(url);
-      } catch(e) {}
-    }
+  async function speak(audioB64) {
+    if (!voiceOn || !audioB64) return;
+    try {
+      const bytes = atob(audioB64);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+      const blob = new Blob([arr], {type: 'audio/mpeg'});
+      const url = URL.createObjectURL(blob);
+      await new Promise(r => {
+        const a = new Audio(url);
+        a.onended = r; a.onerror = r;
+        a.play().catch(r);
+      });
+      URL.revokeObjectURL(url);
+    } catch(e) {}
   }
 
   async function sendMessage() {
@@ -527,9 +522,7 @@
 
       if (data.config_update) applyConfigUpdate(data.config_update);
 
-      if (voiceOn && data.sentences && data.tts_keys) {
-        speak(data.sentences, data.tts_keys);
-      }
+      if (voiceOn && data.audio) speak(data.audio);
 
       document.getElementById('chatStatus').textContent = 'Building your Orby...';
     } catch(e) {
