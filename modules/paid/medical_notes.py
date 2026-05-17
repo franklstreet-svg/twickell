@@ -10,18 +10,48 @@ MODULE_MANIFEST = {
     "min_bridge_version": "1.0.0"
 }
 
-from datetime import datetime
-from engine.storage import load, save, now_iso, new_id
+import json
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _path(profile_dir, filename):
+    p = Path(profile_dir) / 'industry'
+    p.mkdir(parents=True, exist_ok=True)
+    return p / filename
+
+
+def _load(path, default=None):
+    p = Path(path)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            pass
+    return default if default is not None else []
+
+
+def _save(path, data):
+    Path(path).write_text(json.dumps(data, indent=2))
 
 
 def _now_str():
     return datetime.now().strftime('%B %d, %Y')
 
 
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _new_id():
+    return str(uuid.uuid4())[:8]
+
+
 def generate_soap_note(profile_dir: str, patient_id: str,
                        subjective: str, objective: str,
                        assessment: str, plan: str) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     pt_name = pt['name'] if pt else patient_id
 
@@ -51,7 +81,7 @@ Provider Signature: _______________ Date: _______________
 
 def generate_prior_auth(profile_dir: str, patient_id: str,
                         procedure: str, diagnosis: str, insurance: str) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     pt_name = pt['name'] if pt else patient_id
     dob = pt.get('dob', '[DOB]') if pt else '[DOB]'
@@ -63,7 +93,7 @@ To: {insurance} — Authorization Department
 PATIENT INFORMATION
 Name: {pt_name}
 DOB: {dob}
-Member ID: {pt.get('insurance_id', '[Member ID]') if pt else '[Member ID]'}
+Member ID: {pt.get('insurance', '[Member ID]') if pt else '[Member ID]'}
 Group #: [Group Number]
 
 REQUESTED SERVICE
@@ -88,7 +118,7 @@ Phone: [Phone] | Fax: [Fax]"""
 def generate_discharge_summary(profile_dir: str, patient_id: str,
                                admission_date: str, diagnosis: str,
                                treatment: str, follow_up: str) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     pt_name = pt['name'] if pt else patient_id
 
@@ -125,7 +155,7 @@ Attending Physician: _______________ Date: _______________
 
 def generate_referral_letter(profile_dir: str, patient_id: str,
                              referred_to: str, specialty: str, reason: str) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     pt_name = pt['name'] if pt else patient_id
 
@@ -145,7 +175,7 @@ REASON FOR REFERRAL
 {reason}
 
 RELEVANT HISTORY
-{pt.get('history', '[No prior history on file]') if pt else '[No prior history on file]'}
+{pt.get('notes', '[No prior history on file]') if pt else '[No prior history on file]'}
 
 Please feel free to contact our office with any questions. We appreciate your assistance in the care of this patient and look forward to your consultation report.
 
@@ -158,14 +188,13 @@ Sincerely,
 
 
 def generate_patient_summary(profile_dir: str, patient_id: str) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     if not pt:
         return f"Patient {patient_id} not found."
 
-    appts = [a for a in load(profile_dir, 'medical_appointments') if a.get('patient_id') == patient_id]
-    rxs   = [r for r in load(profile_dir, 'medical_prescriptions') if r.get('patient_id') == patient_id]
-    notes = [n for n in load(profile_dir, 'medical_treatment_notes') if n.get('patient_id') == patient_id]
+    appts = [a for a in _load(_path(profile_dir, 'medical_appointments.json'))
+             if a.get('patient_id') == patient_id]
 
     doc = f"""PATIENT SUMMARY
 Generated: {_now_str()}
@@ -177,14 +206,7 @@ APPOINTMENTS ({len(appts)}):
     for a in appts[-5:]:
         doc += f"  {a.get('date','?')} — {a.get('reason','?')} [{a.get('status','scheduled')}]\n"
 
-    doc += f"\nACTIVE PRESCRIPTIONS ({len(rxs)}):\n"
-    for r in rxs:
-        if not r.get('discontinued'):
-            doc += f"  {r.get('medication','?')} {r.get('dosage','?')} — {r.get('frequency','?')}\n"
-
-    doc += f"\nRECENT NOTES ({min(3,len(notes))}):\n"
-    for n in notes[-3:]:
-        doc += f"  [{n.get('date','?')}] {n.get('note','')[:100]}\n"
+    doc += f"\nNotes: {pt.get('notes', 'None on file')}\n"
 
     _save_doc(profile_dir, 'patient_summary', patient_id, doc)
     return doc
@@ -193,7 +215,7 @@ APPOINTMENTS ({len(appts)}):
 def generate_rx_note(profile_dir: str, patient_id: str,
                      medication: str, dosage: str, frequency: str,
                      indication: str, refills: int = 0) -> str:
-    patients = load(profile_dir, 'medical_patients')
+    patients = _load(_path(profile_dir, 'medical_patients.json'))
     pt = next((p for p in patients if p['id'] == patient_id), None)
     pt_name = pt['name'] if pt else patient_id
 
@@ -218,14 +240,14 @@ Signature: _______________ Date: _______________"""
 
 
 def _save_doc(profile_dir, doc_type, ref_id, content):
-    docs = load(profile_dir, 'medical_documents')
-    docs.append({'id': new_id(), 'type': doc_type, 'ref': ref_id,
-                 'content': content, 'created': now_iso()})
-    save(profile_dir, 'medical_documents', docs)
+    docs = _load(_path(profile_dir, 'medical_documents.json'))
+    docs.append({'id': _new_id(), 'type': doc_type, 'ref': ref_id,
+                 'content': content, 'created': _now_iso()})
+    _save(_path(profile_dir, 'medical_documents.json'), docs)
 
 
 def get_documents(profile_dir: str, doc_type: str = None) -> list:
-    docs = load(profile_dir, 'medical_documents')
+    docs = _load(_path(profile_dir, 'medical_documents.json'))
     if doc_type:
         docs = [d for d in docs if d.get('type') == doc_type]
     return docs

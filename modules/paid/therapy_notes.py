@@ -10,19 +10,49 @@ MODULE_MANIFEST = {
     "min_bridge_version": "1.0.0"
 }
 
-from datetime import datetime
-from engine.storage import load, save, now_iso, new_id
+import json
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _path(profile_dir, filename):
+    p = Path(profile_dir) / 'industry'
+    p.mkdir(parents=True, exist_ok=True)
+    return p / filename
+
+
+def _load(path, default=None):
+    p = Path(path)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            pass
+    return default if default is not None else []
+
+
+def _save(path, data):
+    Path(path).write_text(json.dumps(data, indent=2))
 
 
 def _now_str():
     return datetime.now().strftime('%B %d, %Y')
 
 
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _new_id():
+    return str(uuid.uuid4())[:8]
+
+
 def generate_session_note(profile_dir: str, client_id: str,
                           subjective: str, objective: str,
                           assessment: str, plan: str,
                           note_format: str = 'SOAP') -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
@@ -76,7 +106,7 @@ License: _______________ | Credential: _______________"""
 def generate_treatment_plan_doc(profile_dir: str, client_id: str,
                                 presenting_problem: str, goals: list,
                                 interventions: str, frequency: str = 'Weekly') -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
@@ -120,7 +150,7 @@ Next Review Date: _______________"""
 
 def generate_progress_note(profile_dir: str, client_id: str,
                            progress: str, barriers: str, next_steps: str) -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
@@ -148,11 +178,11 @@ Clinician: _______________ Date: _______________"""
 
 def generate_discharge_note(profile_dir: str, client_id: str,
                             reason: str, summary: str, aftercare: str) -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
-    sessions = load(profile_dir, 'therapy_sessions')
+    sessions = _load(_path(profile_dir, 'therapy_sessions.json'))
     client_sessions = [s for s in sessions if s.get('client_id') == client_id]
 
     doc = f"""DISCHARGE SUMMARY
@@ -183,7 +213,7 @@ Clinician Signature: _______________ Date: _______________"""
 
 def generate_referral(profile_dir: str, client_id: str,
                       referred_to: str, reason: str) -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
@@ -214,7 +244,7 @@ Sincerely,
 def generate_billing_note(profile_dir: str, client_id: str,
                           cpt_code: str, dx_code: str,
                           session_date: str, duration_mins: int = 50) -> str:
-    clients = load(profile_dir, 'therapy_clients')
+    clients = _load(_path(profile_dir, 'therapy_clients.json'))
     client = next((c for c in clients if c['id'] == client_id), None)
     name = client['name'] if client else client_id
 
@@ -250,14 +280,14 @@ Provider Signature: _______________ Date: _______________"""
 
 
 def _save_doc(profile_dir, doc_type, ref_id, content):
-    docs = load(profile_dir, 'therapy_documents')
-    docs.append({'id': new_id(), 'type': doc_type, 'ref': ref_id,
-                 'content': content, 'created': now_iso()})
-    save(profile_dir, 'therapy_documents', docs)
+    docs = _load(_path(profile_dir, 'therapy_documents.json'))
+    docs.append({'id': _new_id(), 'type': doc_type, 'ref': ref_id,
+                 'content': content, 'created': _now_iso()})
+    _save(_path(profile_dir, 'therapy_documents.json'), docs)
 
 
 def get_documents(profile_dir: str, doc_type: str = None) -> list:
-    docs = load(profile_dir, 'therapy_documents')
+    docs = _load(_path(profile_dir, 'therapy_documents.json'))
     if doc_type:
         docs = [d for d in docs if d.get('type') == doc_type]
     return docs

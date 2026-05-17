@@ -10,17 +10,46 @@ MODULE_MANIFEST = {
     "min_bridge_version": "1.0.0"
 }
 
-from datetime import datetime
-from engine.storage import load, save, now_iso, new_id
-from modules.paid import legal_pro
+import json
+import uuid
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _path(profile_dir, filename):
+    p = Path(profile_dir) / 'industry'
+    p.mkdir(parents=True, exist_ok=True)
+    return p / filename
+
+
+def _load(path, default=None):
+    p = Path(path)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            pass
+    return default if default is not None else []
+
+
+def _save(path, data):
+    Path(path).write_text(json.dumps(data, indent=2))
 
 
 def _now_str():
     return datetime.now().strftime('%B %d, %Y')
 
 
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _new_id():
+    return str(uuid.uuid4())[:8]
+
+
 def generate_demand_letter(profile_dir: str, case_id: str, demand_amount: float = 0.0) -> str:
-    cases = load(profile_dir, 'legal_cases')
+    cases = _load(_path(profile_dir, 'legal_cases.json'))
     case = next((c for c in cases if c['id'] == case_id), None)
     if not case:
         return f"Case {case_id} not found."
@@ -28,7 +57,7 @@ def generate_demand_letter(profile_dir: str, case_id: str, demand_amount: float 
     doc = f"""DEMAND LETTER
 Date: {_now_str()}
 
-RE: {case['title']}
+RE: {case['client_name']} — {case.get('case_type', 'Legal Matter')}
 Case Reference: {case['id']}
 
 To Whom It May Concern:
@@ -115,33 +144,33 @@ ATTORNEY SIGNATURE: _______________ Date: _______________"""
 
 
 def generate_case_summary(profile_dir: str, case_id: str) -> str:
-    cases = load(profile_dir, 'legal_cases')
+    cases = _load(_path(profile_dir, 'legal_cases.json'))
     case = next((c for c in cases if c['id'] == case_id), None)
     if not case:
         return f"Case {case_id} not found."
 
-    notes = [n for n in load(profile_dir, 'legal_case_notes') if n.get('case_id') == case_id]
-    deadlines = [d for d in load(profile_dir, 'legal_deadlines') if d.get('case_id') == case_id]
-    time_entries = [t for t in load(profile_dir, 'legal_time') if t.get('case_id') == case_id]
+    notes = case.get('notes', [])
+    deadlines = case.get('deadlines', [])
+    time_entries = case.get('time_entries', [])
     total_hours = sum(t.get('hours', 0) for t in time_entries)
 
     doc = f"""CASE SUMMARY REPORT
 Date: {_now_str()}
 
-CASE: {case['title']}
+CASE: {case['client_name']} — {case.get('case_type', '')}
 ID: {case['id']}
 Status: {case.get('status', 'Active')}
-Opened: {case.get('opened', 'Unknown')}
+Opened: {case.get('created_at', 'Unknown')[:10]}
 Description: {case.get('description', 'N/A')}
 
 DEADLINES ({len(deadlines)}):
 """
     for d in deadlines:
-        doc += f"  - {d.get('description','?')} — Due: {d.get('due_date','?')} {'[COMPLETED]' if d.get('completed') else ''}\n"
+        doc += f"  - {d.get('description','?')} — Due: {d.get('date','?')} {'[COMPLETED]' if d.get('completed') else ''}\n"
 
     doc += f"\nNOTES ({len(notes)}):\n"
     for n in notes[-5:]:
-        doc += f"  [{n.get('date','?')}] {n.get('note','')}\n"
+        doc += f"  [{n.get('date','?')[:10]}] {n.get('text','')}\n"
 
     doc += f"\nBILLING SUMMARY:\n  Total Hours Logged: {total_hours:.1f} hrs\n"
     _save_doc(profile_dir, 'case_summary', case_id, doc)
@@ -149,9 +178,9 @@ DEADLINES ({len(deadlines)}):
 
 
 def generate_client_update(profile_dir: str, case_id: str, update_text: str) -> str:
-    cases = load(profile_dir, 'legal_cases')
-    case = next((c for c in cases if c['id'] == case_id), cases[0] if cases else None)
-    case_title = case['title'] if case else 'Your Matter'
+    cases = _load(_path(profile_dir, 'legal_cases.json'))
+    case = next((c for c in cases if c['id'] == case_id), None)
+    case_title = f"{case['client_name']} — {case.get('case_type','')}" if case else 'Your Matter'
     doc = f"""CLIENT STATUS UPDATE
 Date: {_now_str()}
 
@@ -174,14 +203,14 @@ Sincerely,
 
 
 def generate_billing_invoice(profile_dir: str, case_id: str, hourly_rate: float = 350.0) -> str:
-    time_entries = [t for t in load(profile_dir, 'legal_time') if t.get('case_id') == case_id]
-    cases = load(profile_dir, 'legal_cases')
+    cases = _load(_path(profile_dir, 'legal_cases.json'))
     case = next((c for c in cases if c['id'] == case_id), None)
-    case_title = case['title'] if case else case_id
+    case_title = f"{case['client_name']} — {case.get('case_type','')}" if case else case_id
+    time_entries = case.get('time_entries', []) if case else []
 
     lines = [f"""LEGAL BILLING INVOICE
 Date: {_now_str()}
-Invoice #: INV-{new_id().upper()}
+Invoice #: INV-{_new_id().upper()}
 
 Matter: {case_title}
 Case ID: {case_id}
@@ -204,14 +233,14 @@ TIME ENTRIES:
 
 
 def _save_doc(profile_dir, doc_type, ref_id, content):
-    docs = load(profile_dir, 'legal_documents')
-    docs.append({'id': new_id(), 'type': doc_type, 'ref': ref_id,
-                 'content': content, 'created': now_iso()})
-    save(profile_dir, 'legal_documents', docs)
+    docs = _load(_path(profile_dir, 'legal_documents.json'))
+    docs.append({'id': _new_id(), 'type': doc_type, 'ref': ref_id,
+                 'content': content, 'created': _now_iso()})
+    _save(_path(profile_dir, 'legal_documents.json'), docs)
 
 
 def get_documents(profile_dir: str, doc_type: str = None) -> list:
-    docs = load(profile_dir, 'legal_documents')
+    docs = _load(_path(profile_dir, 'legal_documents.json'))
     if doc_type:
         docs = [d for d in docs if d.get('type') == doc_type]
     return docs

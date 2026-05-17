@@ -520,26 +520,53 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
                 f'Tell the user what you just showed them, how it helps their business, '
                 f'and naturally mention the pricing if it feels right.')
 
+    def _ind_load(pd, filename):
+        """Load raw list from profile_dir/industry/ — bypasses the string-returning list functions."""
+        p = Path(pd) / 'industry' / filename
+        if p.exists():
+            try:
+                return json.loads(p.read_text())
+            except Exception:
+                pass
+        return []
+
+    def _ind_ensure_case(pd):
+        """Ensure at least one demo legal case exists; return list of cases."""
+        cases = _ind_load(pd, 'legal_cases.json')
+        if not cases:
+            legal_pro.add_legal_case(pd, 'Smith v. Johnson', 'Personal Injury',
+                                     'Motor vehicle accident, seeking $250,000 in damages')
+            cases = _ind_load(pd, 'legal_cases.json')
+        return cases
+
+    def _ind_ensure_patient(pd):
+        cases = _ind_load(pd, 'medical_patients.json')
+        if not cases:
+            medical_pro.add_patient(pd, 'Jane Demo', '1985-03-15', '555-0100')
+            cases = _ind_load(pd, 'medical_patients.json')
+        return cases
+
+    def _ind_ensure_therapy_client(pd):
+        clients = _ind_load(pd, 'therapy_clients.json')
+        if not clients:
+            therapy_pro.add_therapy_client(pd, 'Alex Demo', dob='1990-06-20',
+                                           presenting_issue='Anxiety, depression')
+            clients = _ind_load(pd, 'therapy_clients.json')
+        return clients
+
     # ── Legal Pro ────────────────────────────────────────────────────────────
     if _x(r'\b(lawyer|attorney|legal case|case (?:notes|deadline|billing)|law firm|deposition|motion|brief|retainer|legal client)\b', m):
-        # Add a demo case if none exist
-        cases = legal_pro.list_legal_cases(profile_dir)
-        if not cases:
-            legal_pro.add_legal_case(profile_dir, 'Smith v. Johnson — Personal Injury', 'Active', 'Motor vehicle accident, seeking $250,000 in damages')
-            cases = legal_pro.list_legal_cases(profile_dir)
-        sample = cases[0] if cases else {}
-        summary = legal_pro.get_billing_summary(profile_dir, sample.get('id',''))
+        cases = _ind_ensure_case(profile_dir)
+        c = cases[0] if cases else {}
+        summary = legal_pro.get_billing_summary(profile_dir, c.get('id', '')) if c else ''
         caps = (f"Case management, deadline tracking, billable time logging, case notes.\n"
                 f"Sub-modules: demand letters, intake forms, retainer agreements, case summaries, client updates, billing invoices.\n"
-                f"Demo case loaded: {sample.get('title','')}\n{summary}")
+                f"Demo case loaded: {c.get('client_name','')} — {c.get('case_type','')}\n{summary}")
         return _paid('Legal Pro', '$349 setup + $149/month', caps)
 
     if _x(r'\b(demand letter|legal brief|intake form|retainer agreement|legal document|billing invoice for)\b', m):
-        cases = legal_pro.list_legal_cases(profile_dir)
-        if not cases:
-            legal_pro.add_legal_case(profile_dir, 'Demo Case — Sample Matter', 'Active', 'Sample legal matter for demonstration')
-            cases = legal_pro.list_legal_cases(profile_dir)
-        case_id = cases[0]['id']
+        cases = _ind_ensure_case(profile_dir)
+        case_id = cases[0]['id'] if cases else 'demo'
         if _x(r'\bdemand letter\b', m):
             doc = legal_docs.generate_demand_letter(profile_dir, case_id, 50000)
             return f'[LEGAL DOC — Demand Letter]\n{doc[:600]}...\n\n(Full document saved. Legal Pro — $349 setup + $149/month)'
@@ -555,114 +582,134 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
 
     # ── Medical Pro ──────────────────────────────────────────────────────────
     if _x(r'\b(patient (?:record|chart|history|list)|medical practice|doctor.?s office|clinic|prescription|appointment (?:schedule|list))\b', m):
-        patients = medical_pro.list_patients(profile_dir)
-        if not patients:
-            medical_pro.add_patient(profile_dir, 'Jane Demo', '1985-03-15', '555-0100')
-            patients = medical_pro.list_patients(profile_dir)
+        patients = _ind_ensure_patient(profile_dir)
         pt = patients[0] if patients else {}
         caps = (f"Patient records, appointment scheduling, prescription tracking, treatment notes.\n"
                 f"Sub-modules: SOAP notes, prior auth letters, discharge summaries, referral letters, Rx notes, patient summaries.\n"
-                f"Demo patient: {pt.get('name','')} | ID: {pt.get('id','')}")
+                f"Demo patient: {pt.get('name','')} | DOB: {pt.get('dob','')}")
         return _paid('Medical Pro', '$349 setup + $149/month', caps)
 
     if _x(r'\b(soap note|prior auth|discharge summary|medical document|referral letter|prescription note)\b', m):
-        patients = medical_pro.list_patients(profile_dir)
-        if not patients:
-            medical_pro.add_patient(profile_dir, 'Jane Demo', '1985-03-15', '555-0100')
-            patients = medical_pro.list_patients(profile_dir)
-        pt_id = patients[0]['id']
+        patients = _ind_ensure_patient(profile_dir)
+        pt_id = patients[0]['id'] if patients else 'demo'
         if _x(r'\bsoap note\b', m):
-            doc = medical_notes.generate_soap_note(profile_dir, pt_id, 'Patient reports persistent headaches for 3 days, rated 7/10.', 'BP 128/82, HR 76, afebrile. Alert and oriented x3.', 'Tension headache vs. migraine — rule out secondary causes.', 'Rx Ibuprofen 600mg TID x5 days. Follow up in 1 week if no improvement.')
+            doc = medical_notes.generate_soap_note(profile_dir, pt_id,
+                'Patient reports persistent headaches for 3 days, rated 7/10.',
+                'BP 128/82, HR 76, afebrile. Alert and oriented x3.',
+                'Tension headache vs. migraine — rule out secondary causes.',
+                'Rx Ibuprofen 600mg TID x5 days. Follow up in 1 week if no improvement.')
         elif _x(r'\bprior auth\b', m):
-            doc = medical_notes.generate_prior_auth(profile_dir, pt_id, 'MRI Brain without contrast', 'Chronic headache — G43.909', 'Blue Cross Blue Shield')
+            doc = medical_notes.generate_prior_auth(profile_dir, pt_id,
+                'MRI Brain without contrast', 'Chronic headache — G43.909', 'Blue Cross Blue Shield')
         elif _x(r'\bdischarge\b', m):
-            doc = medical_notes.generate_discharge_summary(profile_dir, pt_id, '2025-01-10', 'Tension headache', 'IV fluids, pain management, rest', 'Follow up with PCP in 1 week')
+            doc = medical_notes.generate_discharge_summary(profile_dir, pt_id,
+                '2025-01-10', 'Tension headache', 'IV fluids, pain management, rest',
+                'Follow up with PCP in 1 week')
         else:
             doc = medical_notes.generate_patient_summary(profile_dir, pt_id)
         return f'[MEDICAL DOC]\n{doc[:600]}...\n\n(Full document saved. Medical Pro — $349 setup + $149/month)'
 
     # ── Therapy Pro ──────────────────────────────────────────────────────────
     if _x(r'\b(therapy client|counseling|therapist|mental health practice|session note|treatment plan|dap note)\b', m):
-        clients = therapy_pro.list_therapy_clients(profile_dir)
-        if not clients:
-            therapy_pro.add_therapy_client(profile_dir, 'Alex Demo', '1990-06-20', 'Anxiety, depression')
-            clients = therapy_pro.list_therapy_clients(profile_dir)
+        clients = _ind_ensure_therapy_client(profile_dir)
         cl = clients[0] if clients else {}
         caps = (f"Client management, session scheduling, treatment plans, session notes.\n"
                 f"Sub-modules: SOAP/DAP session notes, treatment plan documents, progress notes, discharge summaries, referrals, billing/superbills.\n"
-                f"Demo client: {cl.get('name','')}")
+                f"Demo client: {cl.get('name','')} | Issue: {cl.get('presenting_issue','')}")
         return _paid('Therapy & Counseling Pro', '$199 setup + $79/month', caps)
 
     if _x(r'\b(session note|therapy note|progress note|treatment plan doc|therapy discharge|therapy billing|superbill)\b', m):
-        clients = therapy_pro.list_therapy_clients(profile_dir)
-        if not clients:
-            therapy_pro.add_therapy_client(profile_dir, 'Alex Demo', '1990-06-20', 'Anxiety, depression')
-            clients = therapy_pro.list_therapy_clients(profile_dir)
-        cl_id = clients[0]['id']
+        clients = _ind_ensure_therapy_client(profile_dir)
+        cl_id = clients[0]['id'] if clients else 'demo'
         if _x(r'\b(dap note|session note|therapy note)\b', m):
-            doc = therapy_notes.generate_session_note(profile_dir, cl_id, 'Client reports anxiety improving, still struggling with work stress.', 'Calm affect, engaged, maintained eye contact throughout session.', 'GAD with occupational stressor. Progress noted toward goals.', 'Continue CBT techniques. Assign thought record homework. Meet in 1 week.')
+            doc = therapy_notes.generate_session_note(profile_dir, cl_id,
+                'Client reports anxiety improving, still struggling with work stress.',
+                'Calm affect, engaged, maintained eye contact throughout session.',
+                'GAD with occupational stressor. Progress noted toward goals.',
+                'Continue CBT techniques. Assign thought record homework. Meet in 1 week.')
         elif _x(r'\bprogress note\b', m):
-            doc = therapy_notes.generate_progress_note(profile_dir, cl_id, 'Client demonstrating improved coping strategies and reduced anxiety symptoms.', 'Work stress remains a trigger. Avoidance behaviors persist.', 'Continue exposure therapy. Introduce mindfulness techniques next session.')
+            doc = therapy_notes.generate_progress_note(profile_dir, cl_id,
+                'Client demonstrating improved coping strategies and reduced anxiety symptoms.',
+                'Work stress remains a trigger. Avoidance behaviors persist.',
+                'Continue exposure therapy. Introduce mindfulness techniques next session.')
         elif _x(r'\btreatment plan\b', m):
-            doc = therapy_notes.generate_treatment_plan_doc(profile_dir, cl_id, 'Generalized anxiety disorder with occupational stressor', ['Reduce anxiety symptoms by 50% within 12 sessions', 'Develop 3 healthy coping strategies', 'Improve work-life balance'], 'Cognitive Behavioral Therapy (CBT), mindfulness-based interventions, behavioral activation')
+            doc = therapy_notes.generate_treatment_plan_doc(profile_dir, cl_id,
+                'Generalized anxiety disorder with occupational stressor',
+                ['Reduce anxiety symptoms by 50% within 12 sessions',
+                 'Develop 3 healthy coping strategies', 'Improve work-life balance'],
+                'Cognitive Behavioral Therapy (CBT), mindfulness-based interventions, behavioral activation')
         elif _x(r'\b(superbill|billing)\b', m):
-            doc = therapy_notes.generate_billing_note(profile_dir, cl_id, '90837', 'F41.1', '2025-01-15', 60)
+            doc = therapy_notes.generate_billing_note(profile_dir, cl_id,
+                '90837', 'F41.1', '2025-01-15', 60)
         else:
-            doc = therapy_notes.generate_discharge_note(profile_dir, cl_id, 'Client met treatment goals', 'Significant reduction in anxiety symptoms over 16 sessions', 'Continue self-care practices. Return if symptoms recur.')
+            doc = therapy_notes.generate_discharge_note(profile_dir, cl_id,
+                'Client met treatment goals',
+                'Significant reduction in anxiety symptoms over 16 sessions',
+                'Continue self-care practices. Return if symptoms recur.')
         return f'[THERAPY DOC]\n{doc[:600]}...\n\n(Full document saved. Therapy Pro — $199 setup + $79/month)'
 
     # ── Real Estate Pro ──────────────────────────────────────────────────────
     if _x(r'\b(real estate|listing|showing|buyer|seller|commission|open house|realtor)\b', m):
-        listings = realestate_pro.list_listings(profile_dir)
+        listings = _ind_load(profile_dir, 're_listings.json')
         if not listings:
-            realestate_pro.add_listing(profile_dir, '123 Demo Street', 450000, 'Single Family', 3, 2)
-            listings = realestate_pro.list_listings(profile_dir)
+            realestate_pro.add_listing(profile_dir, '123 Demo Street', 450000, 3, 2, 1800, 'active', 'Single Family demo listing')
+            listings = _ind_load(profile_dir, 're_listings.json')
         l = listings[0] if listings else {}
-        comm = realestate_pro.calculate_commission(l.get('price', 450000)) if listings else 'N/A'
-        caps = f"Listing management, buyer/seller tracking, showings, offers, commission calculator.\nDemo listing: {l.get('address','')} — ${l.get('price',0):,}\nCommission at 3%: {comm}"
+        price = l.get('price', 450000)
+        comm = realestate_pro.calculate_commission(profile_dir, price) if listings else 'N/A'
+        caps = (f"Listing management, buyer/seller tracking, showings, offers, commission calculator.\n"
+                f"Demo listing: {l.get('address','123 Demo Street')} — ${price:,}\n"
+                f"Commission at 3%: {comm}")
         return _paid('Real Estate Pro', '$199 setup + $79/month', caps)
 
     # ── Restaurant Pro ───────────────────────────────────────────────────────
     if _x(r'\b(restaurant|menu (?:item|management)|reservation|table|food inventory|supplier|diner)\b', m):
-        menu = restaurant_pro.list_menu(profile_dir)
+        menu = _ind_load(profile_dir, 'restaurant_menu.json')
         if not menu:
             restaurant_pro.add_menu_item(profile_dir, 'House Burger', 'Mains', 14.99)
             restaurant_pro.add_menu_item(profile_dir, 'Caesar Salad', 'Starters', 9.99)
-            menu = restaurant_pro.list_menu(profile_dir)
+            menu = _ind_load(profile_dir, 'restaurant_menu.json')
         low = restaurant_pro.get_low_inventory(profile_dir)
-        caps = f"Menu management, reservations, inventory tracking, supplier management.\nDemo menu: {len(menu)} items. Low stock alerts: {len(low)} items."
+        low_count = len(low) if isinstance(low, list) else (1 if low and low != 'No low inventory items.' else 0)
+        caps = (f"Menu management, reservations, inventory tracking, supplier management.\n"
+                f"Demo menu: {len(menu)} items. Low stock alerts: {low_count} items.")
         return _paid('Restaurant Pro', '$199 setup + $79/month', caps)
 
     # ── Retail Pro ───────────────────────────────────────────────────────────
     if _x(r'\b(retail store|product inventory|point of sale|pos system|stock (?:level|alert)|sales report)\b', m):
-        products = retail_pro.list_products(profile_dir)
+        products = _ind_load(profile_dir, 'retail_products.json')
         if not products:
-            retail_pro.add_product(profile_dir, 'Demo Product', 'SKU-001', 29.99, 50)
-            products = retail_pro.list_products(profile_dir)
+            retail_pro.add_product(profile_dir, 'Demo Product', 'SKU-001', 29.99, 'General', 50)
+            products = _ind_load(profile_dir, 'retail_products.json')
         report = retail_pro.get_sales_report(profile_dir)
-        caps = f"Product catalog, inventory tracking, POS sales recording, sales reports, low-stock alerts.\nDemo: {len(products)} products. {report}"
+        caps = (f"Product catalog, inventory tracking, POS sales recording, sales reports, low-stock alerts.\n"
+                f"Demo: {len(products)} products in catalog.\n{report[:200] if report else ''}")
         return _paid('Retail Pro', '$149 setup + $49/month', caps)
 
     # ── Salon & Spa ──────────────────────────────────────────────────────────
     if _x(r'\b(salon|spa|hair appointment|nail|beauty|stylist|esthetician)\b', m):
-        appts = salon_pro.list_salon_appointments(profile_dir)
-        if not appts:
+        clients = _ind_load(profile_dir, 'salon_clients.json')
+        appts = _ind_load(profile_dir, 'salon_appointments.json')
+        if not clients:
             salon_pro.add_salon_client(profile_dir, 'Demo Client', '555-0200', 'demo@example.com')
-            clients = salon_pro.list_salon_clients(profile_dir)
+            clients = _ind_load(profile_dir, 'salon_clients.json')
             if clients:
-                salon_pro.add_salon_appointment(profile_dir, clients[0]['id'], 'Haircut & Color', '2025-02-01 10:00')
-        caps = f"Client profiles, appointment booking, visit history, service menu, loyalty tracking.\nDemo: {len(appts)} appointments scheduled."
+                salon_pro.add_salon_appointment(profile_dir, clients[0].get('name', 'Demo Client'), '2025-02-01', '10:00', 'Haircut & Color')
+                appts = _ind_load(profile_dir, 'salon_appointments.json')
+        caps = (f"Client profiles, appointment booking, visit history, service menu, loyalty tracking.\n"
+                f"Demo: {len(clients)} clients, {len(appts)} appointments scheduled.")
         return _paid('Salon & Spa Pro', '$99 setup + $49/month', caps)
 
     # ── Contractor Pro ───────────────────────────────────────────────────────
     if _x(r'\b(contractor|construction job|job estimate|subcontractor|materials list|job invoice|work order)\b', m):
-        jobs = contractor_pro.list_jobs(profile_dir)
+        jobs = _ind_load(profile_dir, 'contractor_jobs.json')
         if not jobs:
-            contractor_pro.add_job(profile_dir, 'Kitchen Remodel — Demo', 'Demo Client', '2025-02-15')
-            jobs = contractor_pro.list_jobs(profile_dir)
+            contractor_pro.add_job(profile_dir, 'Demo Client', '123 Main St', 'Kitchen Remodel — Demo', '2025-02-15')
+            jobs = _ind_load(profile_dir, 'contractor_jobs.json')
         j = jobs[0] if jobs else {}
-        summary = contractor_pro.get_job_summary(profile_dir, j.get('id','')) if jobs else ''
-        caps = f"Job management, estimates, materials tracking, subcontractors, labor hours, invoicing.\nDemo job: {j.get('name','')}\n{summary}"
+        summary = contractor_pro.get_job_summary(profile_dir, j.get('id', '')) if j else ''
+        caps = (f"Job management, estimates, materials tracking, subcontractors, labor hours, invoicing.\n"
+                f"Demo job: {j.get('name', 'Kitchen Remodel')}\n{summary[:300] if summary else ''}")
         return _paid('Contractor Pro', '$249 setup + $99/month', caps)
 
     # ── Trade Specialties ────────────────────────────────────────────────────
@@ -670,66 +717,78 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
         tm = _x(r'\b(plumb(?:er|ing)|electrician|electrical|hvac|roofer|roofing|flooring)\b', m)
         trade = tm.group(1) if tm else 'plumbing'
         codes = trade_pro.get_common_codes(trade)
-        caps = f"Job tracking, material orders, trade-specific code references, job summaries.\nTrade: {trade}\nSample codes: {codes[:300] if codes else 'N/A'}"
+        caps = (f"Job tracking, material orders, trade-specific code references, job summaries.\n"
+                f"Trade: {trade}\nSample codes: {codes[:300] if codes else 'N/A'}")
         return _paid('Trade Specialties Pro', '$99 setup + $39/month', caps)
 
     # ── Accounting Pro ───────────────────────────────────────────────────────
     if _x(r'\b(accounting (?:client|firm)|tax deadline|bookkeep|cpa|financial report|client (?:ledger|financials))\b', m):
-        deadlines = accounting_pro.get_upcoming_tax_deadlines(profile_dir)
+        deadlines = _ind_load(profile_dir, 'accounting_deadlines.json')
         if not deadlines:
-            accounting_pro.add_tax_deadline(profile_dir, 'Q1 Estimated Tax', '2025-04-15')
-            deadlines = accounting_pro.get_upcoming_tax_deadlines(profile_dir)
-        caps = f"Client management, tax deadline tracking, transaction logging, financial summaries, document references.\nUpcoming deadlines: {len(deadlines)}"
+            accounting_pro.add_tax_deadline(profile_dir, 'Demo Client', 'Q1 Estimated Tax', '2025-04-15')
+            deadlines = _ind_load(profile_dir, 'accounting_deadlines.json')
+        caps = (f"Client management, tax deadline tracking, transaction logging, financial summaries, document references.\n"
+                f"Upcoming deadlines: {len(deadlines)}")
         return _paid('Accounting Pro', '$249 setup + $99/month', caps)
 
     # ── HR Professional ──────────────────────────────────────────────────────
     if _x(r'\b(employee|hr|human resources|onboarding|pto|performance review|payroll)\b', m):
-        employees = hr_pro.list_employees(profile_dir)
+        employees = _ind_load(profile_dir, 'hr_employees.json')
         if not employees:
-            hr_pro.add_employee(profile_dir, 'Demo Employee', 'demo@company.com', 'Sales', '2024-01-15')
-            employees = hr_pro.list_employees(profile_dir)
+            hr_pro.add_employee(profile_dir, 'Demo Employee', 'Sales Associate', 'Sales', '2024-01-15', 'demo@company.com')
+            employees = _ind_load(profile_dir, 'hr_employees.json')
         reviews = hr_pro.get_upcoming_reviews(profile_dir)
-        caps = f"Employee records, onboarding checklists, PTO tracking, performance reviews.\nEmployees: {len(employees)}. Upcoming reviews: {len(reviews)}"
+        review_count = len(reviews) if isinstance(reviews, list) else (1 if reviews and 'No' not in str(reviews) else 0)
+        caps = (f"Employee records, onboarding checklists, PTO tracking, performance reviews.\n"
+                f"Employees: {len(employees)}. Upcoming reviews: {review_count}")
         return _paid('HR Professional', '$149 setup + $59/month', caps)
 
     # ── Property Management ──────────────────────────────────────────────────
     if _x(r'\b(property manager|tenant|lease|rent (?:payment|collection)|maintenance request|landlord)\b', m):
-        properties = property_mgmt.list_properties(profile_dir)
+        properties = _ind_load(profile_dir, 'pm_properties.json')
         if not properties:
-            property_mgmt.add_property(profile_dir, '456 Demo Ave Unit 1', 'Apartment', 1200)
-            properties = property_mgmt.list_properties(profile_dir)
-        rent_status = property_mgmt.get_rent_status(profile_dir) if properties else []
-        caps = f"Property listings, tenant management, lease tracking, rent collection, maintenance requests.\nProperties: {len(properties)}. Rent status: {len(rent_status)} units."
+            property_mgmt.add_property(profile_dir, '456 Demo Ave Unit 1', 'Apartment', 1, 1, 1200)
+            properties = _ind_load(profile_dir, 'pm_properties.json')
+        rent_status = property_mgmt.get_rent_status(profile_dir)
+        rent_count = len(rent_status) if isinstance(rent_status, list) else (1 if rent_status else 0)
+        caps = (f"Property listings, tenant management, lease tracking, rent collection, maintenance requests.\n"
+                f"Properties: {len(properties)}. Rent status: {rent_count} units.")
         return _paid('Property Management Pro', '$149 setup + $59/month', caps)
 
     # ── Inventory Pro ────────────────────────────────────────────────────────
     if _x(r'\b(multi.?location inventory|warehouse|purchase order|bulk stock|inventory (?:report|value|movement))\b', m):
-        items = inventory_pro.list_inventory(profile_dir)
+        items = _ind_load(profile_dir, 'inv_items.json')
         if not items:
-            inventory_pro.add_inventory_item(profile_dir, 'Demo Widget', 'DEMO-001', 100, 9.99, 'Warehouse A')
-            items = inventory_pro.list_inventory(profile_dir)
+            inventory_pro.add_inventory_item(profile_dir, 'Demo Widget', 'DEMO-001', 'General', 'each', 5.00, 9.99, 10, 'Warehouse A')
+            items = _ind_load(profile_dir, 'inv_items.json')
         low = inventory_pro.get_low_stock_report(profile_dir)
-        caps = f"Multi-location stock tracking, purchase orders, suppliers, bulk updates, value reports.\nItems: {len(items)}. Low stock alerts: {low[:200] if low else 'None'}"
+        caps = (f"Multi-location stock tracking, purchase orders, suppliers, bulk updates, value reports.\n"
+                f"Items: {len(items)}. Low stock report: {str(low)[:200] if low else 'None'}")
         return _paid('Inventory Pro', '$149 setup + $49/month', caps)
 
     # ── Business Pro ─────────────────────────────────────────────────────────
     if _x(r'\b(create (?:an? )?invoice|business (?:customer|client|crm)|send (?:a )?quote|business dashboard)\b', m):
         if _x(r'\binvoice\b', m):
-            customers = business_pro.list_business_customers(profile_dir)
+            customers = _ind_load(profile_dir, 'biz_customers.json')
             if not customers:
-                business_pro.add_business_customer(profile_dir, 'Demo Corp', 'accounts@democorp.com', '555-0300')
-                customers = business_pro.list_business_customers(profile_dir)
-            inv = business_pro.create_invoice(profile_dir, customers[0]['id'], [{'description': 'Services rendered', 'amount': 2500}])
-            caps = f"CRM, invoicing, quotes, expense tracking, task management, business dashboard.\nDemo invoice created: ${2500:.2f}"
+                business_pro.add_business_customer(profile_dir, 'Demo Corp', '555-0300', 'accounts@democorp.com')
+                customers = _ind_load(profile_dir, 'biz_customers.json')
+            if customers:
+                inv = business_pro.create_invoice(profile_dir, customers[0].get('name', 'Demo Corp'),
+                                                  2500.0, 'Services rendered')
+                caps = f"CRM, invoicing, quotes, expense tracking, task management.\nDemo invoice created for {customers[0].get('name','Demo Corp')}: $2,500.00"
+            else:
+                caps = "CRM, invoicing, quotes, expense tracking, task management, business dashboard."
         else:
             dashboard = business_pro.get_business_dashboard(profile_dir)
-            caps = f"CRM, invoicing, quotes, expense tracking, task management.\n{dashboard}"
+            caps = f"CRM, invoicing, quotes, expense tracking, task management.\n{str(dashboard)[:400]}"
         return _paid('Business Pro', '$149.99 setup + $39.99/month', caps)
 
     # ── Product Development ──────────────────────────────────────────────────
     if _x(r'\b(product roadmap|feature request|launch checklist|product development|mvp|sprint)\b', m):
         roadmap = product_dev.get_roadmap(profile_dir)
-        caps = f"Product management, feature tracking, roadmaps, launch checklists, idea boards.\nRoadmap: {roadmap[:300] if roadmap else 'No products yet — add your first product to get started.'}"
+        caps = (f"Product management, feature tracking, roadmaps, launch checklists, idea boards.\n"
+                f"Roadmap: {str(roadmap)[:300] if roadmap else 'No products yet — add your first product to get started.'}")
         return _paid('Product Development', '$99 setup + $39/month', caps)
 
     # ── Deep Memory ──────────────────────────────────────────────────────────
@@ -738,32 +797,39 @@ def _run_module(user_message: str, profile_dir: str) -> str | None:
             qm = _x(r'search\s+(.+)', msg)
             q = qm.group(1).strip() if qm else msg
             results = deep_memory.search_everything(profile_dir, q)
-            caps = f"Cross-session context notes, decision logs, session summaries, build specs.\nSearch results: {results[:400] if results else 'No results yet.'}"
+            caps = f"Cross-session context notes, decision logs, session summaries, build specs.\nSearch results: {str(results)[:400] if results else 'No results yet.'}"
         else:
             caps = "Persistent context notes, decision logs, session summaries, build specs — all searchable across conversations."
         return _paid('Deep Memory', '$49 setup + $19/month', caps)
 
     # ── Social Media ─────────────────────────────────────────────────────────
     if _x(r'\b(social media|facebook post|instagram|twitter|linkedin|tiktok|schedule (?:a )?post|draft post)\b', m):
-        platforms = ['Facebook', 'Instagram', 'Twitter/X', 'LinkedIn', 'TikTok']
-        caps = f"Manage all social platforms from one place: {', '.join(platforms)}.\nCreate posts, schedule content, save drafts, track analytics.\nConnect your accounts once — post everywhere."
+        caps = ("Manage all social platforms from one place: Facebook, Instagram, Twitter/X, LinkedIn, TikTok.\n"
+                "Create posts, schedule content, save drafts, track analytics.\n"
+                "Connect your accounts once — post everywhere.")
         return _paid('Social Media Manager', '$99 setup + $39/month', caps)
 
     # ── AI Image Studio ──────────────────────────────────────────────────────
     if _x(r'\b(generate (?:an? )?image|ai image|dall.?e|create (?:a )?(?:photo|picture|artwork|graphic))\b', m):
         qm = _x(r'(?:generate|create)\s+(?:an? )?(?:image|photo|picture|artwork|graphic)(?:\s+of)?\s*(.+)', msg)
         prompt = qm.group(1).strip() if qm else 'a beautiful landscape'
-        caps = f"Generate professional images using DALL-E 3 directly from conversation.\nExample: '{prompt}' → photorealistic image saved to your library.\nRequires OpenAI API key (DALL-E 3 rates apply)."
+        caps = (f"Generate professional images using DALL-E 3 directly from conversation.\n"
+                f"Example: '{prompt}' → photorealistic image saved to your library.\n"
+                f"Requires OpenAI API key (DALL-E 3 rates apply).")
         return _paid('AI Image Studio', '$49 setup + $19/month', caps)
 
     # ── 3D Creator ───────────────────────────────────────────────────────────
     if _x(r'\b(3d (?:model|print|design|render)|three.?d model|meshy)\b', m):
-        caps = "Generate 3D models from text descriptions using Meshy.ai — export for 3D printing or digital use.\nExample: 'a small decorative owl figurine' → downloadable 3D model in minutes.\nRequires Meshy.ai API key."
+        caps = ("Generate 3D models from text descriptions using Meshy.ai — export for 3D printing or digital use.\n"
+                "Example: 'a small decorative owl figurine' → downloadable 3D model in minutes.\n"
+                "Requires Meshy.ai API key.")
         return _paid('3D Creator', '$49 setup + $29/month', caps)
 
     # ── AI Video Studio ──────────────────────────────────────────────────────
     if _x(r'\b(generate (?:a )?video|ai video|runway|video (?:from|generation))\b', m):
-        caps = "Generate short AI videos (5–10 seconds) using Runway ML Gen-3.\nExample: 'a sunset over the ocean with gentle waves' → cinematic video clip.\nRequires Runway ML API key."
+        caps = ("Generate short AI videos (5–10 seconds) using Runway ML Gen-3.\n"
+                "Example: 'a sunset over the ocean with gentle waves' → cinematic video clip.\n"
+                "Requires Runway ML API key.")
         return _paid('AI Video Studio', '$49 setup + $29/month', caps)
 
     return None
