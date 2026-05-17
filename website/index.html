@@ -2224,23 +2224,10 @@
 
   // Conversation history for multi-turn context
   let chatHistory = [];
-  let _msgCount = 0;
-
   function sendChip(btn, text) {
     btn.closest('#quickChips').style.display = 'none';
     document.getElementById('chatInput').value = text;
     sendMessage();
-  }
-
-  function _maybeShowBuyCta() {
-    _msgCount++;
-    if (_msgCount === 3) {
-      const cta = document.createElement('div');
-      cta.className = 'chat-buy-cta';
-      cta.innerHTML = '<p>Ready to have Orby for real — on your own computer?</p><a href="/builder">Build My Orby — Founding Member Deal →</a>';
-      document.getElementById('chatMessages').appendChild(cta);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
   }
 
   function scrollBottom() {
@@ -2586,7 +2573,6 @@
         chatHistory.push({ role: 'assistant', content: reply });
         if (data.config_update) applyConfigUpdate(data.config_update);
         if (data.page_action)   applyPageAction(data.page_action);
-        _maybeShowBuyCta();
       } else {
         appendMessage('orby', "I'm having a little trouble right now — try again in a second!");
       }
