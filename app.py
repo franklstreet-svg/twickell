@@ -121,14 +121,14 @@ def _chat_phi3(messages):
     return r.json()['choices'][0]['message']['content']
 
 
-def _chat_groq(messages):
+def _chat_groq(messages, system=None):
     api_key = os.getenv('GROQ_API_KEY', '')
     model   = os.getenv('GROQ_MODEL', 'llama-3.1-8b-instant')
     if not api_key:
         raise ValueError('GROQ_API_KEY not set')
     payload = {
         'model': model,
-        'messages': [{'role': 'system', 'content': DEMO_SYSTEM}] + messages,
+        'messages': [{'role': 'system', 'content': system or DEMO_SYSTEM}] + messages,
         'max_tokens': 300,
         'temperature': 0.7,
     }
@@ -139,7 +139,7 @@ def _chat_groq(messages):
     return r.json()['choices'][0]['message']['content']
 
 
-def _chat_huggingface(messages):
+def _chat_huggingface(messages, system=None):
     hf_token = os.getenv('HF_TOKEN', '')
     hf_model = os.getenv('HF_MODEL', 'meta-llama/Llama-3.1-8B-Instruct')
     hf_url   = os.getenv('HF_URL', 'https://router.huggingface.co/v1/chat/completions')
@@ -148,7 +148,7 @@ def _chat_huggingface(messages):
     headers = {'Authorization': f'Bearer {hf_token}'}
     payload = {
         'model': hf_model,
-        'messages': [{'role': 'system', 'content': DEMO_SYSTEM}] + messages,
+        'messages': [{'role': 'system', 'content': system or DEMO_SYSTEM}] + messages,
         'max_tokens': 300,
         'temperature': 0.7,
     }
@@ -157,17 +157,73 @@ def _chat_huggingface(messages):
     return r.json()['choices'][0]['message']['content']
 
 
-def _chat_anthropic(messages):
+def _chat_anthropic(messages, system=None):
     import anthropic
     client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY', ''))
     response = client.messages.create(
         model=os.getenv('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
         max_tokens=300,
-        system=DEMO_SYSTEM,
+        system=system or DEMO_SYSTEM,
         messages=messages,
         temperature=1.0,
     )
     return response.content[0].text
+
+
+def _demo_module_context(user_message: str) -> str:
+    """Returns extra context to inject into the system prompt based on intent."""
+    msg = user_message.lower()
+
+    # Weather — actually call the real API (free, no key needed)
+    if re.search(r'\b(weather|forecast|temperature outside|raining|snowing)\b', msg):
+        try:
+            import requests as _r
+            m = re.search(r'\bin\s+([A-Za-z\s,]+?)(?:\?|\.|\s*$)', user_message, re.IGNORECASE)
+            location = m.group(1).strip() if m else 'Reno, Nevada'
+            lat_r = _r.get('https://nominatim.openstreetmap.org/search',
+                params={'q': location, 'format': 'json', 'limit': 1},
+                headers={'User-Agent': 'MyOrby/1.0'}, timeout=5)
+            results = lat_r.json()
+            if results:
+                lat, lon = results[0]['lat'], results[0]['lon']
+                wr = _r.get('https://api.open-meteo.com/v1/forecast',
+                    params={'latitude': lat, 'longitude': lon,
+                            'current': 'temperature_2m,apparent_temperature,weathercode,windspeed_10m',
+                            'temperature_unit': 'fahrenheit', 'wind_speed_unit': 'mph',
+                            'timezone': 'auto'}, timeout=8)
+                cur = wr.json()['current']
+                codes = {0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+                         61:'Rain',63:'Moderate rain',71:'Snow',80:'Showers',95:'Thunderstorm'}
+                cond = codes.get(cur['weathercode'], 'Mixed')
+                return (f'[LIVE WEATHER for {location}] {cond}, {cur["temperature_2m"]:.0f}°F '
+                        f'(feels like {cur["apparent_temperature"]:.0f}°F), wind {cur["windspeed_10m"]:.0f} mph. '
+                        f'Tell the user this real weather data naturally.')
+        except Exception:
+            pass
+        return '[INTENT: weather] User is asking about weather. Tell them on their installed Orby you would show live weather for any city, instantly.'
+
+    if re.search(r'\b(remind|reminder)\b', msg):
+        return '[INTENT: reminder] User wants to set a reminder. Show enthusiasm — on their installed Orby you would actually save and track this for them. Ask what they want to be reminded about if not clear.'
+
+    if re.search(r'\b(to.?do|task|my list)\b', msg):
+        return '[INTENT: todo] User is asking about tasks or to-do lists. On their installed Orby you manage their full to-do list, prioritize, and remind them.'
+
+    if re.search(r'\b(shopping|grocery|groceries|buy)\b', msg):
+        return '[INTENT: shopping] User is asking about shopping or groceries. On their installed Orby you maintain their full shopping list.'
+
+    if re.search(r'\b(note|jot|write down)\b', msg):
+        return '[INTENT: notes] User wants to take a note. On their installed Orby you save and organize all their notes.'
+
+    if re.search(r'\b(morning briefing|good morning|start my day)\b', msg):
+        return '[INTENT: briefing] User wants a morning briefing. On their installed Orby you would give them a personalized rundown of their reminders, calendar, weather, and tasks.'
+
+    if re.search(r'\b(calendar|schedule|appointment|meeting)\b', msg):
+        return '[INTENT: calendar] User is asking about their schedule. On their installed Orby you manage their full calendar.'
+
+    if re.search(r'\b(finance|budget|bills|money|expenses)\b', msg):
+        return '[INTENT: finance] User is asking about finances. On their installed Orby you help track budgets, bills, and spending.'
+
+    return ''
 
 
 @app.route('/demo_chat', methods=['POST'])
@@ -180,9 +236,12 @@ def demo_chat():
     messages = data.get('history', [])
     messages.append({'role': 'user', 'content': user_message})
 
+    module_ctx = _demo_module_context(user_message)
+    system = DEMO_SYSTEM + (f'\n\n{module_ctx}' if module_ctx else '')
+
     for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
         try:
-            reply = fn(messages)
+            reply = fn(messages, system=system)
             if reply:
                 log.info('demo_chat served by %s', tier)
                 sentences = _split_sentences(reply)
