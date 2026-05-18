@@ -798,6 +798,30 @@
 
     .industry-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
 
+    /* ── COMING SOON ── */
+    .cs-tag {
+      display: inline-block;
+      background: rgba(212,160,23,0.12);
+      border: 1px solid rgba(212,160,23,0.35);
+      color: var(--gold-light);
+      font-size: 0.65rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .coming-soon { opacity: 0.62; pointer-events: none; cursor: default !important; }
+    .price-card.coming-soon { position: relative; }
+    .price-card.coming-soon::before {
+      content: 'Coming Soon';
+      position: absolute; top: 16px; right: 16px;
+      background: rgba(212,160,23,0.12);
+      border: 1px solid rgba(212,160,23,0.35);
+      color: var(--gold-light);
+      font-size: 0.65rem; font-weight: 800;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 20px;
+    }
+
     /* =============================================
        PRICING
     ============================================= */
@@ -1718,7 +1742,7 @@
       <div class="feature-card">
         <span class="feature-icon">🚀</span>
         <h3>She Grows With You</h3>
-        <p>Start with the home version. Add business modules when you're ready. She becomes whatever you need — a home manager, a business tool, an industry specialist.</p>
+        <p>Start with the home version — 32 modules included. Business and industry add-ons are coming soon. Founding Members get them first.</p>
       </div>
     </div>
   </div>
@@ -1812,7 +1836,7 @@
       <span style="color:var(--gold-light);font-size:1rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Industry Modules</span>
     </div>
     <h2 class="section-title">Everything She Can Do</h2>
-    <p class="section-sub">30 capabilities included free with Home. Business and industry add-ons available when you need them.</p>
+    <p class="section-sub">32 capabilities included free with Home. Business and industry add-ons launching soon.</p>
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab(this, 'tab-home')">Home</button>
@@ -1896,7 +1920,8 @@
     <!-- BUSINESS TAB -->
     <div class="tab-panel" id="tab-business">
       <div style="max-width:560px;margin:0 auto;text-align:center;">
-        <div class="biz-card" style="border-color:var(--gold);box-shadow:0 0 30px rgba(212,160,23,0.12);text-align:left;">
+        <div class="cs-tag" style="margin-bottom:20px;font-size:0.8rem;padding:6px 20px;">🚀 Coming Soon</div>
+        <div class="biz-card coming-soon" style="border-color:var(--gold);box-shadow:0 0 30px rgba(212,160,23,0.12);text-align:left;">
           <h4 style="font-size:1.3rem;margin-bottom:6px;">Business Add-On</h4>
           <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;">Run a business? Add this to your Home license and Orby becomes your business manager too.</p>
           <div style="font-size:0.82rem;color:var(--gold);margin-bottom:4px;">$149 one-time setup</div>
@@ -1908,11 +1933,6 @@
             <li>Business task management</li>
             <li>Business dashboard — revenue, outstanding invoices, open tasks at a glance</li>
           </ul>
-          <p style="color:var(--text-muted);font-size:0.82rem;margin-top:16px;">Need something more specialized? Add an Industry Module below — Legal, Medical, Contractor, and more.</p>
-          <button class="btn btn-gold" style="margin-top:20px;width:100%;justify-content:center;" onclick="openQtyPopup('business',event)">
-            <svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:#0a0f1e;margin-right:6px;"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-            Add to Cart
-          </button>
         </div>
       </div>
     </div>
@@ -1920,136 +1940,97 @@
     <!-- INDUSTRY TAB -->
     <div class="tab-panel" id="tab-industry">
       <div class="industry-grid">
-        <div class="industry-card" onclick="openIndustry('legal')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Legal</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$349 setup</div>
           <div class="industry-price">$149/month</div>
           <p>Case management, client tracking, document organization, deadline alerts, and billing time tracking.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('medical')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Medical</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$349 setup</div>
           <div class="industry-price">$149/month</div>
           <p>Patient tracking, appointment management, treatment notes, prescription tracking, and HIPAA-conscious design.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('realestate')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Real Estate</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
           <div class="industry-price">$79/month</div>
           <p>Listing management, client pipeline, showing scheduler, offer tracking, and commission calculator.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('restaurant')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Restaurant</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
           <div class="industry-price">$79/month</div>
           <p>Menu management, inventory, staff scheduling, reservation tracking, and supplier contacts.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('retail')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Retail</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
           <div class="industry-price">$49/month</div>
           <p>Product catalog, inventory alerts, customer tracking, sales reporting, and supplier management.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('salon')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Salon &amp; Spa</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$99 setup</div>
           <div class="industry-price">$49/month</div>
           <p>Appointment booking, client history, service tracking, staff management, and product inventory.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('contractor')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Contractor</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$249 setup</div>
           <div class="industry-price">$99/month</div>
           <p>Job tracking, estimates, materials lists, subcontractor management, and invoicing. Trade sub-modules available.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('trade')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Trade Specialties</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$99 setup each</div>
           <div class="industry-price">$39/month each</div>
           <p>Plumbing, electrical, HVAC, flooring, roofing, and more. Add to any Contractor module for trade-specific workflows.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('accounting')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Accounting</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$249 setup</div>
           <div class="industry-price">$99/month</div>
           <p>Client books tracking, tax deadline management, document organization, and billing management.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('hr')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>HR Professional</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
           <div class="industry-price">$59/month</div>
           <p>Employee records, onboarding checklists, PTO tracking, review scheduling, and compliance reminders.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('therapy')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Therapy &amp; Counseling</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$199 setup</div>
           <div class="industry-price">$79/month</div>
           <p>Session notes, client tracking, appointment management, treatment planning, and confidential data design.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
-        <div class="industry-card" onclick="openIndustry('property')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Property Management</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
           <div class="industry-price">$59/month</div>
           <p>Tenant tracking, lease management, rent payment logs, maintenance requests, and vacancy status across all properties.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
 
-        <div class="industry-card" onclick="openIndustry('inventory')" style="cursor:pointer;">
+        <div class="industry-card coming-soon">
+          <div class="cs-tag">Coming Soon</div>
           <h4>Inventory Pro</h4>
           <div style="font-size:0.78rem;color:var(--gold);margin-bottom:2px;">$149 setup</div>
           <div class="industry-price">$49/month</div>
           <p>Full-scale inventory management — multi-location stock tracking, purchase orders, suppliers, bulk updates, and value reports. Scales from a small shop to warehouse operations.</p>
-          <div class="ind-click-hint">Click to learn more →</div>
-          <button class="cart-btn" onclick="openQtyPopup(this.closest('.industry-card').getAttribute('onclick').match(/'(\w+)'/)[1],event)" title="Add to cart">
-            <svg viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.1 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0023.25 4H5.21L4.27 2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>
-          </button>
         </div>
       </div>
     </div>
@@ -2094,7 +2075,7 @@
       </div>
 
       <!-- BUSINESS ADD-ON -->
-      <div class="price-card featured">
+      <div class="price-card featured coming-soon">
         <div class="popular-badge" style="background:var(--surface2);color:var(--gold-light);border:1px solid var(--gold);">Business Add-On</div>
         <div class="price-main">
           <span class="amount">$149.99</span>
@@ -2111,21 +2092,15 @@
           <li>Business dashboard</li>
           <li>Works alongside any Industry module</li>
         </ul>
-        <div style="display:flex;gap:10px;margin-top:0;">
-          <a href="/builder" class="btn btn-gold" style="flex:1;justify-content:center;">Add to My Orby →</a>
-          <button class="btn btn-gold" style="padding:0 14px;min-width:48px;justify-content:center;" onclick="openQtyPopup('business',event)" title="Add to cart">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-          </button>
-        </div>
       </div>
 
     </div>
 
     <!-- MODULES CTA -->
     <div class="pricing-modules-cta">
-      <h3>Need Orby for Your Specific Industry?</h3>
-      <p>We have 12 industry-specific modules — Legal, Medical, Contractor, Real Estate, Restaurant, and more. Each is priced individually based on the industry. See exactly what each one costs and what it does.</p>
-      <a href="#modules" class="btn btn-gold" style="font-size:1.15rem;padding:14px 32px;" onclick="document.querySelector('[onclick*=tab-industry]').click()">View Available Modules &amp; Pricing ↑</a>
+      <h3>Industry Modules — Coming Soon</h3>
+      <p>Legal, Medical, Contractor, Real Estate, Restaurant, and 8 more industry-specific modules are in development. Founding Members get priority access when they launch — no extra charge to be first in line.</p>
+      <a href="#modules" class="btn btn-gold" style="font-size:1.15rem;padding:14px 32px;" onclick="document.querySelector('[onclick*=tab-industry]').click()">Preview What's Coming ↑</a>
     </div>
 
     <div class="volume-note">
