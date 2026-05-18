@@ -11,6 +11,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV PORT=8080
+ENV PORT=7860
 
 CMD exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
