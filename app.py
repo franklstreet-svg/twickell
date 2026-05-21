@@ -35,7 +35,7 @@ from modules.paid import (
     image_studio, creator_3d, video_studio,
 )
 
-ORBY_VOICE = 'en-US-AvaNeural'
+ORBY_VOICE = 'en-US-AvaMultilingualNeural'  # newer + more expressive than en-US-AvaNeural
 
 def _clean_for_tts(text: str) -> str:
     t = re.sub(r'##CONFIG##.*?##CONFIG##', '', text, flags=re.DOTALL)

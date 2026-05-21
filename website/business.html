@@ -1131,59 +1131,104 @@ function buyWC(tier) {
     return { pitch, rate };
   }
 
+  // Fetch a single chunk's audio from /tts (Microsoft Ava Multilingual Neural).
+  // Returns an Audio element ready to .play(), or null on failure.
+  async function _fetchChunkAudio(chunkText) {
+    try {
+      const resp = await fetch('/tts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: chunkText })
+      });
+      if (!resp.ok) return null;
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.preload = 'auto';
+      audio._objectUrl = url;
+      return audio;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Play one chunk via browser speechSynthesis as instant fallback when /tts
+  // fails. Keeps the conversation moving even if the server is down.
+  function _speakChunkBrowser(chunkText, idx, total) {
+    return new Promise((resolve) => {
+      if (!synth) return resolve();
+      if (!synthVoice) synthVoice = pickVoice();
+      const utt = new SpeechSynthesisUtterance(chunkText);
+      if (synthVoice) utt.voice = synthVoice;
+      const pr = prosodyFor(chunkText, idx, total);
+      utt.pitch = pr.pitch; utt.rate = pr.rate; utt.volume = 1.0;
+      utt.onend = resolve; utt.onerror = resolve;
+      synth.speak(utt);
+    });
+  }
+
   function speak(text) {
-    if (!text || !synth) return Promise.resolve();
+    if (!text) return Promise.resolve();
     const cleaned = speechifyText(text);
     const chunks = splitForSpeech(cleaned);
     if (!chunks.length) return Promise.resolve();
-    return new Promise((resolve) => {
+
+    return new Promise(async (resolve) => {
       try {
-        synth.cancel();
-        if (!synthVoice) synthVoice = pickVoice();
+        // Hard-cancel anything playing
+        if (synth) synth.cancel();
+        if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
         speaking = true;
         stopRec();
         setMicVisual('speaking');
         setStatus("Orby is speaking…", 'speaking');
 
-        let i = 0;
-        function speakNext() {
-          if (i >= chunks.length || !voiceOn && i > 0) {
-            speaking = false;
-            if (voiceOn) {
-              setMicVisual('listening');
-              setStatus("Listening… speak whenever you're ready.", 'listening');
-              scheduleRecStart(300);
-            } else {
-              setMicVisual('off');
-              setStatus("🎤 Click the mic to talk to Orby with your voice.");
-            }
-            resolve();
-            return;
-          }
-          const chunkText = chunks[i];
-          const utt = new SpeechSynthesisUtterance(chunkText);
-          if (synthVoice) utt.voice = synthVoice;
-          // Per-chunk prosody shaped by punctuation + position
-          const pr = prosodyFor(chunkText, i, chunks.length);
-          utt.pitch  = pr.pitch;
-          utt.rate   = pr.rate;
-          utt.volume = chunkText.trim().endsWith('!') ? 1.0 : 0.96;
-          // Slightly bigger pause after question marks / sentence ends, brief breath after commas
-          const endPunct = chunkText.trim().slice(-1);
+        // Kick off ALL chunk fetches in parallel so audio is ready when we need it
+        const audioPromises = chunks.map(c => _fetchChunkAudio(c));
+
+        for (let i = 0; i < chunks.length; i++) {
+          if (!voiceOn && i > 0) break;
+          const audio = await audioPromises[i];
+          const endPunct = chunks[i].trim().slice(-1);
           const pauseMs = endPunct === '?' ? 220 :
                           endPunct === '!' ? 180 :
                           endPunct === '.' ? 160 :
                           endPunct === ',' ? 80  :
                           endPunct === ';' ? 110 :
                           endPunct === ':' ? 100 : 90;
-          utt.onend = () => { i++; setTimeout(speakNext, pauseMs); };
-          utt.onerror = () => { i++; setTimeout(speakNext, 50); };
-          synth.speak(utt);
+          if (audio) {
+            // Premium neural voice — play the audio blob
+            currentAudio = audio;
+            await new Promise((res) => {
+              audio.onended = () => {
+                URL.revokeObjectURL(audio._objectUrl);
+                currentAudio = null;
+                res();
+              };
+              audio.onerror = () => { currentAudio = null; res(); };
+              audio.play().catch(() => res());
+            });
+          } else {
+            // /tts failed — instant fallback to browser TTS so we don't go silent
+            await _speakChunkBrowser(chunks[i], i, chunks.length);
+          }
+          if (i < chunks.length - 1) {
+            await new Promise(r => setTimeout(r, pauseMs));
+          }
         }
-        speakNext();
       } catch (e) {
+        // Last-ditch fallback — speak the whole text via browser
+        try { await _speakChunkBrowser(cleaned, 0, 1); } catch(_) {}
+      } finally {
         speaking = false;
-        setMicVisual(voiceOn ? 'listening' : 'off');
+        if (voiceOn) {
+          setMicVisual('listening');
+          setStatus("Listening… speak whenever you're ready.", 'listening');
+          scheduleRecStart(300);
+        } else {
+          setMicVisual('off');
+          setStatus("🎤 Click the mic to talk to Orby with your voice.");
+        }
         resolve();
       }
     });
