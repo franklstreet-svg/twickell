@@ -1086,28 +1086,49 @@ function buyWC(tier) {
     return s;
   }
 
-  // Split a reply into sentence-ish chunks so each gets its own prosody envelope
-  // (a single long utterance comes out flatter than 2-3 shorter ones).
+  // Split a reply into clause-sized chunks. Smaller pieces = more breaths,
+  // and per-chunk pitch/rate variation makes the voice feel alive instead of flat.
+  // Each chunk carries the trailing punctuation so we can color the final word.
   function splitForSpeech(text) {
     const trimmed = String(text || '').trim();
     if (!trimmed) return [];
-    // Split on .!? but keep the punctuation. Cap each chunk at ~200 chars.
-    const raw = trimmed.match(/[^.!?]+[.!?]?/g) || [trimmed];
+    // Split on sentence ends AND mid-sentence clause breaks (commas, semicolons,
+    // em-dashes, colons). Keep the separator so we can read intent from it.
+    const raw = trimmed.match(/[^.!?,;:—–-]+[.!?,;:—–-]?/g) || [trimmed];
     const out = [];
     for (let s of raw) {
       s = s.trim();
       if (!s) continue;
-      if (s.length <= 220) { out.push(s); continue; }
-      // Long sentence — break on commas
-      const parts = s.split(/,\s+/).filter(Boolean);
-      let buf = '';
-      for (const p of parts) {
-        if ((buf + ', ' + p).length > 200 && buf) { out.push(buf); buf = p; }
-        else buf = buf ? (buf + ', ' + p) : p;
+      // Merge tiny fragments (<= 3 words) into previous chunk so we don't gasp
+      const wc = s.split(/\s+/).length;
+      if (wc <= 3 && out.length) {
+        out[out.length - 1] = out[out.length - 1] + ' ' + s;
+        continue;
       }
-      if (buf) out.push(buf);
+      out.push(s);
     }
     return out;
+  }
+
+  // Decide prosody for a chunk based on what's around it. Question chunks rise
+  // at the end; exclamations get a brighter pitch + louder; statements fall.
+  function prosodyFor(chunk, idx, total) {
+    const last = chunk.trim().slice(-1);
+    const isQuestion = last === '?';
+    const isExclaim = last === '!';
+    const isMidClause = /[,;:—–-]$/.test(chunk.trim());
+    const isFinal = (idx === total - 1);
+    // Rotating warm baseline so the voice has rhythm (slight ups and downs).
+    const phase = idx % 4;
+    let pitch = [1.04, 1.10, 1.06, 1.12][phase];
+    let rate  = [1.00, 0.96, 1.02, 0.98][phase];
+    if (isQuestion) { pitch += 0.10; rate *= 0.98; }
+    if (isExclaim)  { pitch += 0.08; rate *= 1.04; }
+    if (isMidClause && !isFinal) { rate *= 1.01; }
+    // Clamp to safe ranges (browser TTS clamps anyway, but be defensive)
+    pitch = Math.min(2.0, Math.max(0.5, pitch));
+    rate  = Math.min(1.5, Math.max(0.6, rate));
+    return { pitch, rate };
   }
 
   function speak(text) {
@@ -1139,14 +1160,23 @@ function buyWC(tier) {
             resolve();
             return;
           }
-          const utt = new SpeechSynthesisUtterance(chunks[i]);
+          const chunkText = chunks[i];
+          const utt = new SpeechSynthesisUtterance(chunkText);
           if (synthVoice) utt.voice = synthVoice;
-          // Subtle variation per chunk so the voice has rhythm instead of monotone
-          const phase = i % 3;
-          utt.rate   = phase === 0 ? 1.02 : phase === 1 ? 0.96 : 1.00;
-          utt.pitch  = phase === 0 ? 1.08 : phase === 1 ? 1.02 : 1.10;
-          utt.volume = 1.0;
-          utt.onend = () => { i++; setTimeout(speakNext, 90); };
+          // Per-chunk prosody shaped by punctuation + position
+          const pr = prosodyFor(chunkText, i, chunks.length);
+          utt.pitch  = pr.pitch;
+          utt.rate   = pr.rate;
+          utt.volume = chunkText.trim().endsWith('!') ? 1.0 : 0.96;
+          // Slightly bigger pause after question marks / sentence ends, brief breath after commas
+          const endPunct = chunkText.trim().slice(-1);
+          const pauseMs = endPunct === '?' ? 220 :
+                          endPunct === '!' ? 180 :
+                          endPunct === '.' ? 160 :
+                          endPunct === ',' ? 80  :
+                          endPunct === ';' ? 110 :
+                          endPunct === ':' ? 100 : 90;
+          utt.onend = () => { i++; setTimeout(speakNext, pauseMs); };
           utt.onerror = () => { i++; setTimeout(speakNext, 50); };
           synth.speak(utt);
         }
