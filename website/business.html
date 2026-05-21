@@ -1131,6 +1131,45 @@ function buyWC(tier) {
     return { pitch, rate };
   }
 
+  // Play audio that came back INLINE with the chat reply (base64 MPEG). This
+  // is the proven pattern from /demo_chat — eliminates the buffer-race
+  // distortion the separate /tts fetch was causing.
+  function speakInlineBase64(b64) {
+    if (!b64) return Promise.resolve();
+    return new Promise((resolve) => {
+      try {
+        if (synth) synth.cancel();
+        if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
+        speaking = true;
+        stopRec();
+        setMicVisual('speaking');
+        setStatus("Orby is speaking…", 'speaking');
+        const audio = new Audio('data:audio/mpeg;base64,' + b64);
+        currentAudio = audio;
+        const finish = () => {
+          speaking = false;
+          currentAudio = null;
+          if (voiceOn) {
+            setMicVisual('listening');
+            setStatus("Listening… speak whenever you're ready.", 'listening');
+            scheduleRecStart(300);
+          } else {
+            setMicVisual('off');
+            setStatus("🎤 Click the mic to talk to Orby with your voice.");
+          }
+          resolve();
+        };
+        audio.onended = finish;
+        audio.onerror = finish;
+        audio.play().catch(finish);
+      } catch (e) {
+        speaking = false;
+        setMicVisual(voiceOn ? 'listening' : 'off');
+        resolve();
+      }
+    });
+  }
+
   // Fetch a single chunk's audio from /tts (Microsoft Ava Multilingual Neural).
   // Returns an Audio element ready to .play(), or null on failure.
   async function _fetchChunkAudio(chunkText) {
@@ -1333,9 +1372,15 @@ function buyWC(tier) {
       const reply = data.reply || data.message || "Sorry — I hit a snag. Try again or email franklstreet@yahoo.com.";
       add('bot', reply);
       chatPending = false;
-      // Speak the reply if voice mode is on
+      // Speak the reply if voice mode is on — prefer the audio that came back
+      // inline with the chat reply (one round-trip, no buffer race like the old
+      // separate /tts fetch had).
       if (voiceOn) {
-        await speak(reply);
+        if (data.audio) {
+          await speakInlineBase64(data.audio);
+        } else {
+          await speak(reply);
+        }
       }
       // If Orby triggered the hand-off to legal review, redirect after a short pause
       if (data.redirect_url) {

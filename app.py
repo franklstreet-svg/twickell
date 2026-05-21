@@ -1716,7 +1716,20 @@ def business_demo_chat():
         except Exception:
             pass
 
-    resp = {'ok': True, 'reply': reply, 'session_id': session_id}
+    # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
+    # race). Empty string on failure; widget falls back to no audio.
+    audio_b64 = ''
+    try:
+        _loop = asyncio.new_event_loop()
+        try:
+            audio_bytes = _loop.run_until_complete(_synthesize(_clean_for_tts(reply)))
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+        finally:
+            _loop.close()
+    except Exception as tts_e:
+        log.warning('B2B inline TTS failed: %s', tts_e)
+
+    resp = {'ok': True, 'reply': reply, 'session_id': session_id, 'audio': audio_b64}
     if redirect_url:
         resp['redirect_url'] = redirect_url
     return jsonify(resp)
