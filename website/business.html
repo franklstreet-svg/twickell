@@ -1170,12 +1170,11 @@ function buyWC(tier) {
   function speak(text) {
     if (!text) return Promise.resolve();
     const cleaned = speechifyText(text);
-    const chunks = splitForSpeech(cleaned);
-    if (!chunks.length) return Promise.resolve();
+    if (!cleaned.trim()) return Promise.resolve();
 
     return new Promise(async (resolve) => {
       try {
-        // Hard-cancel anything playing
+        // Hard-cancel anything playing first
         if (synth) synth.cancel();
         if (currentAudio) { try { currentAudio.pause(); } catch(e) {} currentAudio = null; }
         speaking = true;
@@ -1183,41 +1182,37 @@ function buyWC(tier) {
         setMicVisual('speaking');
         setStatus("Orby is speaking…", 'speaking');
 
-        // Kick off ALL chunk fetches in parallel so audio is ready when we need it
-        const audioPromises = chunks.map(c => _fetchChunkAudio(c));
+        // ONE /tts call for the entire reply — eliminates the audio glitching
+        // we got from joining multiple chunks and from mid-reply voice fallback.
+        const audio = await _fetchChunkAudio(cleaned);
 
-        for (let i = 0; i < chunks.length; i++) {
-          if (!voiceOn && i > 0) break;
-          const audio = await audioPromises[i];
-          const endPunct = chunks[i].trim().slice(-1);
-          const pauseMs = endPunct === '?' ? 220 :
-                          endPunct === '!' ? 180 :
-                          endPunct === '.' ? 160 :
-                          endPunct === ',' ? 80  :
-                          endPunct === ';' ? 110 :
-                          endPunct === ':' ? 100 : 90;
-          if (audio) {
-            // Premium neural voice — play the audio blob
-            currentAudio = audio;
-            await new Promise((res) => {
-              audio.onended = () => {
-                URL.revokeObjectURL(audio._objectUrl);
-                currentAudio = null;
-                res();
-              };
-              audio.onerror = () => { currentAudio = null; res(); };
-              audio.play().catch(() => res());
-            });
-          } else {
-            // /tts failed — instant fallback to browser TTS so we don't go silent
-            await _speakChunkBrowser(chunks[i], i, chunks.length);
-          }
-          if (i < chunks.length - 1) {
-            await new Promise(r => setTimeout(r, pauseMs));
-          }
+        if (audio) {
+          currentAudio = audio;
+          // Wait until the browser has FULLY buffered the audio so we don't get
+          // the "alligator" gargling sound from playing while bytes are arriving.
+          await new Promise((res) => {
+            const ready = () => res();
+            const timeoutId = setTimeout(ready, 4000);
+            audio.oncanplaythrough = () => { clearTimeout(timeoutId); ready(); };
+            audio.onerror = () => { clearTimeout(timeoutId); res(); };
+            // Force buffering to start
+            try { audio.load(); } catch(e) {}
+          });
+          // Now play the fully-loaded audio
+          await new Promise((res) => {
+            audio.onended = () => {
+              URL.revokeObjectURL(audio._objectUrl);
+              currentAudio = null;
+              res();
+            };
+            audio.onerror = () => { currentAudio = null; res(); };
+            audio.play().catch(() => res());
+          });
+        } else {
+          // /tts completely failed — single fallback to browser TTS for the whole reply
+          await _speakChunkBrowser(cleaned, 0, 1);
         }
       } catch (e) {
-        // Last-ditch fallback — speak the whole text via browser
         try { await _speakChunkBrowser(cleaned, 0, 1); } catch(_) {}
       } finally {
         speaking = false;
