@@ -198,6 +198,19 @@ h1 .gold {
   transition: transform 0.1s, box-shadow 0.2s;
 }
 .demo-mic:hover { transform: translateY(-1px); box-shadow: 0 0 22px rgba(212,160,23,0.7); }
+.demo-reset {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  width: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.demo-reset:hover { color: var(--gold-light); border-color: var(--gold); }
 .demo-mic.active {
   background: linear-gradient(135deg, #ef4444, #f87171);
   color: white;
@@ -483,6 +496,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
         <button class="demo-mic" id="demoMic" title="Talk to Orby (turn voice on/off)" type="button">🎤</button>
         <input type="text" id="demoInput" class="demo-input" placeholder="Click 🎤 to talk, or type a question" maxlength="500">
         <button class="demo-send" id="demoSend" type="button">Send</button>
+        <button class="demo-reset" id="demoReset" type="button" title="Start the conversation over">↺</button>
       </div>
       <div id="demoVoiceStatus" style="text-align:center;padding:6px 12px;font-size:12px;color:var(--text-muted);background:rgba(0,0,0,0.18);border-top:1px solid var(--border);">
         🎤 Click the mic to enable voice — talk to Orby like a real receptionist.
@@ -973,7 +987,21 @@ function buyWC(tier) {
   const send = document.getElementById('demoSend');
   const mic = document.getElementById('demoMic');
   const status = document.getElementById('demoVoiceStatus');
-  const sessionId = 'demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const resetBtn = document.getElementById('demoReset');
+  let sessionId = 'demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+  // STT autocorrect: Web Speech API doesn't know "Orby" — it mishears as
+  // "Orbeez" (the toy), "Orby's", "Orbis", etc. Normalize on the way in so
+  // Orby sees a clean message instead of getting confused.
+  function _correctMishears(text) {
+    let t = String(text || '');
+    t = t.replace(/\borbeez\b/gi, 'Orby');
+    t = t.replace(/\borby's\b/gi, 'Orby');
+    t = t.replace(/\borbi(s|es)?\b/gi, 'Orby');
+    t = t.replace(/\borbie\b/gi, 'Orby');
+    t = t.replace(/\borbi ai\b/gi, 'Orby AI');
+    return t;
+  }
 
   // ── Voice state ─────────────────────────────────────────────────────────
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1362,6 +1390,7 @@ function buyWC(tier) {
 
   async function shipText(text) {
     if (!text || chatPending) return;
+    text = _correctMishears(text);  // fix Orbeez → Orby etc. before anyone sees it
     chatPending = true;
     stopRec();
     send.disabled = true;
@@ -1415,6 +1444,21 @@ function buyWC(tier) {
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); shipFromInput(); }
   });
+
+  // Start Over button — clear visible chat + cut server-side history by issuing a fresh session_id
+  if (resetBtn) {
+    resetBtn.addEventListener('click', () => {
+      try { if (synth) synth.cancel(); } catch(e) {}
+      try { if (currentAudio) currentAudio.pause(); } catch(e) {}
+      speaking = false;
+      stopRec();
+      msgs.innerHTML = '';
+      sessionId = 'demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      add('bot', "Fresh start! What can I help you with?");
+      setStatus(voiceOn ? "Listening… speak whenever you're ready." : "🎤 Click the mic to talk to Orby with your voice.", voiceOn ? 'listening' : '');
+      if (voiceOn) scheduleRecStart(300);
+    });
+  }
 
   // Pause voice when the tab is hidden so the mic doesn't stay hot in the background
   document.addEventListener('visibilitychange', () => {
