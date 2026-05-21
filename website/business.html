@@ -183,6 +183,33 @@ h1 .gold {
   cursor: pointer;
   font-size: 14px;
 }
+.demo-mic {
+  background: rgba(212,160,23,0.12);
+  color: var(--gold-light);
+  border: 1px solid var(--border);
+  width: 46px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.demo-mic.active {
+  background: linear-gradient(135deg, #ef4444, #f87171);
+  color: white;
+  border-color: #ef4444;
+  animation: pulse-mic 1.4s ease-in-out infinite;
+}
+.demo-mic.speaking {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: white;
+  border-color: #3b82f6;
+}
+@keyframes pulse-mic {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+}
 .demo-foot { text-align: center; color: var(--text-muted); margin-top: 16px; font-size: 13px; }
 
 /* Buttons */
@@ -429,7 +456,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 <!-- HERO -->
 <section class="hero">
   <div class="container">
-    <span class="eyebrow">Founding member pricing — locked for life</span>
+    <span class="eyebrow">Founding member: 50% off setup — first 1000 customers</span>
     <h1>Your <span class="gold">AI Receptionist</span> and <span class="gold">Website Chat</span><br>working 24/7, on hardware <em>you</em> control</h1>
     <p class="subhead">Orby answers your business phones, greets your website visitors, captures leads, books appointments, and learns from you. Your customer data stays on hardware you own — never our cloud.</p>
     <div class="hero-cta">
@@ -451,8 +478,12 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
     <div class="demo-shell">
       <div class="demo-msgs" id="demoMsgs"></div>
       <div class="demo-input-row">
-        <input type="text" id="demoInput" class="demo-input" placeholder="Ask Orby anything — try 'what do you do?' or 'how much does it cost?'" maxlength="500">
-        <button class="demo-send" id="demoSend">Send</button>
+        <button class="demo-mic" id="demoMic" title="Talk to Orby (turn voice on/off)" type="button">🎤</button>
+        <input type="text" id="demoInput" class="demo-input" placeholder="Click 🎤 to talk, or type a question" maxlength="500">
+        <button class="demo-send" id="demoSend" type="button">Send</button>
+      </div>
+      <div id="demoVoiceStatus" style="text-align:center;padding:6px 12px;font-size:12px;color:var(--text-muted);background:rgba(0,0,0,0.18);border-top:1px solid var(--border);">
+        🎤 Click the mic to enable voice — talk to Orby like a real receptionist.
       </div>
     </div>
     <p class="demo-foot">This conversation is a demo. We capture it briefly to improve responses; nothing is sold or shared.</p>
@@ -831,7 +862,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 
       <details class="faq">
         <summary>Why "founding member pricing"?</summary>
-        <p>The first 50 customers get the current rates locked in for the life of their account — meaning even if we raise prices for new customers later, your rate never changes. It's our way of saying thank you for trying us before we have testimonials.</p>
+        <p>The first 1,000 customers per product get <strong>50% off the one-time setup fee</strong> — $149.50 instead of $299. It's our way of saying thank you for trying us early. Your monthly subscription rate stays the same as everyone else's; the discount is on the setup only.</p>
       </details>
 
     </div>
@@ -871,7 +902,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 <section class="final-cta">
   <div class="container">
     <h2>Ready to put Orby to work?</h2>
-    <p>Founding member pricing is locked in for the first 50 customers. Once we hit 50, rates go up for everyone new. Your rate, once locked, never changes.</p>
+    <p>Founding members (first 1,000 per product) save $149.50 on setup. Once we hit 1,000, the setup fee goes back to full price for everyone new.</p>
     <div class="hero-cta">
       <a href="#pricing" class="btn btn-primary">See pricing →</a>
       <a href="#demo" class="btn btn-outline">Talk to Orby first</a>
@@ -930,13 +961,38 @@ function buyWC(tier) {
 })();
 </script>
 
-<!-- INLINE DEMO CHAT -->
+<!-- INLINE DEMO CHAT — voice + text -->
 <script>
 (function () {
   const msgs = document.getElementById('demoMsgs');
   const input = document.getElementById('demoInput');
   const send = document.getElementById('demoSend');
+  const mic = document.getElementById('demoMic');
+  const status = document.getElementById('demoVoiceStatus');
   const sessionId = 'demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+  // ── Voice state ─────────────────────────────────────────────────────────
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let voiceOn = false;       // user has turned voice on
+  let rec = null;            // active SpeechRecognition object
+  let recActive = false;
+  let speaking = false;      // Orby's TTS audio is playing
+  let chatPending = false;   // request in flight (don't listen while we're waiting)
+  let currentAudio = null;
+  let restartTimer = null;
+
+  function setStatus(text, kind) {
+    if (!status) return;
+    status.textContent = text;
+    status.style.color = kind === 'listening' ? '#fca5a5' :
+                          kind === 'speaking'  ? '#93c5fd' :
+                          'var(--text-muted)';
+  }
+  function setMicVisual(state) {
+    mic.classList.remove('active', 'speaking');
+    if (state === 'listening') mic.classList.add('active');
+    if (state === 'speaking') mic.classList.add('speaking');
+  }
 
   function add(role, text) {
     const div = document.createElement('div');
@@ -945,29 +1001,150 @@ function buyWC(tier) {
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   }
-
   function addTyping() {
     const div = document.createElement('div');
     div.className = 'demo-msg typing';
     div.id = 'demo-typing';
-    div.textContent = 'Orby is typing…';
+    div.textContent = 'Orby is thinking…';
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   }
-
   function removeTyping() {
     const t = document.getElementById('demo-typing');
     if (t) t.remove();
   }
 
-  // Opening greeting
-  add('bot', "Hi! I'm Orby. This page is being run by me — I'm the AI Website Controller in action. Ask me anything about the products, pricing, how I work, or my privacy promise. Or just say hi and we'll figure out where to go from there.");
-
-  async function ship() {
-    const text = (input.value || '').trim();
+  // ── TTS playback — server returns base64 mp3 ────────────────────────────
+  async function speak(text) {
     if (!text) return;
-    input.value = '';
+    try {
+      speaking = true;
+      stopRec();  // don't listen while Orby is talking
+      setMicVisual('speaking');
+      setStatus("Orby is speaking…", 'speaking');
+      const r = await fetch('/tts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: text, voice: 'en-US-AvaNeural' })
+      });
+      if (!r.ok) throw new Error('tts http ' + r.status);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      currentAudio = new Audio(url);
+      currentAudio.onended = () => {
+        speaking = false;
+        URL.revokeObjectURL(url);
+        currentAudio = null;
+        if (voiceOn) {
+          setMicVisual('listening');
+          setStatus("Listening… speak whenever you're ready.", 'listening');
+          scheduleRecStart(300);
+        } else {
+          setMicVisual('off');
+          setStatus("🎤 Click the mic to talk to Orby with your voice.");
+        }
+      };
+      currentAudio.play().catch(() => {
+        // Autoplay blocked — happens if voice hasn't been enabled by a click yet.
+        speaking = false;
+        setMicVisual(voiceOn ? 'listening' : 'off');
+      });
+    } catch (e) {
+      speaking = false;
+      setMicVisual(voiceOn ? 'listening' : 'off');
+    }
+  }
+
+  // ── Speech recognition ──────────────────────────────────────────────────
+  function buildRec() {
+    if (!SR) return null;
+    const r = new SR();
+    r.continuous = false;       // single turn — restart after each result
+    r.interimResults = false;
+    r.lang = 'en-US';
+    r.onstart = () => { recActive = true; setStatus("Listening… speak whenever you're ready.", 'listening'); };
+    r.onresult = (e) => {
+      const final = (e.results[0] && e.results[0][0] && e.results[0][0].transcript || '').trim();
+      if (final) shipText(final);
+    };
+    r.onerror = (e) => {
+      recActive = false;
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        voiceOn = false;
+        setMicVisual('off');
+        setStatus("Mic permission denied — you can still type below.");
+      }
+    };
+    r.onend = () => {
+      recActive = false;
+      // Restart listening if voice mode is still on (continuous conversation)
+      if (voiceOn && !speaking && !chatPending) scheduleRecStart(400);
+    };
+    return r;
+  }
+  function scheduleRecStart(delay) {
+    clearTimeout(restartTimer);
+    restartTimer = setTimeout(startRec, delay || 200);
+  }
+  function startRec() {
+    if (!voiceOn || speaking || chatPending || recActive) return;
+    if (!SR) {
+      setStatus("Voice not supported in this browser — please try Chrome or Edge, or type below.");
+      return;
+    }
+    if (rec) { try { rec.abort(); } catch(e) {} }
+    rec = buildRec();
+    try { rec.start(); } catch (e) { recActive = false; }
+  }
+  function stopRec() {
+    clearTimeout(restartTimer);
+    if (rec) { try { rec.abort(); } catch(e) {} rec = null; }
+    recActive = false;
+  }
+
+  // ── Mic toggle ──────────────────────────────────────────────────────────
+  mic.addEventListener('click', async () => {
+    if (!SR) {
+      setStatus("Voice not supported here — try Chrome/Edge, or type below.");
+      return;
+    }
+    if (voiceOn) {
+      voiceOn = false;
+      stopRec();
+      if (currentAudio) { try { currentAudio.pause(); } catch(e) {} }
+      speaking = false;
+      setMicVisual('off');
+      setStatus("Voice off. Click the mic again to turn it back on.");
+      return;
+    }
+    // Ask permission via a silent getUserMedia probe (so the prompt is friendly)
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+      probe.getTracks().forEach(t => t.stop());
+    } catch (e) {
+      setStatus("Mic permission denied. You can still type below, or enable mic in your browser settings.");
+      return;
+    }
+    voiceOn = true;
+    setMicVisual('listening');
+    // Greet by voice on first activation so the user hears Orby
+    if (!window._demoGreetedVocally) {
+      window._demoGreetedVocally = true;
+      speak("Hi! I'm Orby. I'm the AI website controller. Ask me anything — about the products, pricing, or how I work. I'm listening.");
+    } else {
+      scheduleRecStart(150);
+    }
+  });
+
+  // Opening greeting (text only — voice greets after mic click)
+  add('bot', "Hi! I'm Orby. Click the 🎤 mic button to talk to me with your voice (like calling a receptionist) — or type a question below. I'm running on this page exactly the way I'd run on your business website.");
+
+  async function shipText(text) {
+    if (!text || chatPending) return;
+    chatPending = true;
+    stopRec();
     send.disabled = true;
+    input.value = '';
     add('user', text);
     addTyping();
     try {
@@ -981,23 +1158,43 @@ function buyWC(tier) {
       removeTyping();
       const reply = data.reply || data.message || "Sorry — I hit a snag. Try again or email franklstreet@yahoo.com.";
       add('bot', reply);
-      // If Orby triggered the hand-off to legal review, redirect after a short read pause
+      chatPending = false;
+      // Speak the reply if voice mode is on
+      if (voiceOn) {
+        await speak(reply);
+      }
+      // If Orby triggered the hand-off to legal review, redirect after a short pause
       if (data.redirect_url) {
-        setTimeout(() => { location.href = data.redirect_url; }, 1600);
+        setTimeout(() => { location.href = data.redirect_url; }, voiceOn ? 4500 : 1600);
       }
     } catch (e) {
       removeTyping();
       add('bot', "I couldn't reach the brain right now. Please email franklstreet@yahoo.com — Frank will get back to you fast.");
+      chatPending = false;
     } finally {
       send.disabled = false;
       input.focus();
     }
   }
 
-  send.addEventListener('click', ship);
+  // Hook up text input + send button to the same pipeline
+  function shipFromInput() { shipText((input.value || '').trim()); }
+  send.addEventListener('click', shipFromInput);
   input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ship(); }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); shipFromInput(); }
   });
+
+  // Pause voice when the tab is hidden so the mic doesn't stay hot in the background
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopRec();
+    } else if (voiceOn && !speaking && !chatPending) {
+      scheduleRecStart(400);
+    }
+  });
+
+  // Expose shipText so the SR onresult handler can call it
+  window._demoShipText = shipText;
 })();
 </script>
 

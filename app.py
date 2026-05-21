@@ -1572,13 +1572,10 @@ def _run_b2b_llm(history, system):
 
 
 def _scrape_summary(url: str) -> str:
-    """Run the brain's universal scraper if available; return a short summary
-    Orby can use on the next LLM turn. Best-effort — never raise."""
+    """Run the universal scraper if available; return a short summary
+    Orby can use on the next LLM turn. Best-effort — never raise.
+    Imports from twickell's own modules/business/scraper (shipped with deploy)."""
     try:
-        import sys
-        brain_path = '/home/frank/projects/Orbi_Brain'
-        if brain_path not in sys.path:
-            sys.path.insert(0, brain_path)
         from modules.business.scraper.site_scraper import SiteScraper
         result = SiteScraper(max_pages=8).scrape(url)
         if not isinstance(result, dict):
@@ -1728,27 +1725,36 @@ def customer_chat():
     if not api_key:
         return jsonify({'ok': False, 'error': 'api_key required'}), 401
 
-    # Validate API key → customer_id by scanning customers' api_keys.json files.
-    # At launch volume (first 50 customers) a full scan is fine; index later.
+    # Validate API key → customer_id via the SAME data dir bridge_routes uses,
+    # so we don't have a path mismatch between provisioning and chat auth.
     customer_id = ''
     product = ''
-    from pathlib import Path as _P
-    bridge_customers = _P(os.environ.get('ORBI_DATA_DIR',
-                          str(_P('/home/frank/twickell_deploy/data')))) / 'customers'
-    if bridge_customers.exists():
-        candidate_dirs = [bridge_customers / customer_id_hint] if customer_id_hint else []
-        if customer_id_hint and not candidate_dirs[0].exists():
-            candidate_dirs = []
-        if not candidate_dirs:
-            candidate_dirs = [d for d in bridge_customers.iterdir() if d.is_dir()]
-        for cdir in candidate_dirs:
-            for k in _read(cdir / 'api_keys.json', []):
-                if k.get('api_key') == api_key and not k.get('revoked'):
-                    customer_id = k.get('customer_id') or cdir.name
-                    product = k.get('product') or 'website_controller'
-                    break
-            if customer_id:
+    # Try the customer_id_hint first (fast path) using bridge_routes._cust_dir,
+    # then fall back to a full scan of CUSTOMERS_DIR.
+    if customer_id_hint:
+        hint_dir = _cust_dir(customer_id_hint)
+        for k in _read(hint_dir / 'api_keys.json', []):
+            if k.get('api_key') == api_key and not k.get('revoked'):
+                customer_id = k.get('customer_id') or customer_id_hint
+                product = k.get('product') or 'website_controller'
                 break
+    if not customer_id:
+        # Full scan — at launch volume (first hundreds of customers) this is fine
+        try:
+            from bridge_routes import CUSTOMERS_DIR
+            if CUSTOMERS_DIR.exists():
+                for cdir_iter in CUSTOMERS_DIR.iterdir():
+                    if not cdir_iter.is_dir():
+                        continue
+                    for k in _read(cdir_iter / 'api_keys.json', []):
+                        if k.get('api_key') == api_key and not k.get('revoked'):
+                            customer_id = k.get('customer_id') or cdir_iter.name
+                            product = k.get('product') or 'website_controller'
+                            break
+                    if customer_id:
+                        break
+        except Exception as e:
+            log.warning('customer_chat key lookup failed: %s', e)
     if not customer_id:
         return jsonify({'ok': False, 'error': 'invalid or revoked api_key'}), 401
 

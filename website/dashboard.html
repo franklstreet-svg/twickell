@@ -431,6 +431,20 @@
       }
       $('bizName').textContent = (data.profile && data.profile.name) || data.customer_id;
       $('ownerEmail').textContent = data.owner_email || '';
+      // Founding-member badge (shown if this customer qualifies)
+      if (data.founding_member) {
+        var fm = data.founding_member;
+        var dollars = ((fm.locked_monthly_cents || 0) / 100).toFixed(0);
+        var banner = document.getElementById('foundingBanner');
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.id = 'foundingBanner';
+          banner.style.cssText = 'background:linear-gradient(135deg,rgba(212,160,23,0.18),rgba(240,192,64,0.08));border:1px solid var(--gold);border-radius:10px;padding:14px 18px;margin:16px 0 0;font-size:14px;color:var(--gold-light);';
+          var container = document.getElementById('root');
+          if (container) container.insertBefore(banner, container.firstChild);
+        }
+        banner.innerHTML = '⭐ <strong>Founding Member #' + (fm.number || '?') + '</strong> of 1,000 &middot; You paid $149.50 setup (50% off) thanks to being early. Welcome aboard.';
+      }
       renderPending(data.pending || []);
       renderLeads(data.leads || []);
       renderNotifs(data.notifications || []);

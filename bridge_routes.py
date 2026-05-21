@@ -468,15 +468,16 @@ def _get_or_create_api_key(customer_id: str, product: str) -> dict:
 
 def _brain_url() -> str:
     # In the merged twickell deploy, /chat lives on twickell.com itself.
-    return os.environ.get('ORBI_BRAIN_URL', 'https://twickell.com').rstrip('/')
+    return os.environ.get('ORBI_BRAIN_URL', 'https://twickell.com').strip().rstrip('/')
 
 
 def _widget_url() -> str:
-    return os.environ.get('ORBI_WIDGET_URL', 'https://twickell.com/widget').rstrip('/')
+    return os.environ.get('ORBI_WIDGET_URL', 'https://twickell.com/widget').strip().rstrip('/')
 
 
 def _dashboard_base() -> str:
-    return os.environ.get('ORBI_DASHBOARD_URL', 'https://twickell.com').rstrip('/')
+    # .strip() handles any stray whitespace/newlines the env var was pasted with
+    return os.environ.get('ORBI_DASHBOARD_URL', 'https://twickell.com').strip().rstrip('/')
 
 
 def _dashboard_url(owner_token: str) -> str:
@@ -673,6 +674,17 @@ def dashboard_data():
                    if k.get('product') == 'website_controller' and not k.get('revoked')), None)
     if wc_key:
         embed_code = _build_embed_snippet(customer_id, wc_key['api_key'], 'website_controller', profile)
+    # Founding member status — shown in the dashboard as a badge
+    founding_status = None
+    for inst in instances:
+        if inst.get('founding_member'):
+            founding_status = {
+                'product': inst.get('product'),
+                'number': inst.get('founding_member_number'),
+                'tier': inst.get('tier'),
+                'locked_monthly_cents': inst.get('locked_in_monthly_cents'),
+            }
+            break
     return jsonify({
         'ok': True,
         'customer_id': customer_id,
@@ -685,6 +697,7 @@ def dashboard_data():
         'notifications': list(reversed(notifications))[:100],
         'instances': instances,
         'embed_code': embed_code,
+        'founding_member': founding_status,
     })
 
 
@@ -1082,6 +1095,23 @@ WC_PRICING = {
     'pro':        {'monthly': 34900, 'label': 'AI Website Controller — Pro (up to 10,000 chats/mo)'},
 }
 WC_SETUP_FEE_CENTS = 29900  # $299 per product, all tiers
+FOUNDING_MEMBER_CAP = 1000  # first N paying customers per product get 50% off setup
+
+
+def _count_founding_members(product: str) -> int:
+    """Scan all customer instances and return how many are already flagged
+    as founding members for this product. Used to determine whether the next
+    purchase still qualifies (cap is 50 per product)."""
+    count = 0
+    if not CUSTOMERS_DIR.exists():
+        return 0
+    for cdir in CUSTOMERS_DIR.iterdir():
+        if not cdir.is_dir():
+            continue
+        for inst in _read(cdir / 'instances.json', []):
+            if inst.get('product') == product and inst.get('founding_member'):
+                count += 1
+    return count
 
 
 def _safe_customer_id(business_name: str, email: str) -> str:
@@ -1137,6 +1167,17 @@ def wc_checkout():
 
     customer_id = _safe_customer_id(business_name, owner_email)
     pricing = WC_PRICING[tier]
+
+    # Founding member check — first 1000 paying customers per product get 50% off
+    # the one-time setup fee ($149.50 instead of $299). Decided at checkout time
+    # so the discount is reflected on the Stripe invoice the customer signs for.
+    founding_count = _count_founding_members('website_controller')
+    is_founding_member = founding_count < FOUNDING_MEMBER_CAP
+    setup_fee_cents = WC_SETUP_FEE_CENTS // 2 if is_founding_member else WC_SETUP_FEE_CENTS
+    setup_label = ('AI Website Controller — Founding Member Setup (50% off, #'
+                   + str(founding_count + 1) + ' of ' + str(FOUNDING_MEMBER_CAP) + ')') if is_founding_member else \
+                  'AI Website Controller — One-Time Setup Fee'
+
     line_items = [
         {
             'price_data': {
@@ -1150,8 +1191,8 @@ def wc_checkout():
         {
             'price_data': {
                 'currency': 'usd',
-                'product_data': {'name': 'AI Website Controller — One-Time Setup Fee'},
-                'unit_amount': WC_SETUP_FEE_CENTS,
+                'product_data': {'name': setup_label},
+                'unit_amount': setup_fee_cents,
             },
             'quantity': 1,
         },
@@ -1174,6 +1215,9 @@ def wc_checkout():
                 'business_name': business_name,
                 'business_website': business_website,
                 'acceptance_id': acceptance_id,
+                'founding_member': 'true' if is_founding_member else 'false',
+                'founding_member_number': str(founding_count + 1) if is_founding_member else '',
+                'setup_fee_paid_cents': str(setup_fee_cents),
             },
             subscription_data={'metadata': {'customer_id': customer_id, 'tier': tier}},
         )
@@ -1243,6 +1287,17 @@ def wc_webhook():
         # Provision: API key + owner token + instance record
         key_entry = _get_or_create_api_key(customer_id, 'website_controller')
         owner_rec = _get_or_create_owner_token(customer_id, owner_email)
+        # Founding member status — read from the metadata we set at checkout time
+        # (so the post-payment record matches the discount the customer actually paid).
+        founding_member = (meta.get('founding_member') == 'true')
+        try:
+            founding_number = int(meta.get('founding_member_number') or 0) or None
+        except Exception:
+            founding_number = None
+        try:
+            setup_fee_paid_cents = int(meta.get('setup_fee_paid_cents') or 0) or WC_SETUP_FEE_CENTS
+        except Exception:
+            setup_fee_paid_cents = WC_SETUP_FEE_CENTS
         with _lock:
             inst_path = _cust_dir(customer_id) / 'instances.json'
             instances = _read(inst_path, [])
@@ -1264,8 +1319,14 @@ def wc_webhook():
                     'updated_at': _now_iso(),
                     'monthly_usage': 0,
                     'usage_period_start': _now_iso(),
+                    'founding_member': founding_member,
+                    'founding_member_number': founding_number,
+                    'setup_fee_paid_cents': setup_fee_paid_cents,
                 })
             _atomic_write(inst_path, instances)
+        if founding_member:
+            log.info('FOUNDING MEMBER #%s: customer=%s tier=%s paid_setup=$%.2f (50%% off)',
+                     founding_number, customer_id, tier, setup_fee_paid_cents / 100.0)
 
         # Build the welcome payload (next task will email this — for now we log+save)
         biz = _read(_cust_dir(customer_id) / 'business_profile.json', {})
@@ -1291,10 +1352,7 @@ def wc_webhook():
         if business_website:
             def _scrape_in_bg(cid, url):
                 try:
-                    import sys
-                    brain_path = '/home/frank/projects/Orbi_Brain'
-                    if brain_path not in sys.path:
-                        sys.path.insert(0, brain_path)
+                    # Scraper is shipped with the twickell deploy at modules/business/scraper/
                     from modules.business.scraper.site_scraper import SiteScraper
                     result = SiteScraper(max_pages=15).scrape(url)
                     if not result.get('ok', True):
