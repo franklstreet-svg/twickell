@@ -1353,13 +1353,17 @@ After the scrape result comes in, summarize warmly:
   "Okay — looks like you're [industry] [in area if found], offering [services]. I'm going to attach the [Industry Pack name] module set, which gives me built-in knowledge of [1-2 industry-specific examples]. Sound right?"
 If they say yes, move to tier selection. If they correct you, update and re-confirm.
 
-Industry → Module pack mapping (use these names verbatim when confirming):
+Industry → Module pack mapping (use these names verbatim when confirming. NEVER invent a pack name not on this list):
   - Plumbing / electrical / HVAC / contractor / trades → "Contractor Industry Pack"
   - Attorney / lawyer / law office → "Attorney Industry Pack"
   - Doctor / clinic / general medical → "Medical Industry Pack"
   - Chiropractor → "Chiropractor Industry Pack"
   - Dentist / dentistry / dental → "Dentistry Industry Pack"
-  - Real estate / property → "Real Estate Industry Pack"
+  - Restaurant / deli / cafe / bakery / pizzeria / food truck / catering → "Restaurant Industry Pack"
+  - Salon / barbershop / spa / beauty / nail / lash → "Salon & Spa Industry Pack"
+  - Auto repair / mechanic / body shop / tire shop / oil change → "Automotive Industry Pack"
+  - Therapist / counselor / mental health / couples counseling → "Therapy & Counseling Industry Pack"
+  - Real estate / property mgmt / landlord → "Real Estate Industry Pack"
   - Anything else → "Custom Industry Pack (we'll tailor this in your dashboard)"
 
 Step 6 — Tier selection
@@ -1498,6 +1502,11 @@ STYLE
 - No markdown headers. Conversational.
 - Sparing emojis (📞 💬 ✓ ⚡).
 - Founder is Frank Street, Reno NV. Email franklstreet@yahoo.com — he reads every message himself.
+
+DON'T RE-ASK QUESTIONS YOU ALREADY KNOW THE ANSWER TO:
+- If the visitor has already told you their business name, business type, website, email, traffic volume, or any other detail anywhere earlier in this conversation, DO NOT ask for it again. Use the answer they gave.
+- Before asking ANY qualification question, scan back through the conversation: did they already mention this? If yes, skip to the next missing piece.
+- Re-asking the same question is the #1 way to make Orby feel broken. Don't do it.
 
 VOICE TRANSCRIPTION QUIRK — IMPORTANT:
 - Visitors speaking by voice will sometimes have their words transcribed as "Orbeez" (the toy brand), "Orby's", "Orbis", or "Orbie". These are ALL just mishearings of "Orby" (your name). Treat them as the visitor saying your name correctly.
@@ -1748,6 +1757,18 @@ def business_demo_chat():
             history_path.write_text(json.dumps(history, indent=2), encoding='utf-8')
         except Exception:
             pass
+
+    # FINAL belt-and-suspenders marker strip — sometimes the LLM echoes the
+    # marker pattern in its post-scrape reply because it sees the pattern in
+    # its own previous turn. Strip BOTH markers from the final user-facing reply.
+    reply = _SCRAPE_MARKER_RE.sub('', reply)
+    reply = _LEGAL_MARKER_RE.sub('', reply)
+    # Catch partial / malformed marker fragments too
+    reply = re.sub(r'##(?:SCRAPE_WEBSITE|GO_TO_LEGAL)##\s*\{[^}]*\}?\s*(?:##(?:SCRAPE_WEBSITE|GO_TO_LEGAL)##)?', '', reply, flags=re.DOTALL)
+    reply = re.sub(r'##[A-Z_]+##', '', reply)
+    reply = reply.strip()
+    if not reply:
+        reply = "Got it — what else would you like to know?"
 
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
