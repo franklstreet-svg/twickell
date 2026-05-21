@@ -1061,6 +1061,32 @@ function buyWC(tier) {
     synthVoice = pickVoice();
   }
 
+  // Convert money + per-unit shorthand into spoken form BEFORE TTS so the
+  // engine doesn't read "$" literally as "dollar" or "/mo" as "slash em oh".
+  function speechifyText(text) {
+    let s = String(text || '');
+    // "$149.50" -> "149 dollars and 50 cents"; "$299" -> "299 dollars"
+    s = s.replace(/\$(\d{1,3}(?:,\d{3})*)(?:\.(\d{1,2}))?/g, (m, dollars, cents) => {
+      const d = dollars.replace(/,/g, '');
+      if (cents) {
+        const c = cents.padEnd(2, '0').slice(0, 2);
+        return `${d} dollars and ${c} cents`;
+      }
+      return `${d} dollars`;
+    });
+    // "/mo", "/month", "/yr", "/year"
+    s = s.replace(/\/\s*mo\b/gi, ' per month');
+    s = s.replace(/\/\s*month\b/gi, ' per month');
+    s = s.replace(/\/\s*yr\b/gi, ' per year');
+    s = s.replace(/\/\s*year\b/gi, ' per year');
+    // Markdown emphasis markers
+    s = s.replace(/\*\*([^*]+)\*\*/g, '$1');
+    s = s.replace(/\*([^*]+)\*/g, '$1');
+    // Pipes used as list separators ("Starter | Growth | Pro" -> commas)
+    s = s.replace(/\s*\|\s*/g, ', ');
+    return s;
+  }
+
   // Split a reply into sentence-ish chunks so each gets its own prosody envelope
   // (a single long utterance comes out flatter than 2-3 shorter ones).
   function splitForSpeech(text) {
@@ -1087,7 +1113,8 @@ function buyWC(tier) {
 
   function speak(text) {
     if (!text || !synth) return Promise.resolve();
-    const chunks = splitForSpeech(text);
+    const cleaned = speechifyText(text);
+    const chunks = splitForSpeech(cleaned);
     if (!chunks.length) return Promise.resolve();
     return new Promise((resolve) => {
       try {
