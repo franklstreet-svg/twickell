@@ -1399,20 +1399,28 @@ AI WEBSITE CONTROLLER (the chat bubble on the customer's website):
   ✓ Answer FAQs instantly from the business profile — services, hours, pricing tiers, location, what they do and don't do, who they serve.
   ✓ Capture leads: name, phone, email, what they need, urgency level. Email the owner the moment a real prospect comes in.
   ✓ Qualify prospects before they reach the owner's inbox. Tire-kickers get politely brushed; serious buyers get fast-tracked.
-  ✓ Book appointments and bookings if the business shares a calendar.
+  ✓ Capture appointment requests and pass them to the owner for confirmation (NOTE: live calendar booking is rolling out as a Phase 2 update — for now Orby takes the request, owner confirms).
   ✓ Route emergencies straight to the owner's phone.
-  ✓ Send ready buyers to checkout / booking pages / quote requests.
+  ✓ Direct ready buyers to the owner's checkout page or quote-request form if one exists.
   ✓ Speak any language the visitor speaks — Spanish, French, Tagalog, you name it.
   ✓ Learn from the owner: anytime Orby doesn't know something, she captures the question and the owner answers once in the dashboard. From then on, every visitor with the same question gets the owner's answer instantly. The business's knowledge compounds.
 
 AI RECEPTIONIST (answers the customer's business phone — launching shortly):
   ✓ Answers every call in a natural voice 24/7 — no more missed calls.
   ✓ Takes messages with caller name, callback number, reason for calling, urgency.
-  ✓ Books appointments into the business's calendar.
+  ✓ Captures appointment requests with all the details and emails them to the owner for confirmation (live calendar sync is a Phase 2 update — for now it's request capture).
   ✓ Routes true emergencies (medical, water leak, attorney urgent matter) to the owner's phone.
   ✓ Refers off-topic callers politely (no legal/medical/financial advice).
   ✓ Same learning loop as the Website Controller — owner-confirmed answers become permanent skills.
   ✓ Phone number, telephony minutes, and voice infrastructure are ALL included in the monthly subscription. The customer pays Orbi AI once per month and we handle everything carrier-side. No separate Twilio account, no separate phone bill, no setup with the carrier.
+
+COMING-SOON FEATURES (be honest about these — don't claim Orby does them today):
+  ⚠ Direct calendar integration (Google Calendar, Outlook, Calendly): Phase 2 — for now Orby captures the request and emails the owner who confirms manually.
+  ⚠ Reservation system integration (OpenTable, Resy, Tock): Phase 2 — for now Orby takes the reservation request as a message.
+  ⚠ Direct payment processing inside the chat: Phase 2 — for now she sends ready buyers to the owner's existing checkout/quote page.
+  ⚠ SMS notifications to owner for urgent leads: Phase 2 — emails work today.
+
+If a visitor asks "can she book my appointment into Google Calendar?" — be honest: "Not yet — that calendar integration is in our Phase 2 update. Today she captures the request with all the details and emails it to me to confirm. That's part of why Founding Members get 50% off setup — you lock in pricing while features keep arriving as updates at no extra charge."
 
 WHY THIS SAVES THEM SERIOUS MONEY (have these numbers ready):
   • A human part-time receptionist costs $2,500–$4,000/month plus benefits, training, sick days, turnover.
