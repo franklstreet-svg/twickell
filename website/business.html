@@ -1028,12 +1028,17 @@ function buyWC(tier) {
     if (!synth) return null;
     const voices = synth.getVoices();
     if (!voices.length) return null;
-    // Prefer high-quality named female voices in order of OS/browser likelihood
+    // PRIORITY 1: the "Online (Natural)" Microsoft voices have dramatically
+    // better prosody/emotion than any local voice. Worth scanning by substring
+    // so we pick them even when the full name varies by locale.
+    const naturalMatch = voices.find(v => /Online \(Natural\)/i.test(v.name) && /en[-_]US/i.test(v.lang))
+                      || voices.find(v => /Neural/i.test(v.name) && /en[-_]US/i.test(v.lang));
+    if (naturalMatch) return naturalMatch;
+    // PRIORITY 2: specific known-good female voices by exact name
     const preferred = [
-      'Microsoft Aria Online (Natural) - English (United States)',
-      'Microsoft Jenny Online (Natural) - English (United States)',
-      'Microsoft Emma Online (Natural) - English (United States)',
       'Microsoft Aria - English (United States)',
+      'Microsoft Jenny - English (United States)',
+      'Microsoft Emma - English (United States)',
       'Microsoft Zira - English (United States)',
       'Google US English',
       'Samantha',
@@ -1056,41 +1061,70 @@ function buyWC(tier) {
     synthVoice = pickVoice();
   }
 
+  // Split a reply into sentence-ish chunks so each gets its own prosody envelope
+  // (a single long utterance comes out flatter than 2-3 shorter ones).
+  function splitForSpeech(text) {
+    const trimmed = String(text || '').trim();
+    if (!trimmed) return [];
+    // Split on .!? but keep the punctuation. Cap each chunk at ~200 chars.
+    const raw = trimmed.match(/[^.!?]+[.!?]?/g) || [trimmed];
+    const out = [];
+    for (let s of raw) {
+      s = s.trim();
+      if (!s) continue;
+      if (s.length <= 220) { out.push(s); continue; }
+      // Long sentence — break on commas
+      const parts = s.split(/,\s+/).filter(Boolean);
+      let buf = '';
+      for (const p of parts) {
+        if ((buf + ', ' + p).length > 200 && buf) { out.push(buf); buf = p; }
+        else buf = buf ? (buf + ', ' + p) : p;
+      }
+      if (buf) out.push(buf);
+    }
+    return out;
+  }
+
   function speak(text) {
     if (!text || !synth) return Promise.resolve();
+    const chunks = splitForSpeech(text);
+    if (!chunks.length) return Promise.resolve();
     return new Promise((resolve) => {
       try {
-        synth.cancel();  // interrupt any prior utterance
-        const utt = new SpeechSynthesisUtterance(text);
+        synth.cancel();
         if (!synthVoice) synthVoice = pickVoice();
-        if (synthVoice) utt.voice = synthVoice;
-        utt.rate = 1.0;
-        utt.pitch = 1.05;
-        utt.volume = 1.0;
-        utt.onstart = () => {
-          speaking = true;
-          stopRec();
-          setMicVisual('speaking');
-          setStatus("Orby is speaking…", 'speaking');
-        };
-        utt.onend = () => {
-          speaking = false;
-          if (voiceOn) {
-            setMicVisual('listening');
-            setStatus("Listening… speak whenever you're ready.", 'listening');
-            scheduleRecStart(300);
-          } else {
-            setMicVisual('off');
-            setStatus("🎤 Click the mic to talk to Orby with your voice.");
+        speaking = true;
+        stopRec();
+        setMicVisual('speaking');
+        setStatus("Orby is speaking…", 'speaking');
+
+        let i = 0;
+        function speakNext() {
+          if (i >= chunks.length || !voiceOn && i > 0) {
+            speaking = false;
+            if (voiceOn) {
+              setMicVisual('listening');
+              setStatus("Listening… speak whenever you're ready.", 'listening');
+              scheduleRecStart(300);
+            } else {
+              setMicVisual('off');
+              setStatus("🎤 Click the mic to talk to Orby with your voice.");
+            }
+            resolve();
+            return;
           }
-          resolve();
-        };
-        utt.onerror = () => {
-          speaking = false;
-          setMicVisual(voiceOn ? 'listening' : 'off');
-          resolve();
-        };
-        synth.speak(utt);
+          const utt = new SpeechSynthesisUtterance(chunks[i]);
+          if (synthVoice) utt.voice = synthVoice;
+          // Subtle variation per chunk so the voice has rhythm instead of monotone
+          const phase = i % 3;
+          utt.rate   = phase === 0 ? 1.02 : phase === 1 ? 0.96 : 1.00;
+          utt.pitch  = phase === 0 ? 1.08 : phase === 1 ? 1.02 : 1.10;
+          utt.volume = 1.0;
+          utt.onend = () => { i++; setTimeout(speakNext, 90); };
+          utt.onerror = () => { i++; setTimeout(speakNext, 50); };
+          synth.speak(utt);
+        }
+        speakNext();
       } catch (e) {
         speaking = false;
         setMicVisual(voiceOn ? 'listening' : 'off');
