@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orby AI — Your AI Receptionist + Website Chat. 24/7. On YOUR Hardware.</title>
-<meta name="description" content="Orby answers your phones and your website chat — 24/7, never tired, learns YOUR business. Your customer data stays on hardware you control. Built for contractors, attorneys, doctors, and small businesses.">
+<meta name="description" content="Orby answers your phones and your website chat — 24/7, never tired, learns YOUR business. Your customer data stays on hardware you control. Built for contractors, attorneys, doctors, and businesses of every size.">
 <style>
 :root {
   --bg: #0a0f1e;
@@ -184,17 +184,20 @@ h1 .gold {
   font-size: 14px;
 }
 .demo-mic {
-  background: rgba(212,160,23,0.12);
-  color: var(--gold-light);
-  border: 1px solid var(--border);
-  width: 46px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg);
+  border: 1px solid var(--gold);
+  width: 50px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 0 14px rgba(212,160,23,0.5);
+  transition: transform 0.1s, box-shadow 0.2s;
 }
+.demo-mic:hover { transform: translateY(-1px); box-shadow: 0 0 22px rgba(212,160,23,0.7); }
 .demo-mic.active {
   background: linear-gradient(135deg, #ef4444, #f87171);
   color: white;
@@ -494,7 +497,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 <section class="section">
   <div class="container">
     <h2>The math of missed calls is brutal</h2>
-    <p class="lede">A typical small business misses 30-60% of incoming calls outside business hours. Every missed call = a customer who hires the next business in their search.</p>
+    <p class="lede">A typical business misses 30-60% of incoming calls outside business hours. Every missed call = a customer who hires the next business in their search.</p>
     <div class="three-up">
       <div class="feature-card">
         <div class="icon">📵</div>
@@ -533,7 +536,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
           <li>Learns from YOUR answers — every "she didn't know that" becomes a permanent skill</li>
           <li>Speaks any language your callers do</li>
         </ul>
-        <p style="margin-top:14px"><strong>Bring your own Twilio number.</strong> Your phone bill stays yours — same pay-as-you-go pricing every business already understands.</p>
+        <p style="margin-top:14px"><strong>Everything's included — dedicated phone number, all the carrier minutes, and the voice infrastructure.</strong> No separate phone bill, no Twilio account to set up. You pay one monthly fee to us, we handle the rest.</p>
       </div>
       <div class="feature-card">
         <div class="icon">💬</div>
@@ -764,7 +767,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
     </p>
 
     <h3 style="text-align:center; margin-top:64px; color: var(--gold-light); font-size:1.5rem;">AI Receptionist <span class="coming-soon-tag">Launching shortly</span></h3>
-    <p style="text-align:center; color: var(--text-muted); font-size:14px; margin-top:6px;">$99 / $249 / $449 by monthly call volume, plus $299 setup. Bring your own Twilio account.</p>
+    <p style="text-align:center; color: var(--text-muted); font-size:14px; margin-top:6px;">$99 / $249 / $449 by monthly call volume, plus $299 setup. Phone number and all carrier minutes included — one bill, no extras.</p>
     <p style="text-align:center; margin-top:16px;">
       <a href="mailto:franklstreet@yahoo.com?subject=AI%20Receptionist%20Waitlist" class="btn btn-outline">Join the launch waitlist</a>
     </p>
@@ -840,8 +843,9 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
       </details>
 
       <details class="faq">
-        <summary>Why do I need my own Twilio account for the Receptionist?</summary>
-        <p>Twilio is the phone carrier — like Verizon or AT&amp;T, but for software. The reason you bring your own Twilio account is so the phone bill stays in your name (and your phone numbers stay portable if you ever leave us). You pay Twilio at their published per-minute rates, which is usually $15-$300/month depending on call volume. We help you set it up — it's a 10-minute process.</p>
+        <summary>Do I need my own phone service or a Twilio account?</summary>
+        <p>No. The Receptionist subscription includes everything — a dedicated phone number we set up for your business, all the carrier minutes (within your tier), and the voice infrastructure. You pay Orbi AI one monthly fee and we handle the rest. There's no separate phone bill to worry about, no third-party account to manage, no setup on your end.</p>
+        <p>If you already have a business phone number you want callers to keep dialing, you simply forward that line to the number we set up. Forwarding takes about a minute and we walk you through it.</p>
       </details>
 
       <details class="faq">
@@ -1015,45 +1019,84 @@ function buyWC(tier) {
     if (t) t.remove();
   }
 
-  // ── TTS playback — server returns base64 mp3 ────────────────────────────
-  async function speak(text) {
-    if (!text) return;
-    try {
-      speaking = true;
-      stopRec();  // don't listen while Orby is talking
-      setMicVisual('speaking');
-      setStatus("Orby is speaking…", 'speaking');
-      const r = await fetch('/tts', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ text: text, voice: 'en-US-AvaNeural' })
-      });
-      if (!r.ok) throw new Error('tts http ' + r.status);
-      const blob = await r.blob();
-      const url = URL.createObjectURL(blob);
-      currentAudio = new Audio(url);
-      currentAudio.onended = () => {
-        speaking = false;
-        URL.revokeObjectURL(url);
-        currentAudio = null;
-        if (voiceOn) {
-          setMicVisual('listening');
-          setStatus("Listening… speak whenever you're ready.", 'listening');
-          scheduleRecStart(300);
-        } else {
-          setMicVisual('off');
-          setStatus("🎤 Click the mic to talk to Orby with your voice.");
-        }
-      };
-      currentAudio.play().catch(() => {
-        // Autoplay blocked — happens if voice hasn't been enabled by a click yet.
+  // ── TTS playback — uses the browser's built-in speech synthesis for instant
+  // playback (no server round-trip). Voice starts the moment text is available.
+  const synth = window.speechSynthesis;
+  let synthVoice = null;
+
+  function pickVoice() {
+    if (!synth) return null;
+    const voices = synth.getVoices();
+    if (!voices.length) return null;
+    // Prefer high-quality named female voices in order of OS/browser likelihood
+    const preferred = [
+      'Microsoft Aria Online (Natural) - English (United States)',
+      'Microsoft Jenny Online (Natural) - English (United States)',
+      'Microsoft Emma Online (Natural) - English (United States)',
+      'Microsoft Aria - English (United States)',
+      'Microsoft Zira - English (United States)',
+      'Google US English',
+      'Samantha',
+      'Karen',
+      'Allison',
+      'Victoria',
+    ];
+    for (const name of preferred) {
+      const v = voices.find(x => x.name === name);
+      if (v) return v;
+    }
+    // Fallback: any en-US female-sounding voice
+    return voices.find(v => /en[-_]US/i.test(v.lang) && /female|aria|jenny|samantha|zira|karen|allison|emma|victoria/i.test(v.name))
+        || voices.find(v => /en[-_]US/i.test(v.lang))
+        || voices[0];
+  }
+  // Voices load asynchronously in some browsers
+  if (synth) {
+    synth.onvoiceschanged = () => { synthVoice = pickVoice(); };
+    synthVoice = pickVoice();
+  }
+
+  function speak(text) {
+    if (!text || !synth) return Promise.resolve();
+    return new Promise((resolve) => {
+      try {
+        synth.cancel();  // interrupt any prior utterance
+        const utt = new SpeechSynthesisUtterance(text);
+        if (!synthVoice) synthVoice = pickVoice();
+        if (synthVoice) utt.voice = synthVoice;
+        utt.rate = 1.0;
+        utt.pitch = 1.05;
+        utt.volume = 1.0;
+        utt.onstart = () => {
+          speaking = true;
+          stopRec();
+          setMicVisual('speaking');
+          setStatus("Orby is speaking…", 'speaking');
+        };
+        utt.onend = () => {
+          speaking = false;
+          if (voiceOn) {
+            setMicVisual('listening');
+            setStatus("Listening… speak whenever you're ready.", 'listening');
+            scheduleRecStart(300);
+          } else {
+            setMicVisual('off');
+            setStatus("🎤 Click the mic to talk to Orby with your voice.");
+          }
+          resolve();
+        };
+        utt.onerror = () => {
+          speaking = false;
+          setMicVisual(voiceOn ? 'listening' : 'off');
+          resolve();
+        };
+        synth.speak(utt);
+      } catch (e) {
         speaking = false;
         setMicVisual(voiceOn ? 'listening' : 'off');
-      });
-    } catch (e) {
-      speaking = false;
-      setMicVisual(voiceOn ? 'listening' : 'off');
-    }
+        resolve();
+      }
+    });
   }
 
   // ── Speech recognition ──────────────────────────────────────────────────
