@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Step — Legal Review — Orby AI</title>
+<style>
+:root {
+  --bg: #0a0f1e;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --gold: #d4a017;
+  --gold-light: #f0c040;
+  --text: #e8eaf0;
+  --text-muted: #8892a4;
+  --border: rgba(212,160,23,0.2);
+  --danger: #ef4444;
+  --success: #22c55e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  padding: 28px 16px 80px;
+  min-height: 100vh;
+}
+.container { max-width: 780px; margin: 0 auto; }
+.topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.orb {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+  box-shadow: 0 0 18px rgba(212,160,23,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 18px rgba(212,160,23,0.4), inset 0 2px 4px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 0 32px var(--gold), inset 0 2px 4px rgba(255,255,255,0.3); }
+}
+.brand { font-weight: 800; font-size: 1.2rem; }
+.step-meta { color: var(--text-muted); font-size: 13px; margin-left: auto; }
+h1 {
+  font-size: clamp(1.7rem, 4vw, 2.4rem);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+.subhead { color: var(--text-muted); margin-bottom: 30px; max-width: 620px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 26px;
+  margin-bottom: 18px;
+}
+.card-title {
+  color: var(--gold-light);
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(212,160,23,0.08);
+  font-size: 14.5px;
+}
+.summary-row:last-child { border: none; padding-bottom: 0; }
+.summary-row .label { color: var(--text-muted); }
+.summary-row .value { color: var(--text); font-weight: 600; text-align: right; }
+.price-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 15px;
+}
+.price-line.total { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 8px; font-weight: 800; color: var(--gold-light); font-size: 1.1rem; }
+
+.checks .item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.checks .item:hover { border-color: var(--gold); }
+.checks .item.checked { border-color: var(--gold); background: rgba(212,160,23,0.07); }
+.checks .item label { display: flex; gap: 14px; cursor: pointer; align-items: flex-start; }
+.checks input[type="checkbox"] {
+  margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--gold);
+}
+.checks .item .head { font-weight: 700; color: var(--text); margin-bottom: 4px; font-size: 14.5px; }
+.checks .item .body { color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
+.checks .item a { color: var(--gold-light); text-decoration: underline; }
+
+.notes {
+  background: rgba(212,160,23,0.06);
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 18px 0;
+}
+
+.actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; margin-top: 24px; }
+.btn {
+  display: inline-block;
+  padding: 14px 26px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: filter 0.1s, transform 0.1s;
+}
+.btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.btn:disabled {
+  opacity: 0.4; cursor: not-allowed; filter: none; transform: none;
+}
+.btn-primary { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--bg); }
+.btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+.btn-danger-outline { background: transparent; color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
+
+.error {
+  background: rgba(239,68,68,0.1);
+  border-left: 3px solid var(--danger);
+  padding: 14px 18px;
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 14px;
+  margin-top: 14px;
+  min-height: 0;
+  display: none;
+}
+.error.show { display: block; }
+
+.invalid {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+.invalid a { color: var(--gold-light); }
+.spinner-msg {
+  display: none;
+  text-align: center;
+  padding: 24px;
+  color: var(--gold-light);
+  font-size: 15px;
+}
+.spinner-msg.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="topbar">
+    <div class="orb"></div>
+    <div class="brand">Orby AI</div>
+    <div class="step-meta">Step 3 of 3 — Legal review</div>
+  </div>
+
+  <h1>One quick read-through, then you're set</h1>
+  <p class="subhead">Orby gathered the details from our chat. Take a moment to read each item below and check the box if you agree. All boxes must be checked to continue to payment. Refusing is fine — you can pick up the conversation any time.</p>
+
+  <!-- Order summary -->
+  <div class="card">
+    <div class="card-title"><span>What you're buying</span></div>
+    <div id="summary"><div style="color:var(--text-muted);">Loading order details…</div></div>
+  </div>
+
+  <!-- Legal checkboxes -->
+  <div class="card">
+    <div class="card-title"><span>Read &amp; accept</span></div>
+    <div class="checks" id="checks"></div>
+
+    <div class="notes">
+      <strong>What happens after you click Continue:</strong> You'll be sent to a secure Stripe page to pay. Stripe handles the card — Orbi AI never sees your card number. After payment, Orby attaches your industry modules, builds your business profile from your website scan, and emails you your owner dashboard + embed code within minutes.
+    </div>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="actions">
+    <button class="btn btn-danger-outline" id="refuseBtn">Cancel — I'm not ready</button>
+    <button class="btn btn-primary" id="acceptBtn" disabled>I accept all — Continue to payment →</button>
+  </div>
+
+  <div class="spinner-msg" id="spinner">Setting up your checkout…</div>
+
+</div>
+
+<script>
+const TIER_DETAIL = {
+  starter: { name: 'AI Website Controller — Starter', monthly: 99,  limit: 'up to 500 chats/month' },
+  growth:  { name: 'AI Website Controller — Growth',  monthly: 199, limit: 'up to 2,500 chats/month' },
+  pro:     { name: 'AI Website Controller — Pro',     monthly: 349, limit: 'up to 10,000 chats/month' },
+};
+const SETUP_FEE = 299;
+
+const TOKEN = new URLSearchParams(location.search).get('token');
+const $ = (id) => document.getElementById(id);
+
+const CHECKLIST = [
+  { id: 'terms',    title: "I've read the Terms of Service.",   body: 'In particular, <a href="/terms#section_20" target="_blank">Section 20</a> covers the B2B Products: cancellation, refunds, tier overage, compliance.' },
+  { id: 'privacy',  title: "I've read the Privacy Policy.",     body: 'Especially <a href="/privacy#section_14" target="_blank">Section 14</a> on data routing — my business data lives on hardware I control. The Orbi Bridge routes connections but does not store call or chat content.' },
+  { id: 'refund',   title: "I've read the Refund Policy.",      body: 'The one-time $299 setup fee is non-refundable. The first 7 days of a billing cycle are pro-rated refundable. Cancel any time from my dashboard. See <a href="/refund" target="_blank">refund policy</a>.' },
+  { id: 'hard',     title: 'I understand Orby has hard limits.', body: 'Orby will not give legal, medical, or financial advice on my behalf. She refuses those topics and refers callers/visitors to licensed professionals. That protects me and my customers.' },
+  { id: 'data',     title: "I'll obtain any required consent for call/chat recording.", body: 'In some jurisdictions (e.g., two-party consent states in the US), I need to inform callers when an AI is recording or transcribing. Orbi AI provides the technology; consent obligations rest with me as the operator.' },
+  { id: 'fairuse',  title: 'I agree to fair-use limits.',         body: "I won't use the service to harass, defraud, or spam, or for anything unlawful. Orbi AI may suspend service for clear abuse." },
+];
+
+function renderChecks() {
+  $('checks').innerHTML = CHECKLIST.map(c => `
+    <div class="item" data-id="${c.id}">
+      <label>
+        <input type="checkbox" data-id="${c.id}">
+        <span>
+          <div class="head">${c.title}</div>
+          <div class="body">${c.body}</div>
+        </span>
+      </label>
+    </div>
+  `).join('');
+  document.querySelectorAll('.checks input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.item').classList.toggle('checked', cb.checked);
+      updateAcceptState();
+    });
+  });
+}
+
+function updateAcceptState() {
+  const all = document.querySelectorAll('.checks input[type="checkbox"]');
+  const allChecked = Array.from(all).every(cb => cb.checked);
+  $('acceptBtn').disabled = !allChecked;
+}
+
+function renderSummary(intent) {
+  const tier = TIER_DETAIL[intent.tier] || TIER_DETAIL.starter;
+  const modList = (intent.modules || []).map(m => `<li>${m}</li>`).join('') || '<li>Custom — confirmed in your dashboard after setup</li>';
+  $('summary').innerHTML = `
+    <div class="summary-row"><span class="label">Business</span><span class="value">${intent.business_name || '—'}</span></div>
+    <div class="summary-row"><span class="label">Type</span><span class="value">${intent.industry || '—'}</span></div>
+    <div class="summary-row"><span class="label">Website</span><span class="value">${intent.website || '—'}</span></div>
+    <div class="summary-row"><span class="label">Owner email</span><span class="value">${intent.email || '—'}</span></div>
+    <div class="summary-row"><span class="label">Modules Orby will attach</span><span class="value" style="text-align:right;"><ul style="margin:0;padding:0;list-style:none;">${modList}</ul></span></div>
+    <div style="margin-top:18px;">
+      <div class="price-line"><span>${tier.name}</span><span>$${tier.monthly}/mo · ${tier.limit}</span></div>
+      <div class="price-line"><span>One-time setup</span><span>$${SETUP_FEE}</span></div>
+      <div class="price-line total"><span>Charged today</span><span>$${tier.monthly + SETUP_FEE}</span></div>
+      <div class="price-line" style="color:var(--text-muted);font-size:13px;"><span>Then $${tier.monthly}/mo until you cancel</span><span></span></div>
+    </div>
+  `;
+}
+
+async function loadIntent() {
+  if (!TOKEN) { invalid("Missing token."); return; }
+  try {
+    const r = await fetch('/api/b2b/intent/' + encodeURIComponent(TOKEN));
+    const data = await r.json();
+    if (!data.ok) { invalid(data.error || "Couldn't load your order."); return; }
+    window._intent = data.intent;
+    renderSummary(data.intent);
+    renderChecks();
+  } catch (e) {
+    invalid("Network problem loading your order.");
+  }
+}
+
+function invalid(msg) {
+  document.body.innerHTML = `<div class="container invalid">
+    <div class="topbar"><div class="orb"></div><div class="brand">Orby AI</div></div>
+    <h1>This page is no longer valid</h1>
+    <p>${msg}</p>
+    <p style="margin-top:20px;"><a href="/">Return to the front page</a> and chat with Orby to start fresh.</p>
+  </div>`;
+}
+
+$('refuseBtn').addEventListener('click', async () => {
+  await fetch('/api/b2b/refuse', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({token: TOKEN}) }).catch(()=>{});
+  location.href = '/?refused=1';
+});
+
+$('acceptBtn').addEventListener('click', async () => {
+  const errEl = $('error');
+  errEl.classList.remove('show');
+  const intent = window._intent || {};
+  const tier = (intent.tier || 'starter').toLowerCase();
+  const td = TIER_DETAIL[tier] || TIER_DETAIL.starter;
+
+  $('acceptBtn').disabled = true;
+  $('refuseBtn').disabled = true;
+  $('spinner').classList.add('show');
+
+  try {
+    const legalResp = await fetch('/api/legal_accept', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: intent.business_name || intent.email || 'Owner',
+        email: intent.email,
+        cart_summary: `${td.name} ($${td.monthly}/mo) + $${SETUP_FEE} setup. Modules: ${(intent.modules||[]).join(', ')||'TBD'}`,
+        product: 'website_controller',
+        tier: tier,
+        business_name: intent.business_name || '',
+        business_website: intent.website || '',
+        terms_version: '2026-05'
+      })
+    });
+    const legalData = await legalResp.json();
+    if (!legalResp.ok || !legalData.acceptance_id) throw new Error(legalData.error || 'Legal record failed.');
+
+    const checkoutResp = await fetch('/api/wc/checkout', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        acceptance_id: legalData.acceptance_id,
+        tier: tier,
+        owner_email: intent.email,
+        business_name: intent.business_name || '',
+        business_website: intent.website || ''
+      })
+    });
+    const co = await checkoutResp.json();
+    if (co && co.url) {
+      location.href = co.url;
+    } else {
+      throw new Error((co && co.error) || 'Could not start checkout.');
+    }
+  } catch (e) {
+    $('spinner').classList.remove('show');
+    $('acceptBtn').disabled = false;
+    $('refuseBtn').disabled = false;
+    errEl.textContent = e.message + ' — Email franklstreet@yahoo.com if this keeps happening.';
+    errEl.classList.add('show');
+  }
+});
+
+loadIntent();
+</script>
+
+</body>
+</html>

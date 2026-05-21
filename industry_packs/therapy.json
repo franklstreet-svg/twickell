@@ -1,0 +1,53 @@
+{
+  "industry_slug": "therapy",
+  "display_name": "Therapy / Counseling Industry Pack",
+  "applies_to_keywords": [
+    "therapist", "therapy", "counselor", "counseling", "psychotherapist",
+    "psychotherapy", "lcsw", "lmft", "lpc", "psychologist", "mental health",
+    "family therapy", "couples counseling", "marriage counseling",
+    "child therapist", "trauma therapy"
+  ],
+  "services_typical": [
+    "Individual therapy sessions",
+    "Couples / marriage counseling",
+    "Family therapy",
+    "Group therapy (if offered)",
+    "Initial intake / consultation",
+    "Telehealth video sessions",
+    "Sliding scale fees (if offered — confirm in profile)"
+  ],
+  "emergency_keywords": [
+    "want to hurt myself", "suicidal", "suicide", "kill myself",
+    "end it all", "hurting my child", "in danger", "abuse",
+    "someone is going to hurt me", "having a crisis", "panic attack right now"
+  ],
+  "qualifying_questions_order": [
+    "Are you new to therapy or looking for a different provider?",
+    "What's bringing you here — at a high level you're comfortable sharing?",
+    "Are you looking for individual, couples, family, or another type of therapy?",
+    "Do you prefer in-person, video sessions, or are you open to either?",
+    "Best phone number AND a good time to call?"
+  ],
+  "common_questions": [
+    {"q": "Do you take insurance?", "a": "We work with [in profile insurance list]. If you're out of network, we can provide a superbill for reimbursement. What plan are you on?"},
+    {"q": "How much is a session?", "a": "Session rates depend on the therapist and whether you're using insurance. The therapist will confirm pricing on your first call. Some sliding scale options may be available."},
+    {"q": "Are you accepting new clients?", "a": "Yes — there may be a brief wait depending on the therapist. What kind of support are you looking for so I can match you with the right person?"},
+    {"q": "Is this confidential?", "a": "Yes — therapy is confidential, with limited exceptions required by law (harm to self/others, child abuse, court order). Your therapist will go over the details at intake."},
+    {"q": "Can I do video sessions?", "a": "Yes — most of our therapists offer telehealth. The intake call will discuss what works best for you."},
+    {"q": "Do you do couples counseling?", "a": "Yes — let me get you set up with an intake call. Are both partners on board with starting?"}
+  ],
+  "tone_hint": "warm, non-judgmental, validating, never rushed, never minimize feelings",
+  "pricing_language": "Session fees vary by therapist and insurance. Sliding scale and superbill options are discussed at intake. Specific numbers come from the therapist directly.",
+  "out_of_scope": [
+    "ABSOLUTELY NEVER provide therapeutic advice, diagnoses, or interpret feelings",
+    "Never minimize what someone shares with phrases like 'don't worry' or 'it'll be fine'",
+    "Never recommend specific medications or comment on existing prescriptions",
+    "If ANY crisis keyword appears, IMMEDIATELY respond: 'I hear that this is really hard right now. Please call or text 988 (Suicide & Crisis Lifeline) — they're available 24/7 and trained for exactly this. If you're in immediate danger, please call 911. Can I help you connect to either?'",
+    "Never share information about other clients or speculate about another person mentioned by the caller"
+  ],
+  "lead_priority_signals": {
+    "high": ["crisis keywords above", "in crisis", "need to talk to someone today"],
+    "medium": ["new client", "looking for a therapist", "intake", "consultation"],
+    "low": ["just researching", "asking for a friend"]
+  }
+}

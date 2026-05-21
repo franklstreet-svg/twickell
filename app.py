@@ -91,6 +91,14 @@ SESSION_DIR.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'orby-demo-key-2025')
 
+# Attach all Bridge B2B routes (Website Controller checkout, owner dashboard,
+# API key issuance, tier usage, webhook, etc.). See bridge_routes.py for routes.
+try:
+    from bridge_routes import register_bridge_routes
+    register_bridge_routes(app)
+except Exception as _bridge_err:  # don't crash twickell if bridge_routes has an issue
+    logging.getLogger(__name__).warning('Bridge routes not loaded: %s', _bridge_err)
+
 
 def _get_profile_dir() -> str:
     if 'sid' not in session:
@@ -101,9 +109,19 @@ def _get_profile_dir() -> str:
 
 
 @app.route('/')
-@app.route('/index.html')
 def index():
+    # New B2B-focused front page (Receptionist + Website Controller).
+    # The old consumer-Orby home page is preserved at /personal for existing visitors.
+    return send_from_directory(WEBSITE_DIR, 'business.html')
+
+
+@app.route('/personal')
+@app.route('/index.html')
+def personal_home():
     return send_from_directory(WEBSITE_DIR, 'index.html')
+
+
+# /api/wc/checkout is registered by bridge_routes.register_bridge_routes() — no proxy needed.
 
 
 @app.route('/<path:filename>')
@@ -1294,6 +1312,858 @@ def demo_chat():
     return jsonify({'response': "Having a little trouble — try again in a second!"})
 
 
+# ── B2B Orby — the AI Website Controller selling itself ───────────────────
+
+B2B_DEMO_SYSTEM = """You are Orby — an AI Website Controller. You are running on twickell.com, the marketing site for Orbi AI Solutions. You are not a separate "demo bot." You ARE the product. What the visitor is using right now is exactly what they would get for their own business.
+
+YOUR PRIMARY MISSION: walk every interested visitor through the complete purchase journey — explanation, qualification, business discovery, website scan, legal review, payment. Be warm and conversational. ONE QUESTION AT A TIME.
+
+══════════════════════════════════════════
+THE EXACT BUY FLOW — FOLLOW THESE PHASES
+══════════════════════════════════════════
+
+PHASE A — EXPLAIN & ANSWER (default, until buying intent)
+Answer questions. Explain products, pricing, privacy. Don't push. Let them learn at their pace.
+
+PHASE B — BUYING INTENT DETECTED
+When the visitor says any of these (or close variations):
+  - "I want one" / "I want to buy" / "let's do this" / "let's set me up"
+  - "how do I buy" / "how do I get started" / "sign me up"
+  - "I'm in" / "let's go" / "I'll take it"
+Switch into qualification mode. Say something like:
+  "Awesome — let's get you set up. First, what's your business name?"
+
+PHASE C — QUALIFICATION (one question at a time, NEVER stack)
+Gather, in this order:
+  1. Business name
+  2. What kind of business they run (their industry — listen carefully)
+  3. Their business website URL (so you can scan it)
+  4. Their email address (for the dashboard link)
+
+After each answer, briefly acknowledge and ask the next question. Don't summarize until you have all four.
+
+PHASE D — WEBSITE SCAN
+After they give the website URL, tell them you'll take a quick look. Then output this EXACT marker at the very end of your message (the system will see it and run the scraper):
+##SCRAPE_WEBSITE##{"url":"<their url>"}##SCRAPE_WEBSITE##
+
+On the NEXT turn you will see a system message starting with [SCRAPER_RESULT: ...]. Use that to confirm what you found.
+
+PHASE E — CONFIRM + MODULE ATTACHMENT
+After the scrape result comes in, summarize warmly:
+  "Okay — looks like you're [industry] [in area if found], offering [services]. I'm going to attach the [Industry Pack name] module set, which gives me built-in knowledge of [1-2 industry-specific examples]. Sound right?"
+If they say yes, move to tier selection. If they correct you, update and re-confirm.
+
+Industry → Module pack mapping (use these names verbatim when confirming):
+  - Plumbing / electrical / HVAC / contractor / trades → "Contractor Industry Pack"
+  - Attorney / lawyer / law office → "Attorney Industry Pack"
+  - Doctor / clinic / general medical → "Medical Industry Pack"
+  - Chiropractor → "Chiropractor Industry Pack"
+  - Dentist / dentistry / dental → "Dentistry Industry Pack"
+  - Real estate / property → "Real Estate Industry Pack"
+  - Anything else → "Custom Industry Pack (we'll tailor this in your dashboard)"
+
+PHASE F — TIER SELECTION
+Ask: "How busy is your site right now? Roughly how many people chat or message you in a typical month — under 500, between 500 and 2,500, or more than 2,500?"
+Map their answer:
+  - Under 500 → Starter ($99/mo)
+  - 500–2,500 → Growth ($199/mo)
+  - 2,500–10,000 → Pro ($349/mo)
+  - 10,000+ → tell them you'll switch to Enterprise pricing — invite an email to franklstreet@yahoo.com
+
+PHASE G — HAND OFF TO LEGAL REVIEW
+Confirm the order one last time:
+  "Here's where we land: [Tier] tier for $[X]/month plus the one-time $299 setup. I'll pull together [Industry Pack name] and your business profile from [website]. Last step before payment is a quick legal review — terms, privacy, refund, data-routing — you'll need to read and check each item. Ready to go to that page?"
+
+When they say yes, output this EXACT marker at the very end of your message (the system will redirect them):
+##GO_TO_LEGAL##{"business_name":"<name>","industry":"<industry>","website":"<url>","email":"<email>","tier":"<starter|growth|pro>","modules":["<pack name>"]}##GO_TO_LEGAL##
+
+DO NOT output ##GO_TO_LEGAL## until you have all the fields and they have confirmed.
+
+PHASE H — IF THEY REFUSE OR ABANDON LEGAL
+You'll see "[VISITOR_REFUSED_LEGAL]" in your context. Respond warmly with something like:
+  "No problem at all — I appreciate you considering us. If you ever change your mind, I'll be right here. Have a great day."
+Do NOT push or try to re-sell. Wish them well.
+
+PHASE I — IF THEY ACCEPT LEGAL
+You'll see "[VISITOR_ACCEPTED_LEGAL]" — respond with:
+  "Perfect. Sending you to secure checkout now. Right after payment you'll get your owner dashboard link and embed code by email."
+
+══════════════════════════════════════════
+WHAT ORBY DOES FOR THE CUSTOMER'S BUSINESS — full sales explainer
+══════════════════════════════════════════
+
+When a visitor asks "what do you actually DO?" or "how does this help me?" or "what's in it for me?" — explain at length. These are the real things you do:
+
+AI WEBSITE CONTROLLER (the chat bubble on the customer's website):
+  ✓ Greet every visitor warmly, in the customer's brand voice, 24/7. No more "we're closed."
+  ✓ Answer FAQs instantly from the business profile — services, hours, pricing tiers, location, what they do and don't do, who they serve.
+  ✓ Capture leads: name, phone, email, what they need, urgency level. Email the owner the moment a real prospect comes in.
+  ✓ Qualify prospects before they reach the owner's inbox. Tire-kickers get politely brushed; serious buyers get fast-tracked.
+  ✓ Book appointments and bookings if the business shares a calendar.
+  ✓ Route emergencies straight to the owner's phone.
+  ✓ Send ready buyers to checkout / booking pages / quote requests.
+  ✓ Speak any language the visitor speaks — Spanish, French, Tagalog, you name it.
+  ✓ Learn from the owner: anytime Orby doesn't know something, she captures the question and the owner answers once in the dashboard. From then on, every visitor with the same question gets the owner's answer instantly. The business's knowledge compounds.
+
+AI RECEPTIONIST (answers the customer's business phone — launching shortly):
+  ✓ Answers every call in a natural voice 24/7 — no more missed calls.
+  ✓ Takes messages with caller name, callback number, reason for calling, urgency.
+  ✓ Books appointments into the business's calendar.
+  ✓ Routes true emergencies (medical, water leak, attorney urgent matter) to the owner's phone.
+  ✓ Refers off-topic callers politely (no legal/medical/financial advice).
+  ✓ Same learning loop as the Website Controller — owner-confirmed answers become permanent skills.
+  ✓ Customer brings their own Twilio number — phone bill stays theirs.
+
+WHY THIS SAVES THEM SERIOUS MONEY (have these numbers ready):
+  • A human part-time receptionist costs $2,500–$4,000/month plus benefits, training, sick days, turnover.
+  • An after-hours answering service runs $200–$500/month and you still miss most of what they say.
+  • Orby's most expensive tier ($449/mo Receptionist Pro) is roughly one-tenth the cost of a human receptionist.
+  • One missed call per week from a real customer often equals one lost job per month — many trades businesses lose $10,000+/year that way.
+  • Bigger competitors charge $250–$1,279/month for cloud-based AI services. Orby starts at $99/mo, with the data on YOUR hardware (no cloud lock-in).
+
+WHY THIS GETS THEM MORE CLIENTS:
+  • 24/7 coverage = customers in your funnel even when you're asleep, on a job, with family, or on vacation. Most small businesses lose 30–60% of after-hours leads.
+  • Instant chat response on the website = visitors don't bounce to a competitor when they have one quick question.
+  • Lead capture is built in — Orby gets the name, phone, urgency, and what they need before they leave. Every visit either turns into a lead or you learn what was missing.
+  • Qualification means owners only call back real buyers. Time stops going to tire-kickers.
+  • Industry packs (contractor, attorney, chiropractor, dentist, etc.) let Orby speak the language of THAT industry's customers — she sounds like she works there because she's trained to.
+
+HOW ORBY EXPLAINS THE BUSINESS TO ITS CUSTOMERS:
+  • She uses the owner's business profile — name, services, hours, pricing, owner story, certifications, service area — to sound like an extension of the team, not a generic chatbot.
+  • She mirrors the tone the owner sets (warm and folksy / sharp and professional / clinical and reassuring / casual and friendly).
+  • She knows the owner's pricing (or politely defers when she shouldn't quote: "Best to talk to [owner] for a specific quote — want me to set up a call?").
+  • She knows what the business does NOT do, so she doesn't waste a caller's time with services the business can't deliver.
+  • She quotes ranges when pricing is variable: "Most full-bath remodels we do run $X–$Y, but the real number depends on the scope. I can get you a quote scheduled today if you want."
+
+OTHER CAPABILITIES (mention when relevant):
+  • Multi-language by default — caller switches to Spanish, Orby keeps going in Spanish.
+  • Smart escalation — Orby knows when to stop and bring in a human.
+  • Voice options (Receptionist) — Polly Standard included free; premium neural voices and named voices available as upgrade.
+  • Owner dashboard — answer pending Qs, see leads, edit business profile, view tier usage, get the embed code, view conversation history.
+  • Heartbeat self-healing — if Orby ever goes silent, the Bridge auto-restarts the brain so the customer never knows there was a hiccup.
+  • Cross-product learning — if the customer eventually buys both Receptionist and Website Controller, answers learned in one product instantly become available in the other.
+
+══════════════════════════════════════════
+PRODUCT FACTS (only these — never invent)
+══════════════════════════════════════════
+
+PRODUCT 1 — AI Website Controller (YOU):
+- Lives as a floating chat on a customer's site.
+- Greets visitors, captures leads, learns from owner answers.
+- Install: paste one <script> tag into their site.
+- Tiers (per month + $299 one-time setup):
+  • Starter: up to 500 chats/mo — $99/mo
+  • Growth: up to 2,500 chats/mo — $199/mo
+  • Pro: up to 10,000 chats/mo — $349/mo
+  • Enterprise (10,000+): custom quote — email franklstreet@yahoo.com
+
+PRODUCT 2 — AI Receptionist (LAUNCHING SHORTLY — waitlist only):
+- Answers business phone 24/7 with natural voice.
+- BYO Twilio account (customer's phone bill stays theirs).
+- Tiers: Starter $99, Growth $249, Pro $449 — $299 setup.
+- Interested? Direct to email franklstreet@yahoo.com for waitlist.
+
+══════════════════════════════════════════
+PRIVACY PROMISE
+══════════════════════════════════════════
+Customer business data (transcripts, profile, leads, learned answers) lives on hardware the customer controls. Our Bridge routes secure connections — never stores conversation content. Suitable for medical/legal/financial offices that need data residency.
+
+══════════════════════════════════════════
+LEARNING LOOP (mention if asked "what if you don't know?")
+══════════════════════════════════════════
+When you don't know an answer, say: "Great question — I'll make sure the right person gets back to you. What's the best way to reach you?" You capture it; owner answers in their dashboard; from then on, every future visitor with that question gets the owner's answer instantly. Knowledge compounds.
+
+══════════════════════════════════════════
+HARD LIMITS (refuse these every time)
+══════════════════════════════════════════
+- Never give legal, medical, or financial advice.
+- Never claim features that don't exist.
+- Never make up a price or tier outside the published list.
+- If asked anything off-topic, answer briefly and steer back: "Happy to chat about that — but my real job is selling AI staff for small businesses. What brings you here today?"
+
+══════════════════════════════════════════
+STYLE
+══════════════════════════════════════════
+- Warm, human. Never "as an AI" or "I'm just a chatbot."
+- 2-4 sentences by default. Long only when they ask for detail.
+- ONE QUESTION AT A TIME during the buy flow.
+- No markdown headers. Conversational.
+- Sparing emojis (📞 💬 ✓ ⚡).
+- Founder is Frank Street, Reno NV. Email franklstreet@yahoo.com — he reads every message himself.
+"""
+
+_LEGACY_NOTES = """Old simpler prompt kept here as reference only — not used.
+
+YOUR JOB IS TWO THINGS, EQUALLY:
+1. Operate the website like a Website Controller does for any customer — answer visitor questions about Orbi AI, capture their interest, send them to checkout when they're ready.
+2. Sell yourself. When asked "what are you?" or "how does this work?" — tell them: "I AM the AI Website Controller. What you're using right here is exactly what I'd be on your website, except I'd know your business instead of Orby AI's."
+
+WHAT YOU SELL (these are the only two products that exist today):
+
+PRODUCT 1 — AI Website Controller (this is YOU):
+- Lives as a floating chat on a customer's site (just like this page).
+- Greets every visitor, answers FAQs from their business profile, captures leads, sends qualified prospects to their inbox.
+- Install: paste one <script> tag into the customer's site.
+- Pricing tiers (per month + $299 one-time setup):
+  - Starter: up to 500 chats/mo — $99/mo
+  - Growth: up to 2,500 chats/mo — $199/mo
+  - Pro: up to 10,000 chats/mo — $349/mo
+  - Enterprise (10,000+): contact for a custom quote
+- "Chat" = one distinct visitor conversation (not per message).
+
+PRODUCT 2 — AI Receptionist (LAUNCHING SHORTLY — say "available very soon"):
+- Answers the customer's business phone 24/7 with a natural voice.
+- Takes messages, books appointments, routes emergencies.
+- Customer brings their own Twilio account; their phone bill stays theirs.
+- Pricing tiers (per month + $299 one-time setup):
+  - Starter: up to 300 calls/mo — $99/mo
+  - Growth: up to 1,000 calls/mo — $249/mo
+  - Pro: up to 3,000 calls/mo — $449/mo
+  - Enterprise (3,000+): contact for a custom quote
+- Direct interested callers to email franklstreet@yahoo.com for the launch waitlist.
+
+THE PRIVACY PROMISE (this is the big differentiator — bring it up when relevant):
+The customer's business data — business profile, call transcripts, chat history, leads, learned answers — lives on hardware THE CUSTOMER controls. Not in our cloud. Our Bridge service routes secure connections between the customer's hardware and our voice/web services, but it never stores the content of their conversations. Most AI chatbot companies pile every customer's data into one big cloud database; Orbi AI doesn't. This makes the architecture suitable for medical, legal, and other regulated practices.
+
+HOW ORBY LEARNS (mention when asked "what if you don't know something"):
+When you don't know an answer, you say honestly: "Great question — I'll make sure the right person here gets back to you on that. What's the best way to reach you?" You capture the question; the owner answers it once in their dashboard; from then on, every future caller/visitor with the same question gets the owner's answer instantly. Your knowledge compounds.
+
+WHO BUILT YOU:
+Frank Street, founder of Orbi AI, based in Reno NV. Email: franklstreet@yahoo.com — he reads every message and usually responds himself.
+
+WHEN A VISITOR IS READY TO BUY:
+Tell them to click the tier they want on the pricing section of the page (Starter / Growth / Pro). The Buy button will collect their email, business name, and website, then send them to Stripe checkout. After payment, they'll get their owner dashboard link and embed code by email within minutes.
+
+If they want the Receptionist (which isn't live yet), direct them to email franklstreet@yahoo.com for the waitlist.
+
+STYLE RULES (these matter):
+- Warm and human. Never use "as an AI" or "I'm just a chatbot."
+- Direct. Don't bury the answer in 4 paragraphs of preamble.
+- Short by default. 2-4 sentences unless they ask for detail.
+- One question at a time. Never stack questions.
+- When asked "what can you do?" — don't list features. Ask: "What's the situation with your business that made you look this up today?" Then tailor.
+- If they ask something off-topic (politics, generic AI questions, joke requests) — answer briefly and steer back: "Happy to chat about that — but my real job is selling AI staff for small businesses. What brings you here today?"
+
+HARD LIMITS (refuse these every time):
+- Never give legal advice, medical advice, or financial advice. If asked, say: "That's something you should ask a licensed professional — I'm not the right tool for legal/medical/financial calls. But if you're a lawyer/doctor/CPA looking to USE me on your phones or website, I'd love to talk."
+- Never claim features that don't exist. Stick to what's listed above.
+- Never make up a price or a tier. Only the four tiers per product listed above.
+
+You can use emojis sparingly (📞 💬 ✓). Don't use markdown headers in your replies — keep it conversational.
+"""
+
+
+_SCRAPE_MARKER_RE = re.compile(r'##SCRAPE_WEBSITE##(.*?)##SCRAPE_WEBSITE##', re.DOTALL)
+_LEGAL_MARKER_RE  = re.compile(r'##GO_TO_LEGAL##(.*?)##GO_TO_LEGAL##', re.DOTALL)
+_B2B_INTENT_DIR   = Path('/tmp/orby_b2b_intents')
+
+
+def _run_b2b_llm(history, system):
+    """Try Groq → HF → Anthropic and return the first non-empty reply."""
+    for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+        try:
+            r = fn(history, system=system)
+            if r:
+                log.info('business_demo_chat tier=%s', tier)
+                return r
+        except Exception as e:
+            log.warning('business_demo_chat %s failed: %s', tier, e)
+    return None
+
+
+def _scrape_summary(url: str) -> str:
+    """Run the brain's universal scraper if available; return a short summary
+    Orby can use on the next LLM turn. Best-effort — never raise."""
+    try:
+        import sys
+        brain_path = '/home/frank/projects/Orbi_Brain'
+        if brain_path not in sys.path:
+            sys.path.insert(0, brain_path)
+        from modules.business.scraper.site_scraper import SiteScraper
+        result = SiteScraper(max_pages=8).scrape(url)
+        if not isinstance(result, dict):
+            return f"[SCRAPER_RESULT: could not fetch {url}]"
+        profile = (result.get('business_profile') or {})
+        bits = []
+        if profile.get('name'): bits.append(f"business name: {profile['name']}")
+        if profile.get('business_type'): bits.append(f"type: {profile['business_type']}")
+        if profile.get('owner_name'): bits.append(f"owner: {profile['owner_name']}")
+        if profile.get('services'):
+            svs = profile['services']
+            if isinstance(svs, list) and svs:
+                bits.append("services: " + ", ".join(str(s) for s in svs[:6]))
+        if profile.get('service_area'):
+            area = profile['service_area']
+            if isinstance(area, list) and area: bits.append("area: " + ", ".join(str(a) for a in area[:3]))
+            elif area: bits.append(f"area: {area}")
+        if profile.get('hours'): bits.append(f"hours: {profile['hours']}")
+        if not bits:
+            return f"[SCRAPER_RESULT: site fetched ({url}) but couldn't extract clean business details — confirm manually with the visitor]"
+        return f"[SCRAPER_RESULT for {url}: " + " | ".join(bits) + "]"
+    except Exception as e:
+        return f"[SCRAPER_RESULT: scrape failed ({e.__class__.__name__}) — ask the visitor to describe their business manually]"
+
+
+@app.route('/business_demo_chat', methods=['POST'])
+def business_demo_chat():
+    """B2B Orby — runs the conversational sales funnel.
+    Handles two flow-control markers from the LLM's reply:
+      ##SCRAPE_WEBSITE##{"url":"..."}##SCRAPE_WEBSITE##  → run scraper, re-call LLM
+      ##GO_TO_LEGAL##{...captured fields...}##GO_TO_LEGAL##  → save intent, return redirect"""
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get('message') or '').strip()
+    if not user_message:
+        return jsonify({'error': 'empty'}), 400
+
+    session_id = (data.get('session_id') or '').strip()
+    history_path = None
+    history = []
+    if session_id:
+        history_path = Path(os.path.dirname(os.path.abspath(__file__))) / 'business_chat_sessions' / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
+        history_path.parent.mkdir(parents=True, exist_ok=True)
+        if history_path.exists():
+            try:
+                history = json.loads(history_path.read_text(encoding='utf-8'))
+            except Exception:
+                history = []
+    history.append({'role': 'user', 'content': user_message})
+    if len(history) > 30:
+        history = history[-30:]
+
+    from datetime import datetime as _dt, timezone as _tz
+    _today = _dt.now(_tz.utc).strftime('%A, %B %d, %Y')
+    system = B2B_DEMO_SYSTEM + f"\n\nToday is {_today}."
+
+    reply = _run_b2b_llm(history, system)
+    if not reply:
+        reply = "I'm having a hiccup right now — but Frank reads email at franklstreet@yahoo.com and he'll get you sorted. Sorry about that."
+
+    redirect_url = ''
+
+    # MARKER 1 — Website scrape request: extract URL, run scraper, re-call LLM with result.
+    scrape_match = _SCRAPE_MARKER_RE.search(reply)
+    if scrape_match:
+        try:
+            payload = json.loads(scrape_match.group(1).strip())
+            scrape_url = (payload.get('url') or '').strip()
+        except Exception:
+            scrape_url = ''
+        if scrape_url:
+            summary = _scrape_summary(scrape_url)
+            # Strip the marker out of Orby's first reply (visitor shouldn't see it)
+            first_reply_clean = _SCRAPE_MARKER_RE.sub('', reply).strip() or "Hang on, let me look…"
+            # Add the cleaned reply + the scraper result as a system-style turn, then re-call
+            history.append({'role': 'assistant', 'content': first_reply_clean})
+            history.append({'role': 'user', 'content': summary})  # scraper result fed as a "system observation"
+            reply = _run_b2b_llm(history, system) or first_reply_clean
+            # Remove the synthesized turn so the visitor's history reflects only real messages
+            history.pop()  # remove the [SCRAPER_RESULT] user turn
+
+    # MARKER 2 — Hand off to legal review: capture intent fields and produce redirect URL.
+    legal_match = _LEGAL_MARKER_RE.search(reply)
+    if legal_match:
+        try:
+            intent = json.loads(legal_match.group(1).strip())
+        except Exception:
+            intent = {}
+        if intent.get('tier') and intent.get('email'):
+            _B2B_INTENT_DIR.mkdir(parents=True, exist_ok=True)
+            token = uuid.uuid4().hex
+            intent_record = {
+                'token': token,
+                'created_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+                'session_id': session_id,
+                **intent,
+            }
+            try:
+                (_B2B_INTENT_DIR / f'{token}.json').write_text(json.dumps(intent_record, indent=2))
+                redirect_url = f'/b2b-checkout-prep?token={token}'
+            except Exception as e:
+                log.error('Could not save b2b intent: %s', e)
+        # Strip the marker from the visible reply
+        reply = _LEGAL_MARKER_RE.sub('', reply).strip()
+        if not reply:
+            reply = "Sending you to the legal review now — won't take a minute."
+
+    history.append({'role': 'assistant', 'content': reply})
+    if history_path:
+        try:
+            history_path.write_text(json.dumps(history, indent=2), encoding='utf-8')
+        except Exception:
+            pass
+
+    resp = {'ok': True, 'reply': reply, 'session_id': session_id}
+    if redirect_url:
+        resp['redirect_url'] = redirect_url
+    return jsonify(resp)
+
+
+@app.route('/chat', methods=['POST'])
+def customer_chat():
+    """The real /chat endpoint embedded customer widgets call.
+    Auth via X-Orbi-API-Key header (or body.api_key). Looks up the customer,
+    loads their business profile, runs the never-guess gate, calls the LLM,
+    captures unknown questions, and increments tier usage."""
+    try:
+        from bridge_routes import (
+            _cust_dir, _read, _atomic_write, _api_keys_path, _now_iso,
+            _lock as _bridge_lock, _build_embed_snippet, USAGE_LIMITS,
+            _reset_period_if_due,
+        )
+    except Exception as e:
+        log.error('Bridge helpers unavailable: %s', e)
+        return jsonify({'ok': False, 'error': 'service not configured'}), 503
+
+    data = request.get_json(silent=True) or {}
+    api_key = (request.headers.get('X-Orbi-API-Key') or data.get('api_key') or '').strip()
+    customer_id_hint = (data.get('customer_id') or '').strip()
+    message = (data.get('message') or data.get('text') or '').strip()
+    session_id = (data.get('session_id') or '').strip()
+    page_url = (data.get('page_url') or '').strip()
+    deployment = (data.get('deployment') or 'website_controller').strip()
+    if not message:
+        return jsonify({'ok': False, 'error': 'message required'}), 400
+    if len(message) > 1000:
+        return jsonify({'ok': False, 'error': 'message too long'}), 400
+    if not api_key:
+        return jsonify({'ok': False, 'error': 'api_key required'}), 401
+
+    # Validate API key → customer_id by scanning customers' api_keys.json files.
+    # At launch volume (first 50 customers) a full scan is fine; index later.
+    customer_id = ''
+    product = ''
+    from pathlib import Path as _P
+    bridge_customers = _P(os.environ.get('ORBI_DATA_DIR',
+                          str(_P('/home/frank/twickell_deploy/data')))) / 'customers'
+    if bridge_customers.exists():
+        candidate_dirs = [bridge_customers / customer_id_hint] if customer_id_hint else []
+        if customer_id_hint and not candidate_dirs[0].exists():
+            candidate_dirs = []
+        if not candidate_dirs:
+            candidate_dirs = [d for d in bridge_customers.iterdir() if d.is_dir()]
+        for cdir in candidate_dirs:
+            for k in _read(cdir / 'api_keys.json', []):
+                if k.get('api_key') == api_key and not k.get('revoked'):
+                    customer_id = k.get('customer_id') or cdir.name
+                    product = k.get('product') or 'website_controller'
+                    break
+            if customer_id:
+                break
+    if not customer_id:
+        return jsonify({'ok': False, 'error': 'invalid or revoked api_key'}), 401
+
+    cdir = _cust_dir(customer_id)
+    profile = _read(cdir / 'business_profile.json', {})
+
+    # ── Never-guess: check learned_answers.json for a matching question ──────
+    norm = re.sub(r'\s+', ' ', re.sub(r'[^\w\s]', '', message.lower())).strip()
+    learned_items = _read(cdir / 'learned_answers.json', [])
+    learned_hit = None
+    for it in learned_items:
+        if it.get('verified') and it.get('answer') and it.get('question_normalized') == norm:
+            it['asked_count'] = (it.get('asked_count') or 0) + 1
+            it['last_asked'] = _now_iso()
+            learned_hit = it
+            break
+    if learned_hit:
+        try:
+            _atomic_write(cdir / 'learned_answers.json', learned_items)
+        except Exception:
+            pass
+        # Increment usage (best-effort)
+        try:
+            _bump_usage(customer_id, product)
+        except Exception:
+            pass
+        return jsonify({'ok': True, 'reply': learned_hit['answer'], 'tier': 'learned',
+                        'session_id': session_id})
+
+    # ── LLM fallback with customer-specific system prompt ────────────────────
+    sys_prompt = _build_customer_system_prompt(profile, product)
+    history = [{'role': 'user', 'content': message}]
+    reply = None
+    for tier_name, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+        try:
+            r = fn(history, system=sys_prompt)
+            if r:
+                reply = r
+                log.info('customer_chat customer=%s tier=%s', customer_id, tier_name)
+                break
+        except Exception as e:
+            log.warning('customer_chat %s failed for %s: %s', tier_name, customer_id, e)
+    if not reply:
+        reply = ("That's a great question — I want to make sure the right person here "
+                 "gets back to you on that. What's the best way to reach you?")
+
+    # ── If the reply signals "I don't know," capture the pending question ───
+    lower_reply = reply.lower()
+    is_dont_know = any(phrase in lower_reply for phrase in [
+        "i'll make sure", "i will make sure", "best way to reach",
+        "get back to you", "great question", "let me get the right"
+    ])
+    if is_dont_know:
+        try:
+            # Save to learned_answers.json with verified=False (pending)
+            new_entry = {
+                'id': uuid.uuid4().hex[:8],
+                'question': message,
+                'question_normalized': norm,
+                'answer': '',
+                'verified': False,
+                'asked_count': 1,
+                'first_asked': _now_iso(),
+                'last_asked': _now_iso(),
+                'session_id': session_id,
+                'asked_via_product': product,
+                'page_url': page_url,
+            }
+            # Dedupe by normalized question
+            existing = _read(cdir / 'learned_answers.json', [])
+            found_dupe = False
+            for it in existing:
+                if it.get('question_normalized') == norm:
+                    it['asked_count'] = (it.get('asked_count') or 0) + 1
+                    it['last_asked'] = _now_iso()
+                    found_dupe = True
+                    break
+            if not found_dupe:
+                existing.append(new_entry)
+            _atomic_write(cdir / 'learned_answers.json', existing)
+        except Exception as e:
+            log.warning('pending capture failed: %s', e)
+
+    # Lead detection — pull contact info + intent signals from this message + history
+    try:
+        # Per-session brief history for context (rolling window)
+        sess_path = Path(os.path.dirname(os.path.abspath(__file__))) / 'customer_chat_sessions' / customer_id / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
+        sess_path.parent.mkdir(parents=True, exist_ok=True)
+        sess_history = []
+        if sess_path.exists():
+            try:
+                sess_history = json.loads(sess_path.read_text(encoding='utf-8'))
+            except Exception:
+                sess_history = []
+        sess_history.append({'role': 'user', 'content': message})
+        sess_history.append({'role': 'assistant', 'content': reply})
+        sess_history = sess_history[-24:]
+        sess_path.write_text(json.dumps(sess_history, indent=2), encoding='utf-8')
+
+        signals = _extract_lead_signals(message, sess_history)
+        if signals:
+            _capture_lead_if_ready(customer_id, signals, session_id, page_url, profile)
+    except Exception as e:
+        log.warning('lead detection failed: %s', e)
+
+    # Increment usage counter
+    try:
+        _bump_usage(customer_id, product)
+    except Exception:
+        pass
+
+    return jsonify({'ok': True, 'reply': reply, 'tier': 'llm',
+                    'session_id': session_id, 'customer_id': customer_id})
+
+
+_PHONE_RE = re.compile(r'(?:\+?1[-.\s]?)?(?:\(?(\d{3})\)?[-.\s]?)(\d{3})[-.\s]?(\d{4})')
+_EMAIL_RE = re.compile(r'[\w.+-]+@[\w-]+\.[\w.-]+')
+_NAME_RE  = re.compile(r"(?:my name is|i'm|i am|this is|call me)\s+([A-Za-z]{3,}(?:\s+[A-Za-z]{2,})?)", re.IGNORECASE)
+_NAME_BLACKLIST = {'at', 'on', 'to', 'the', 'and', 'a', 'an', 'in', 'for', 'with',
+                   'about', 'from', 'just', 'not', 'sure', 'looking', 'wondering',
+                   'calling', 'asking', 'trying', 'going', 'wanting', 'hoping'}
+_INTENT_HIGH = re.compile(r'\b(emergency|right now|today|asap|urgent|leaking|broken|hurt|in pain|water damage)\b', re.IGNORECASE)
+_INTENT_MED  = re.compile(r'\b(quote|estimate|book|appointment|schedule|consultation|hire|interested|how much|want to)\b', re.IGNORECASE)
+
+
+def _extract_lead_signals(message: str, history: list) -> dict:
+    """Pull phone, email, name, urgency, and service interest from a single message
+    plus any session history. Returns {} if nothing actionable was found."""
+    combined = message
+    # Pull a bit of context from earlier messages in this session
+    if isinstance(history, list):
+        for turn in history[-6:]:
+            if isinstance(turn, dict) and turn.get('role') == 'user':
+                combined += ' ' + str(turn.get('content', ''))
+
+    found = {}
+    phone_m = _PHONE_RE.search(combined)
+    if phone_m:
+        found['phone'] = ''.join(phone_m.groups())
+    email_m = _EMAIL_RE.search(combined)
+    if email_m:
+        found['email'] = email_m.group(0)
+    name_m = _NAME_RE.search(combined)
+    if name_m:
+        candidate = name_m.group(1).strip()
+        # Reject single-word names that are common English words (false positives
+        # like "call me at" → captures "at")
+        first_word = candidate.split()[0].lower() if candidate else ''
+        if first_word not in _NAME_BLACKLIST and len(candidate) >= 3:
+            found['name'] = candidate
+
+    if _INTENT_HIGH.search(combined):
+        found['urgency'] = 'high'
+    elif _INTENT_MED.search(combined):
+        found['urgency'] = 'medium'
+
+    intent_m = _INTENT_MED.search(message) or _INTENT_HIGH.search(message)
+    if intent_m:
+        found['service_interest'] = message[:200]
+
+    return found
+
+
+def _capture_lead_if_ready(customer_id: str, signals: dict, session_id: str,
+                            page_url: str, profile: dict):
+    """Save a lead + send the owner an email when we have contact info.
+    Idempotent within a session: won't double-save if we already have a lead
+    for this session_id."""
+    if not signals:
+        return False
+    has_contact = bool(signals.get('phone') or signals.get('email'))
+    if not has_contact:
+        return False
+    try:
+        from bridge_routes import _cust_dir, _read, _atomic_write, _now_iso, _lock as _bl
+        cdir = _cust_dir(customer_id)
+        with _bl:
+            leads_path = cdir / 'leads.json'
+            leads = _read(leads_path, [])
+            # Dedupe — if this session already has a lead, just update it
+            existing = next((l for l in leads if l.get('session_id') == session_id), None)
+            if existing:
+                for k in ('phone', 'email', 'name', 'urgency', 'service_interest'):
+                    if signals.get(k) and not existing.get(k):
+                        existing[k] = signals[k]
+                existing['updated_at'] = _now_iso()
+                _atomic_write(leads_path, leads)
+                return False  # not a fresh lead
+            lead = {
+                'id': uuid.uuid4().hex[:8],
+                'name': signals.get('name', ''),
+                'phone': signals.get('phone', ''),
+                'email': signals.get('email', ''),
+                'urgency': signals.get('urgency', 'normal'),
+                'service_interest': signals.get('service_interest', ''),
+                'page_url': page_url,
+                'session_id': session_id,
+                'created_at': _now_iso(),
+            }
+            leads.append(lead)
+            _atomic_write(leads_path, leads)
+
+        # Email the owner immediately (high urgency goes first)
+        try:
+            from bridge_routes import _owner_path, send_email
+            owner_rec = _read(_owner_path(customer_id), {})
+            owner_email = owner_rec.get('owner_email', '')
+            if owner_email:
+                biz = (profile or {}).get('name', 'your business')
+                urgency_label = lead['urgency'].upper() if lead['urgency'] == 'high' else lead['urgency'].title()
+                subj = f"[{urgency_label}] New lead for {biz}"
+                body = f"""Orby just captured a new lead on your website:
+
+Name:        {lead['name'] or '(not given yet)'}
+Phone:       {lead['phone'] or '(not given yet)'}
+Email:       {lead['email'] or '(not given yet)'}
+Urgency:     {lead['urgency']}
+Interest:    {lead['service_interest'] or '(unspecified)'}
+Page:        {lead['page_url'] or '(unknown)'}
+Time:        {lead['created_at']}
+
+See the full conversation context in your dashboard:
+{_dashboard_url_for(customer_id)}
+
+— Orby AI
+"""
+                send_email(owner_email, subj, body)
+        except Exception as e:
+            log.warning('lead email failed for %s: %s', customer_id, e)
+        return True
+    except Exception as e:
+        log.warning('lead capture failed for %s: %s', customer_id, e)
+        return False
+
+
+def _dashboard_url_for(customer_id: str) -> str:
+    try:
+        from bridge_routes import _owner_path, _read, _dashboard_url
+        rec = _read(_owner_path(customer_id), {})
+        token = rec.get('owner_token', '')
+        return _dashboard_url(token) if token else ''
+    except Exception:
+        return ''
+
+
+def _bump_usage(customer_id: str, product: str):
+    """Increment monthly_usage on the matching instance record. No-op on error."""
+    from bridge_routes import _cust_dir, _read, _atomic_write, _now_iso, _lock as _bl, _reset_period_if_due
+    with _bl:
+        path = _cust_dir(customer_id) / 'instances.json'
+        items = _read(path, [])
+        for inst in items:
+            if inst.get('product') == product:
+                _reset_period_if_due(inst)
+                inst['monthly_usage'] = (inst.get('monthly_usage') or 0) + 1
+                _atomic_write(path, items)
+                return
+
+
+_INDUSTRY_PACKS_DIR = Path(__file__).resolve().parent / 'industry_packs'
+_INDUSTRY_PACK_CACHE: dict = {}
+
+
+def _load_industry_pack(industry_or_type: str) -> dict:
+    """Return the best-matching industry pack for a business type, or {} if none.
+    Match by checking applies_to_keywords against the business_type string."""
+    if not industry_or_type:
+        return {}
+    if not _INDUSTRY_PACKS_DIR.exists():
+        return {}
+    needle = industry_or_type.lower()
+    # Lazy-load all packs once into a process-level cache
+    if not _INDUSTRY_PACK_CACHE:
+        for f in _INDUSTRY_PACKS_DIR.glob('*.json'):
+            try:
+                pack = json.loads(f.read_text(encoding='utf-8'))
+                if pack.get('industry_slug'):
+                    _INDUSTRY_PACK_CACHE[pack['industry_slug']] = pack
+            except Exception as e:
+                log.warning('industry pack %s failed to load: %s', f.name, e)
+    # Score each pack by keyword hits
+    best = None
+    best_score = 0
+    for slug, pack in _INDUSTRY_PACK_CACHE.items():
+        score = 0
+        for kw in (pack.get('applies_to_keywords') or []):
+            if kw.lower() in needle:
+                score += 1
+        if score > best_score:
+            best = pack
+            best_score = score
+    return best or {}
+
+
+def _build_customer_system_prompt(profile: dict, product: str) -> str:
+    """Render a customer-specific Orby system prompt from their business profile,
+    enriched with any matching industry pack."""
+    biz_name = profile.get('name', 'this business') or 'this business'
+    services = profile.get('services') or []
+    if isinstance(services, list):
+        services_str = ', '.join(str(s) for s in services[:10])
+    else:
+        services_str = str(services)
+    hours = profile.get('hours', '') or 'see our website for hours'
+    area = profile.get('service_area') or ''
+    if isinstance(area, list):
+        area = ', '.join(str(a) for a in area[:3])
+    contact_phone = profile.get('contact_phone', '') or profile.get('phone', '')
+    contact_email = profile.get('contact_email', '') or profile.get('email', '')
+    owner = profile.get('owner_name', '') or profile.get('owner', '')
+    biz_type = profile.get('business_type', '') or profile.get('industry', '')
+
+    # Build the base prompt
+    prompt = f"""You are Orby — the AI Website Controller running on the website of {biz_name}.
+You speak ONLY for {biz_name}. You are part of their team.
+
+WHAT YOU KNOW ABOUT {biz_name.upper()}:
+- Business name: {biz_name}
+- Type: {biz_type or 'See profile'}
+- Services: {services_str or 'See profile'}
+- Hours: {hours}
+- Service area: {area or 'see website'}
+- Contact phone: {contact_phone or '—'}
+- Contact email: {contact_email or '—'}
+- Owner: {owner or '—'}
+"""
+
+    # Layer in industry pack content if one matches
+    pack = _load_industry_pack(biz_type)
+    if pack:
+        common_qs = pack.get('common_questions') or []
+        common_qs_block = '\n'.join(f'  Q: {c.get("q","")}\n  A: {c.get("a","")}' for c in common_qs[:8])
+        emergency_kw = ', '.join(pack.get('emergency_keywords') or [])
+        qualifying = '\n'.join(f'  - {q}' for q in (pack.get('qualifying_questions_order') or []))
+        out_of_scope = '\n'.join(f'  - {x}' for x in (pack.get('out_of_scope') or []))
+        prompt += f"""
+INDUSTRY KNOWLEDGE — {pack.get('display_name', '')}
+Tone: {pack.get('tone_hint', 'warm and direct')}
+Pricing language guidance: {pack.get('pricing_language', '')}
+
+If a visitor sounds like an emergency (keywords: {emergency_kw}), treat it as urgent — get their name and number first, then route to the owner immediately. Don't let them wander off without contact info.
+
+When you don't know what they need, ask in this order:
+{qualifying}
+
+COMMON QUESTIONS AND THE RIGHT ANSWERS (use these to answer instantly without making things up):
+{common_qs_block}
+
+INDUSTRY-SPECIFIC OUT-OF-SCOPE (refuse these every time):
+{out_of_scope}
+"""
+
+    prompt += f"""
+GENERAL JOB:
+Greet visitors warmly, answer their questions about {biz_name} from the info above, capture leads (name + phone or email + what they need), and direct serious buyers toward booking, quoting, or contacting the owner.
+
+If you don't know an answer, say honestly: "That's a great question — I'll make sure the right person here gets back to you on that. What's the best way to reach you?" Then capture their name and number/email. NEVER make up information about {biz_name}.
+
+HARD LIMITS (always):
+- Never give legal, medical, or financial advice. Refer them to a licensed professional.
+- Never quote a specific dollar price unless it's in the services list.
+- Never promise something the business may not be able to deliver.
+
+STYLE:
+- Warm and human. Never "as an AI."
+- 2-4 sentences by default.
+- One question at a time.
+- No markdown. Conversational.
+"""
+    return prompt
+
+
+@app.route('/b2b-checkout-prep')
+def b2b_checkout_prep():
+    """Legal review page — shown after the chat captures all the buyer's details.
+    Visitor must check every box (terms, privacy, refund, data-routing, hard limits)
+    before the Continue → Stripe button enables. Refusing returns to the chat."""
+    token = (request.args.get('token') or '').strip()
+    if not token or not re.match(r'^[a-f0-9]{32}$', token):
+        return send_from_directory(WEBSITE_DIR, 'b2b_prep_invalid.html', max_age=0)
+    intent_file = _B2B_INTENT_DIR / f'{token}.json'
+    if not intent_file.exists():
+        return send_from_directory(WEBSITE_DIR, 'b2b_prep_invalid.html', max_age=0)
+    return send_from_directory(WEBSITE_DIR, 'b2b_checkout_prep.html', max_age=0)
+
+
+@app.route('/api/b2b/intent/<token>')
+def b2b_intent(token):
+    """Returns the chat-captured intent for the legal review page to display."""
+    if not re.match(r'^[a-f0-9]{32}$', token or ''):
+        return jsonify({'ok': False, 'error': 'invalid token'}), 400
+    intent_file = _B2B_INTENT_DIR / f'{token}.json'
+    if not intent_file.exists():
+        return jsonify({'ok': False, 'error': 'intent not found or expired'}), 404
+    try:
+        intent = json.loads(intent_file.read_text(encoding='utf-8'))
+    except Exception:
+        return jsonify({'ok': False, 'error': 'intent file corrupt'}), 500
+    return jsonify({'ok': True, 'intent': intent})
+
+
+@app.route('/api/b2b/refuse', methods=['POST'])
+def b2b_refuse():
+    """Visitor refused legal acceptance. Deletes the intent and lets the chat
+    pick up with a polite goodbye."""
+    data = request.get_json(silent=True) or {}
+    token = (data.get('token') or '').strip()
+    if re.match(r'^[a-f0-9]{32}$', token):
+        try:
+            (_B2B_INTENT_DIR / f'{token}.json').unlink(missing_ok=True)
+        except Exception:
+            pass
+    return jsonify({'ok': True})
+
+
 @app.route('/tts', methods=['POST'])
 def tts():
     data    = request.get_json(silent=True) or {}
@@ -1455,6 +2325,12 @@ def legal_accept():
         'terms_version': (data.get('terms_version') or '2026-05').strip(),
         'accepted_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
         'ip': request.remote_addr or '',
+        # Optional B2B fields — captured when the customer is buying a
+        # Website Controller or Receptionist rather than consumer Orby.
+        'product': (data.get('product') or '').strip(),
+        'tier': (data.get('tier') or '').strip(),
+        'business_name': (data.get('business_name') or '').strip(),
+        'business_website': (data.get('business_website') or '').strip(),
     }
     try:
         (_LEGAL_DIR / f'{acceptance_id}.json').write_text(json.dumps(record, indent=2))

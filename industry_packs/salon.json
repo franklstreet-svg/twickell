@@ -1,0 +1,51 @@
+{
+  "industry_slug": "salon",
+  "display_name": "Salon / Spa / Barbershop Industry Pack",
+  "applies_to_keywords": [
+    "salon", "barber", "barbershop", "hair salon", "beauty", "spa",
+    "nail salon", "esthetician", "stylist", "colorist", "lash",
+    "massage therapist", "massage clinic", "waxing"
+  ],
+  "services_typical": [
+    "Haircuts (men's, women's, kids)",
+    "Color, highlights, balayage",
+    "Blowouts",
+    "Manicure / pedicure",
+    "Massages",
+    "Facials",
+    "Waxing / brow services",
+    "Lash extensions",
+    "Bridal / event styling"
+  ],
+  "emergency_keywords": [
+    "allergic reaction", "chemical burn", "scalp burn",
+    "lash glue in eye"
+  ],
+  "qualifying_questions_order": [
+    "What service are you looking for?",
+    "Do you have a preferred stylist or are you open to whoever's available?",
+    "When were you hoping to come in — today, this week, a specific date?",
+    "Is this your first visit with us or are you a returning client?",
+    "Best phone number to confirm the appointment?"
+  ],
+  "common_questions": [
+    {"q": "How much is a haircut?", "a": "Cuts start in our published price range — exact price depends on the stylist and any extras like a wash. Let me get you booked and we can confirm with the stylist."},
+    {"q": "Do you take walk-ins?", "a": "Sometimes, depending on the day. The fastest way to guarantee a slot is to book — what service were you thinking?"},
+    {"q": "How long does color take?", "a": "Color services run 1.5–3 hours depending on length and style. Let me get you booked with the right amount of time."},
+    {"q": "Do you do bridal?", "a": "Yes — bridal styling is one of our specialties. What's your date and rough party size? I'll connect you with our bridal coordinator."},
+    {"q": "Do you offer gift cards?", "a": "Yes — gift cards are available in any amount. Want me to send you a link or have someone call you back?"},
+    {"q": "What's your cancellation policy?", "a": "We ask for 24 hours notice for cancellations to avoid a fee. Need to reschedule? I can help with that."}
+  ],
+  "tone_hint": "friendly, image-aware, helpful with appointment booking",
+  "pricing_language": "Service prices vary by stylist experience and add-ons. Exact pricing is confirmed at booking.",
+  "out_of_scope": [
+    "Never give specific cosmetic / dermatological advice",
+    "Never recommend a chemical service for someone reporting a sensitive scalp / pregnancy / medication that affects skin — defer to the stylist consultation",
+    "Never confirm a specific stylist's availability without checking"
+  ],
+  "lead_priority_signals": {
+    "high": ["wedding tomorrow", "event tonight", "bridal in 2 weeks"],
+    "medium": ["appointment", "booking", "new client", "consultation"],
+    "low": ["just curious about prices", "looking around"]
+  }
+}

@@ -515,6 +515,60 @@
     <p><strong>Technical Data.</strong> Anonymized health pings and error log data are retained for a period sufficient to identify and resolve technical issues, typically not longer than twelve (12) months in identifiable form, after which they may be retained in further aggregated and anonymized form for historical analysis.</p>
   </div>
 
+  <!-- SECTION 14 — B2B PRODUCTS: RECEPTIONIST + WEBSITE CONTROLLER -->
+  <div class="legal-section">
+    <h2><span class="section-num">14</span> AI Receptionist &amp; AI Website Controller — Data Routing Addendum</h2>
+    <div class="highlight-box">
+      <p><strong>The short version (B2B products):</strong> When you buy the AI Receptionist or AI Website Controller, your business data — call transcripts, chat messages, customer leads, business profile, and learned answers — lives on hardware you control. Our Bridge service routes secure connections between your hardware and the voice/web services that need them, but it does <strong>not store</strong> the content of your customers' conversations.</p>
+    </div>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.1 What lives on YOUR hardware</h3>
+    <p>Your AI Receptionist or AI Website Controller stores the following data on hardware you control (your office server, your own cloud VPS, or your own computer):</p>
+    <ul style="margin-left: 20px; line-height: 1.9;">
+      <li>Your business profile (name, hours, services, pricing, owner info, FAQs)</li>
+      <li>All call transcripts and chat conversation history</li>
+      <li>Leads and contact information your AI captures</li>
+      <li>Owner-confirmed answers (your AI's learned knowledge base)</li>
+      <li>Notifications and message-taking records</li>
+    </ul>
+    <p>You can wipe this data at any time. You can move it to different hardware. You hold the keys.</p>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.2 What our Bridge service DOES handle</h3>
+    <p>The Orbi Bridge is our coordination service. It runs on Orbi AI infrastructure and performs these functions:</p>
+    <ul style="margin-left: 20px; line-height: 1.9;">
+      <li><strong>Routing connections</strong> between your hardware and the voice/web services that need to reach it (for example, between Twilio's voice service and the brain on your hardware)</li>
+      <li><strong>Health monitoring</strong> via heartbeat pings — recording only "your service was alive at this time," never the content of the conversations</li>
+      <li><strong>API key issuance</strong> to authenticate your products</li>
+      <li><strong>Billing coordination</strong> with Stripe (we never see your card numbers — those go to Stripe directly)</li>
+      <li><strong>Module library</strong> — code and configuration templates for industry-specific features</li>
+    </ul>
+    <p>The Bridge passes through data in transit. It does not persist the body of customer conversations, chat messages, or call transcripts to its own database.</p>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.3 Third-party services involved</h3>
+    <p>To deliver voice and chat capabilities, your AI uses these third-party services:</p>
+    <ul style="margin-left: 20px; line-height: 1.9;">
+      <li><strong>Twilio</strong> (for AI Receptionist) — carries voice calls between callers and your hardware. Twilio is the phone carrier; their privacy policy governs voice transit, the same way any phone carrier would. You hold your own Twilio account and pay Twilio directly.</li>
+      <li><strong>Groq, HuggingFace, Anthropic</strong> — large language model providers used (in that order of preference) when your AI generates a response. These providers process the conversation transiently to generate the AI's reply. They do not retain conversation content beyond their stated retention windows (see each provider's policy).</li>
+      <li><strong>Stripe</strong> — payment processing for your subscription. Stripe sees your billing details; we do not.</li>
+      <li><strong>Render</strong> — hosts our Bridge service. Render's infrastructure runs the routing code; it does not have direct access to your stored business data.</li>
+    </ul>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.4 HIPAA-friendly architecture</h3>
+    <p>Because your business data does not live in a shared multi-tenant cloud database we control, the AI Receptionist and AI Website Controller architecture is suitable for many regulated industries — including medical, legal, and financial offices — that require strong data residency and isolation guarantees. We do not currently sign HIPAA Business Associate Agreements; if your use case requires one, contact us so we can discuss a custom arrangement.</p>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.5 Your right to audit</h3>
+    <p>The Orbi Bridge router code is open to inspection by customers. If you want to confirm that our service does what we describe, request the audit instructions by emailing <a href="mailto:franklstreet@yahoo.com">franklstreet@yahoo.com</a>.</p>
+
+    <h3 style="color:var(--gold-light); margin-top:24px; margin-bottom:8px;">14.6 Data deletion</h3>
+    <p>To delete your B2B AI's data, you have two paths:</p>
+    <ul style="margin-left: 20px; line-height: 1.9;">
+      <li><strong>Delete from your hardware:</strong> simply remove the brain installation from your server. All conversation history, leads, and learned answers are gone.</li>
+      <li><strong>Cancel your subscription:</strong> we will revoke your API keys, deactivate your Bridge instance entries, and email you a confirmation. Your data on your hardware remains yours to do with as you wish.</li>
+    </ul>
+
+    <p style="margin-top:18px; color:var(--text-muted); font-size:14px;">This Section 14 addendum specifically governs the AI Receptionist and AI Website Controller B2B products. Sections 1–13 above continue to govern the consumer My Orby product and the marketing website at twickell.com.</p>
+  </div>
+
   <!-- SECTION 13 -->
   <div class="legal-section">
     <h2><span class="section-num">13</span> Contact — Privacy Questions and Requests</h2>

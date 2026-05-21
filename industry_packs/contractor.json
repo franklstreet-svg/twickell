@@ -1,0 +1,47 @@
+{
+  "industry_slug": "contractor",
+  "display_name": "Contractor / Trades Industry Pack",
+  "applies_to_keywords": [
+    "contractor", "plumber", "plumbing", "electrician", "electrical", "hvac",
+    "heating", "cooling", "roofer", "roofing", "carpenter", "carpentry",
+    "handyman", "remodel", "remodeling", "construction", "builder",
+    "tradesman", "drywall", "tile", "flooring", "painting"
+  ],
+  "services_typical": [
+    "Emergency repairs (24/7 dispatch when supported)",
+    "Free written estimates",
+    "Same-day or next-day service",
+    "Licensed and insured work",
+    "Warranty on labor and parts"
+  ],
+  "emergency_keywords": [
+    "leak", "leaking", "flood", "flooding", "water damage", "no heat", "no ac",
+    "no air", "burst pipe", "no power", "sparking", "shock", "burning smell",
+    "gas leak", "smoke", "ceiling collapse", "fell through", "trapped"
+  ],
+  "qualifying_questions_order": [
+    "Tell me what's going on — is something not working, or are you planning a project?",
+    "What's your address or zip code?",
+    "How urgent is this — emergency, today, this week, or just getting quotes?",
+    "Best phone number to reach you on?"
+  ],
+  "common_questions": [
+    {"q": "Do you give free estimates?", "a": "Yes — free written estimates are standard. I can set one up for you. What's your address and a good time?"},
+    {"q": "Do you handle emergencies?", "a": "We do — let me get your name, address, and a number to reach you and I'll dispatch someone right away."},
+    {"q": "Are you licensed and insured?", "a": "Yes. License and insurance details are available on request — happy to send them over."},
+    {"q": "How much does this cost?", "a": "It depends on the scope — for a clear number I'd send someone out for a free estimate. Want me to schedule one?"},
+    {"q": "Do you work on weekends?", "a": "For emergencies, yes. For regular jobs, weekday scheduling is usually best — let me check what's open."}
+  ],
+  "tone_hint": "warm-direct, blue-collar friendly, no jargon",
+  "pricing_language": "We don't quote firm prices over chat because every job is different — but for a $300 service call or a $30,000 remodel, we always give a free estimate before any work starts.",
+  "out_of_scope": [
+    "Never quote a specific dollar number unless it's in the business profile services list",
+    "Never promise a same-day appointment without confirming with the owner",
+    "Never give DIY troubleshooting that could be dangerous — direct them to call us instead"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords above", "today", "right now", "asap"],
+    "medium": ["quote", "estimate", "this week", "looking to hire"],
+    "low": ["just curious", "researching", "thinking about", "maybe next month"]
+  }
+}

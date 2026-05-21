@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orby AI — Your AI Receptionist + Website Chat. 24/7. On YOUR Hardware.</title>
+<meta name="description" content="Orby answers your phones and your website chat — 24/7, never tired, learns YOUR business. Your customer data stays on hardware you control. Built for contractors, attorneys, doctors, and small businesses.">
+<style>
+:root {
+  --bg: #0a0f1e;
+  --surface: #111827;
+  --surface2: #1a2235;
+  --gold: #d4a017;
+  --gold-light: #f0c040;
+  --gold-glow: rgba(212,160,23,0.4);
+  --text: #e8eaf0;
+  --text-muted: #8892a4;
+  --border: rgba(212,160,23,0.2);
+  --success: #22c55e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.65;
+  overflow-x: hidden;
+}
+a { color: var(--gold-light); text-decoration: none; }
+a:hover { color: #fff; }
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+.narrow { max-width: 780px; margin: 0 auto; padding: 0 24px; }
+h1, h2, h3, h4 { letter-spacing: -0.01em; line-height: 1.2; }
+strong { color: var(--text); }
+ul { margin-left: 22px; line-height: 1.85; }
+
+/* Nav */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,15,30,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 68px;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.orb {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
+  box-shadow: 0 0 18px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3);
+  animation: pulse 3s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 18px var(--gold-glow), inset 0 2px 4px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 0 32px var(--gold), inset 0 2px 4px rgba(255,255,255,0.3); }
+}
+.nav-links { display: flex; gap: 22px; font-size: 14px; align-items: center; }
+.nav-links a { color: var(--text-muted); }
+.nav-links a:hover { color: var(--text); }
+.nav-cta {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg) !important;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+/* Hero */
+.hero { padding: 80px 0 30px; text-align: center; }
+.eyebrow {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(212,160,23,0.12);
+  color: var(--gold-light);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+}
+h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  font-weight: 800;
+  margin-bottom: 22px;
+  letter-spacing: -0.025em;
+}
+h1 .gold {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.subhead {
+  font-size: 1.25rem;
+  color: var(--text-muted);
+  max-width: 720px;
+  margin: 0 auto 40px;
+  line-height: 1.55;
+}
+.hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 18px; }
+.hero-meta { color: var(--text-muted); font-size: 13px; }
+
+/* Demo Chat */
+.demo-wrap {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  margin: 60px auto;
+  max-width: 880px;
+  box-shadow: 0 20px 60px rgba(212,160,23,0.08);
+}
+.demo-header { text-align: center; margin-bottom: 18px; }
+.demo-header h3 { font-size: 1.4rem; margin-bottom: 6px; }
+.demo-header p { color: var(--text-muted); font-size: 14px; }
+.demo-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.demo-msgs {
+  height: 380px;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.demo-msg {
+  padding: 10px 14px;
+  border-radius: 14px;
+  max-width: 75%;
+  line-height: 1.5;
+  font-size: 14.5px;
+}
+.demo-msg.bot { align-self: flex-start; background: rgba(232,234,240,0.08); }
+.demo-msg.user { align-self: flex-end; background: rgba(212,160,23,0.18); }
+.demo-msg.typing { align-self: flex-start; color: var(--text-muted); font-style: italic; }
+.demo-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0,0,0,0.25);
+  border-top: 1px solid var(--border);
+}
+.demo-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+}
+.demo-input:focus { border-color: var(--gold); }
+.demo-send {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg);
+  border: none;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+.demo-foot { text-align: center; color: var(--text-muted); margin-top: 16px; font-size: 13px; }
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s, box-shadow 0.2s;
+  text-decoration: none;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(212,160,23,0.2); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg);
+}
+.btn-outline {
+  background: transparent;
+  color: var(--gold-light);
+  border: 1px solid var(--gold);
+}
+.btn-ghost {
+  background: rgba(212,160,23,0.1);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+/* Section base */
+.section { padding: 72px 0; }
+.section h2 {
+  font-size: clamp(1.7rem, 3.5vw, 2.3rem);
+  text-align: center;
+  margin-bottom: 14px;
+}
+.section .lede { text-align: center; color: var(--text-muted); margin-bottom: 48px; max-width: 700px; margin-left: auto; margin-right: auto; }
+.section.alt { background: var(--surface); }
+
+/* Three-up grid */
+.three-up { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.two-up { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+@media (max-width: 840px) {
+  .three-up, .two-up { grid-template-columns: 1fr; }
+}
+.feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 28px;
+}
+.section.alt .feature-card { background: var(--bg); }
+.feature-card .icon { font-size: 2rem; margin-bottom: 14px; }
+.feature-card h3 {
+  color: var(--gold-light);
+  margin-bottom: 10px;
+  font-size: 1.18rem;
+}
+.feature-card p { color: var(--text-muted); font-size: 14.5px; }
+.feature-card ul { color: var(--text-muted); font-size: 14px; margin-top: 10px; }
+
+/* How-it-works steps */
+.steps { counter-reset: step; max-width: 880px; margin: 0 auto; }
+.step {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 22px;
+  margin-bottom: 26px;
+  align-items: flex-start;
+}
+.step-num {
+  counter-increment: step;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.step-num::before { content: counter(step) ". "; }
+.step h4 { color: var(--text); margin-bottom: 6px; font-size: 1.15rem; }
+.step p { color: var(--text-muted); font-size: 14.5px; }
+
+/* Comparison table */
+.compare {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.compare table { width: 100%; border-collapse: collapse; }
+.compare th, .compare td { padding: 16px 18px; text-align: left; border-bottom: 1px solid rgba(212,160,23,0.08); font-size: 14.5px; }
+.compare th { background: rgba(212,160,23,0.08); color: var(--gold-light); font-weight: 700; }
+.compare td.feat { color: var(--text); font-weight: 600; }
+.compare .check { color: var(--success); font-weight: 700; }
+.compare .x { color: var(--text-muted); }
+
+/* Pricing */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 36px;
+}
+@media (max-width: 900px) { .pricing-grid { grid-template-columns: 1fr; } }
+.tier {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 26px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.tier.featured {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 50px rgba(212,160,23,0.18);
+  transform: scale(1.02);
+}
+.tier .badge {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--bg);
+  padding: 5px 16px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tier-name { font-size: 1.35rem; font-weight: 800; }
+.tier-limit { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; margin-top: 4px; }
+.tier-price { font-size: 2.6rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+.tier-price span { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
+.tier-setup { color: var(--text-muted); font-size: 13px; margin-bottom: 22px; }
+.tier-features { list-style: none; margin-left: 0; margin-bottom: 26px; flex: 1; line-height: 1.85; }
+.tier-features li { padding: 4px 0; font-size: 14px; color: var(--text); }
+.tier-features li::before { content: "✓ "; color: var(--gold); font-weight: 700; }
+.coming-soon-tag {
+  display: inline-block;
+  background: rgba(212,160,23,0.15);
+  color: var(--gold-light);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-left: 8px;
+  font-weight: 700;
+}
+
+/* FAQ */
+.faq-list { max-width: 820px; margin: 0 auto; }
+.faq {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 12px;
+}
+.faq summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold-light);
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.faq summary::after { content: "+"; color: var(--gold); font-size: 22px; font-weight: 400; }
+.faq[open] summary::after { content: "−"; }
+.faq[open] summary { margin-bottom: 14px; }
+.faq p { color: var(--text-muted); font-size: 14.5px; line-height: 1.7; }
+.faq p + p { margin-top: 10px; }
+
+/* Trust strip */
+.trust-strip {
+  background: linear-gradient(135deg, var(--surface), var(--surface2));
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 0;
+  text-align: center;
+}
+.trust-strip h3 { color: var(--gold-light); margin-bottom: 14px; font-size: 1.4rem; }
+.trust-pills { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 820px; margin: 24px auto 0; }
+.trust-pill {
+  padding: 10px 16px;
+  background: rgba(212,160,23,0.08);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--text);
+}
+
+/* Founder note */
+.founder {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px;
+  max-width: 780px;
+  margin: 0 auto;
+}
+.founder h3 { color: var(--gold-light); margin-bottom: 14px; font-size: 1.25rem; }
+.founder p { color: var(--text-muted); margin-bottom: 12px; font-size: 15px; }
+.founder .signoff { color: var(--text); font-weight: 700; margin-top: 18px; font-style: italic; }
+
+/* Final CTA */
+.final-cta {
+  padding: 80px 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(212,160,23,0.06), rgba(212,160,23,0.02));
+}
+.final-cta h2 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); margin-bottom: 18px; }
+.final-cta p { color: var(--text-muted); max-width: 580px; margin: 0 auto 32px; }
+
+/* Footer */
+footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(--text-muted); }
+.footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; font-size: 14px; }
+.footer-inner a { color: var(--text-muted); margin-right: 18px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container nav-inner">
+    <div class="logo"><div class="orb"></div><span>Orby AI</span></div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a href="#privacy">Privacy</a>
+      <a href="/personal">Personal Orby</a>
+      <a href="#pricing" class="nav-cta">Buy now</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow">Founding member pricing — locked for life</span>
+    <h1>Your <span class="gold">AI Receptionist</span> and <span class="gold">Website Chat</span><br>working 24/7, on hardware <em>you</em> control</h1>
+    <p class="subhead">Orby answers your business phones, greets your website visitors, captures leads, books appointments, and learns from you. Your customer data stays on hardware you own — never our cloud.</p>
+    <div class="hero-cta">
+      <a href="#pricing" class="btn btn-primary">See pricing →</a>
+      <a href="#demo" class="btn btn-outline">💬 Try Orby live</a>
+      <a href="tel:8886164997" class="btn btn-ghost">📞 (888) 616-4997</a>
+    </div>
+    <p class="hero-meta">No credit card to try. Setup takes under 24 hours.</p>
+  </div>
+</section>
+
+<!-- LIVE CHAT DEMO -->
+<div class="container" id="demo">
+  <div class="demo-wrap">
+    <div class="demo-header">
+      <h3>Talk to Orby. Right now. <span style="color:var(--gold-light)">⬇</span></h3>
+      <p>She's running on this site as our own Website Controller. Ask her about pricing, what she can do, how she learns — anything. <strong style="color:var(--text)">What you're using here is the actual product.</strong></p>
+    </div>
+    <div class="demo-shell">
+      <div class="demo-msgs" id="demoMsgs"></div>
+      <div class="demo-input-row">
+        <input type="text" id="demoInput" class="demo-input" placeholder="Ask Orby anything — try 'what do you do?' or 'how much does it cost?'" maxlength="500">
+        <button class="demo-send" id="demoSend">Send</button>
+      </div>
+    </div>
+    <p class="demo-foot">This conversation is a demo. We capture it briefly to improve responses; nothing is sold or shared.</p>
+  </div>
+</div>
+
+<!-- THE PROBLEM -->
+<section class="section">
+  <div class="container">
+    <h2>The math of missed calls is brutal</h2>
+    <p class="lede">A typical small business misses 30-60% of incoming calls outside business hours. Every missed call = a customer who hires the next business in their search.</p>
+    <div class="three-up">
+      <div class="feature-card">
+        <div class="icon">📵</div>
+        <h3>The 5pm cliff</h3>
+        <p>Your phone rings at 5:01pm — voicemail. The caller doesn't leave a message. They call your competitor. You'll never know they were interested. <strong>That's not just one lost call — it's a lost month.</strong></p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🌐</div>
+        <h3>The 24/7 visitor</h3>
+        <p>Someone lands on your website at 11pm on a Saturday. They have one question — "do you handle <em>X</em>?" — and no way to ask. They bounce. <strong>You spent money to bring them; nobody was home to greet them.</strong></p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">👥</div>
+        <h3>The cost of staff</h3>
+        <p>A part-time human receptionist costs $2,500-$4,000/month plus benefits, training, sick days, and turnover. They can only answer one call at a time, and they sleep at night. <strong>Orby costs $99-$449/month.</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU GET -->
+<section class="section alt">
+  <div class="container">
+    <h2>Two AI staff, one promise</h2>
+    <p class="lede">Buy one, buy both. Each works independently. Your customer data — calls, chats, leads, profiles — lives on hardware <strong>you</strong> control. Not our cloud.</p>
+    <div class="two-up">
+      <div class="feature-card">
+        <div class="icon">📞</div>
+        <h3>AI Receptionist</h3>
+        <p>Answers your business phone with a warm, natural voice 24/7. She:</p>
+        <ul>
+          <li>Takes messages and gets caller details</li>
+          <li>Books appointments into your calendar</li>
+          <li>Routes emergencies straight to you</li>
+          <li>Answers your most common questions from your business profile</li>
+          <li>Learns from YOUR answers — every "she didn't know that" becomes a permanent skill</li>
+          <li>Speaks any language your callers do</li>
+        </ul>
+        <p style="margin-top:14px"><strong>Bring your own Twilio number.</strong> Your phone bill stays yours — same pay-as-you-go pricing every business already understands.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">💬</div>
+        <h3>AI Website Controller</h3>
+        <p>Lives as a polite floating chat bubble on your existing website. She:</p>
+        <ul>
+          <li>Greets every visitor by industry-appropriate context</li>
+          <li>Answers FAQs instantly from your business profile</li>
+          <li>Captures leads (name, phone, email, interest) and emails you</li>
+          <li>Qualifies prospects before they even reach your inbox</li>
+          <li>Sends ready buyers straight to your Stripe checkout or booking page</li>
+          <li>Learns from every "I don't know" you correct in your dashboard</li>
+        </ul>
+        <p style="margin-top:14px"><strong>Install is one line of HTML.</strong> Works on WordPress, Shopify, Squarespace, Wix, custom sites — anywhere.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="container">
+    <h2>How it works</h2>
+    <p class="lede">From "I want to buy" to "Orby is live on my site" in under 24 hours.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div>
+          <h4>You buy a tier that matches your traffic.</h4>
+          <p>Pay with Stripe like any other subscription. We email you within minutes with your owner dashboard link and your embed code (for the Website Controller) or your Twilio setup instructions (for the Receptionist).</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div>
+          <h4>Orby scans your website to learn the basics.</h4>
+          <p>Our scraper pulls your business name, services, hours, contact info, owner name, and service area from your existing site. You don't need to fill anything out manually — but you'll review it before going live.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div>
+          <h4>You confirm her business profile in the dashboard.</h4>
+          <p>Edit anything the scraper missed or got wrong. Add specifics — your appointment rules, your pricing, your emergency triage flow, what to say when a caller asks about something you don't do. Takes about 20 minutes.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div>
+          <h4>You paste one line of code (Website Controller) or forward your phones (Receptionist).</h4>
+          <p>For chat: copy the <code>&lt;script&gt;</code> tag we emailed you and paste it into your website's footer. Reload — Orby appears in the bottom-right corner. For phone: forward your business line to the Twilio number we set up. Orby starts answering on the very next call.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div>
+          <h4>She learns every time she's stumped.</h4>
+          <p>Whenever a caller or visitor asks something she doesn't know, she captures the question and notifies you. You answer once in your dashboard. From that moment, every future customer with the same question gets your answer instantly. Her knowledge compounds — month two is better than month one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="section alt">
+  <div class="container">
+    <h2>Built for businesses where every call matters</h2>
+    <p class="lede">We're starting with industries where the cost of a missed call is highest. More industry packs roll out monthly.</p>
+    <div class="three-up">
+      <div class="feature-card">
+        <div class="icon">🔧</div>
+        <h3>Contractors &amp; Trades</h3>
+        <p>Plumbers, electricians, HVAC, roofers, general contractors. Orby triages emergencies (water leak vs. quote), books estimates, and qualifies bid requests so you only call back serious buyers.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">⚖️</div>
+        <h3>Attorneys &amp; Law Offices</h3>
+        <p>Solo practitioners and small firms. Orby explains your practice areas, schedules consultations, takes detailed intake notes for new matters, and routes urgent matters straight to your phone.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🩺</div>
+        <h3>Chiropractors &amp; Medical</h3>
+        <p>Patient-friendly tone. Orby handles new patient intake, books and reschedules appointments, answers insurance and pricing questions, and routes acute pain calls to your on-call line.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🦷</div>
+        <h3>Dentistry</h3>
+        <p>From "do you take Delta Dental?" to "I chipped a tooth." Orby books cleanings, explains procedures from your price list, and triages dental emergencies to your after-hours line.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🏠</div>
+        <h3>Real Estate &amp; Property</h3>
+        <p>Schedule showings, qualify buyers and tenants, answer property-specific questions from listings you've connected. Coming soon for property managers and brokerages.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">🛠️</div>
+        <h3>Custom industry?</h3>
+        <p>If we haven't built an industry pack for your line of work yet, we'll build one for you when you sign up. That's part of the deal — you tell Orby what your industry needs, she learns it permanently.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section class="section" id="compare">
+  <div class="container">
+    <h2>How Orby compares</h2>
+    <p class="lede">The honest version. No competitor bashing — just where each option fits.</p>
+    <div class="compare">
+      <table>
+        <thead>
+          <tr>
+            <th>&nbsp;</th>
+            <th>Orby AI</th>
+            <th>Hire a receptionist</th>
+            <th>Big cloud AI services</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feat">Cost / month</td>
+            <td class="check">$99–$449</td>
+            <td class="x">$2,500–$4,000+</td>
+            <td class="x">$255–$1,279</td>
+          </tr>
+          <tr>
+            <td class="feat">Hours of coverage</td>
+            <td class="check">24 / 7 / 365</td>
+            <td class="x">9–5, weekdays</td>
+            <td class="check">24 / 7</td>
+          </tr>
+          <tr>
+            <td class="feat">Customer data on YOUR hardware</td>
+            <td class="check">✓ Yes</td>
+            <td class="check">✓ (on paper, in their files)</td>
+            <td class="x">No — multi-tenant cloud</td>
+          </tr>
+          <tr>
+            <td class="feat">Learns from YOUR specific answers</td>
+            <td class="check">✓ Yes, permanent</td>
+            <td class="check">✓ (over time, with training)</td>
+            <td class="x">Generic AI responses</td>
+          </tr>
+          <tr>
+            <td class="feat">Sick days / turnover</td>
+            <td class="check">Never</td>
+            <td class="x">Yes</td>
+            <td class="check">Never</td>
+          </tr>
+          <tr>
+            <td class="feat">Setup time</td>
+            <td class="check">Under 24 hours</td>
+            <td class="x">2–6 weeks hiring</td>
+            <td class="check">1–7 days</td>
+          </tr>
+          <tr>
+            <td class="feat">HIPAA-friendly architecture</td>
+            <td class="check">✓ (data stays with you)</td>
+            <td class="check">✓ (with BAA)</td>
+            <td class="x">Often no</td>
+          </tr>
+          <tr>
+            <td class="feat">Cancel anytime</td>
+            <td class="check">✓</td>
+            <td class="x">Severance / notice</td>
+            <td class="check">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section alt" id="pricing">
+  <div class="container">
+    <h2>Per-product pricing</h2>
+    <p class="lede">Each product priced independently. Volume-tiered so a doctor's office pays fairly, and a small contractor pays fairly. $299 one-time setup per product.</p>
+
+    <h3 style="text-align:center; margin-top:36px; color: var(--gold-light); font-size:1.5rem;">AI Website Controller</h3>
+    <p style="text-align:center; color: var(--text-muted); font-size:14px; margin-top:6px;">Tiered by monthly visitor chats. One distinct conversation = one chat (not per message).</p>
+    <div class="pricing-grid">
+      <div class="tier">
+        <div class="tier-name">Starter</div>
+        <div class="tier-limit">Up to 500 chats / month</div>
+        <div class="tier-price">$99<span>/mo</span></div>
+        <div class="tier-setup">+ $299 one-time setup</div>
+        <ul class="tier-features">
+          <li>Floating chat on your site</li>
+          <li>Lead capture + email notifications</li>
+          <li>Owner dashboard included</li>
+          <li>She learns from your answers</li>
+          <li>Industry pack included</li>
+        </ul>
+        <button class="btn btn-outline" onclick="buyWC('starter')">Buy Starter</button>
+      </div>
+      <div class="tier featured">
+        <span class="badge">Most Popular</span>
+        <div class="tier-name">Growth</div>
+        <div class="tier-limit">Up to 2,500 chats / month</div>
+        <div class="tier-price">$199<span>/mo</span></div>
+        <div class="tier-setup">+ $299 one-time setup</div>
+        <ul class="tier-features">
+          <li>Everything in Starter</li>
+          <li>5× higher chat volume cap</li>
+          <li>Priority lead alerts (SMS optional)</li>
+          <li>Priority email support</li>
+        </ul>
+        <button class="btn btn-primary" onclick="buyWC('growth')">Buy Growth</button>
+      </div>
+      <div class="tier">
+        <div class="tier-name">Pro</div>
+        <div class="tier-limit">Up to 10,000 chats / month</div>
+        <div class="tier-price">$349<span>/mo</span></div>
+        <div class="tier-setup">+ $299 one-time setup</div>
+        <ul class="tier-features">
+          <li>Everything in Growth</li>
+          <li>4× higher chat volume cap</li>
+          <li>Phone support during business hours</li>
+          <li>Custom industry pack work</li>
+        </ul>
+        <button class="btn btn-outline" onclick="buyWC('pro')">Buy Pro</button>
+      </div>
+    </div>
+    <p style="text-align:center; margin-top:28px; color: var(--text-muted); font-size:14px;">
+      More than 10,000 chats/month? <a href="mailto:franklstreet@yahoo.com">Talk to us about Enterprise</a>.
+    </p>
+
+    <h3 style="text-align:center; margin-top:64px; color: var(--gold-light); font-size:1.5rem;">AI Receptionist <span class="coming-soon-tag">Launching shortly</span></h3>
+    <p style="text-align:center; color: var(--text-muted); font-size:14px; margin-top:6px;">$99 / $249 / $449 by monthly call volume, plus $299 setup. Bring your own Twilio account.</p>
+    <p style="text-align:center; margin-top:16px;">
+      <a href="mailto:franklstreet@yahoo.com?subject=AI%20Receptionist%20Waitlist" class="btn btn-outline">Join the launch waitlist</a>
+    </p>
+  </div>
+</section>
+
+<!-- PRIVACY DETAIL -->
+<section class="section" id="privacy">
+  <div class="container narrow">
+    <h2 style="text-align:center;">Your data, your hardware</h2>
+    <p style="color: var(--text-muted); text-align:center; margin-bottom: 32px; max-width:none;">Most AI services pile every customer's data into one shared cloud database. We don't. Here's what's actually on whose computer:</p>
+    <div class="two-up" style="margin-bottom: 28px;">
+      <div class="feature-card">
+        <h3>On hardware YOU control:</h3>
+        <ul>
+          <li>Your business profile (name, hours, services, FAQs)</li>
+          <li>Every call transcript</li>
+          <li>Every chat conversation</li>
+          <li>Every lead Orby captures</li>
+          <li>Every answer you've taught her</li>
+        </ul>
+      </div>
+      <div class="feature-card">
+        <h3>On our Bridge service:</h3>
+        <ul>
+          <li>License keys + tier billing info</li>
+          <li>Heartbeats (was your service alive at 3pm?)</li>
+          <li>Module library (code templates)</li>
+          <li>NO call content</li>
+          <li>NO chat content</li>
+          <li>NO leads or business data</li>
+        </ul>
+      </div>
+    </div>
+    <p style="color: var(--text-muted); text-align:center; font-size:14.5px;">The Orbi Bridge code is open to audit. <a href="/privacy">Read the full privacy policy →</a></p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section alt" id="faq">
+  <div class="container">
+    <h2>Frequently Asked Questions</h2>
+    <p class="lede">Real questions from real prospects. Missing something? Just ask Orby.</p>
+    <div class="faq-list">
+
+      <details class="faq">
+        <summary>Will Orby sound robotic?</summary>
+        <p>No. Orby uses natural-sounding voices that callers regularly mistake for a human receptionist. She handles interruptions, knows when to slow down for a phone number, and uses warm conversational phrasing — not telephone-tree menus.</p>
+        <p>For the Receptionist, you can pick from multiple voice options (Polly Standard included free; premium neural voices available as an upgrade).</p>
+      </details>
+
+      <details class="faq">
+        <summary>What if Orby doesn't know how to answer something?</summary>
+        <p>She'll say something honest like <em>"That's a great question — I'm going to make sure the right person here gets back to you on that. What's the best number to reach you at?"</em> She captures the question and notifies you immediately.</p>
+        <p>You answer once in your dashboard. The next caller or visitor with the same question gets your answer instantly. Her knowledge base grows with you.</p>
+      </details>
+
+      <details class="faq">
+        <summary>How long does setup take?</summary>
+        <p>For the Website Controller: you'll have your embed code in your inbox within minutes of buying. Pasting it on your site is a 5-minute job (longer if your developer is asleep). Orby starts working the moment the page reloads.</p>
+        <p>For the Receptionist: setup is under 24 hours from purchase. We confirm your business profile with you, set up the Twilio webhook, and walk you through forwarding your business line.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Does Orby work in languages other than English?</summary>
+        <p>Yes. She handles Spanish, French, and a long list of others automatically — she'll respond in whatever language the caller or visitor uses. If you want her to default to a specific language for greetings, you can set that in your profile.</p>
+      </details>
+
+      <details class="faq">
+        <summary>What happens during a tier cap?</summary>
+        <p>We email you at 80% of your monthly cap and again at 100%. If you go over, Orby keeps working — we don't cut you off in the middle of a call or chat. But we'll suggest the next tier up so you're not over-paying for usage you keep exceeding.</p>
+        <p>You can change tiers any time from your dashboard.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Why do I need my own Twilio account for the Receptionist?</summary>
+        <p>Twilio is the phone carrier — like Verizon or AT&amp;T, but for software. The reason you bring your own Twilio account is so the phone bill stays in your name (and your phone numbers stay portable if you ever leave us). You pay Twilio at their published per-minute rates, which is usually $15-$300/month depending on call volume. We help you set it up — it's a 10-minute process.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Is this HIPAA-friendly for medical or legal use?</summary>
+        <p>The architecture is — because your patient or client data lives on hardware you control, never in a shared cloud database. We don't currently sign HIPAA Business Associate Agreements off-the-shelf. If your practice requires one, contact us and we'll arrange a custom setup.</p>
+      </details>
+
+      <details class="faq">
+        <summary>What if Orby messes something up?</summary>
+        <p>It can happen. She has hard limits built in (she'll never give legal advice, medical advice, or financial advice — she'll always defer those to you). For other mistakes, every conversation is visible in your dashboard. You can correct what she said, and she'll learn from your correction so the same mistake doesn't happen twice.</p>
+        <p>If something is wrong, email <a href="mailto:franklstreet@yahoo.com">franklstreet@yahoo.com</a> — we read every message.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Can I cancel?</summary>
+        <p>Any time, from your dashboard or by emailing us. No notice period. No cancellation fees. We'll deactivate your products, you keep your data (it was on your hardware anyway), and we won't bill you again.</p>
+      </details>
+
+      <details class="faq">
+        <summary>Why "founding member pricing"?</summary>
+        <p>The first 50 customers get the current rates locked in for the life of their account — meaning even if we raise prices for new customers later, your rate never changes. It's our way of saying thank you for trying us before we have testimonials.</p>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust-strip">
+  <div class="container">
+    <h3>Built for trust from day one</h3>
+    <div class="trust-pills">
+      <div class="trust-pill">✓ Your data on YOUR hardware</div>
+      <div class="trust-pill">✓ Cancel any time</div>
+      <div class="trust-pill">✓ No cloud lock-in</div>
+      <div class="trust-pill">✓ Hard limits on legal, medical, financial advice</div>
+      <div class="trust-pill">✓ Stripe payments, never see your card</div>
+      <div class="trust-pill">✓ Bring your own Twilio</div>
+      <div class="trust-pill">✓ Audit our routing code</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOUNDER NOTE -->
+<section class="section">
+  <div class="container">
+    <div class="founder">
+      <h3>A note from Frank</h3>
+      <p>I built Orby because the AI services I looked at all wanted to store my friends' and family's data in their own cloud. That's fine for a chatbot answering "what's the capital of France." It's not fine for a receptionist answering a caller in tears, or a chat capturing a custody-case intake.</p>
+      <p>So I built it the other way around. Your customers' words stay on your hardware. Our service routes the connection; it doesn't read the mail. If we ever stop existing, your data is still yours. That's the only way I want to sell this.</p>
+      <p>If you have questions or want to talk, email me directly: <a href="mailto:franklstreet@yahoo.com">franklstreet@yahoo.com</a>. I read every message and most of the time I'm the one who responds.</p>
+      <p class="signoff">— Frank, founder, Orby AI · Reno, NV</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <div class="container">
+    <h2>Ready to put Orby to work?</h2>
+    <p>Founding member pricing is locked in for the first 50 customers. Once we hit 50, rates go up for everyone new. Your rate, once locked, never changes.</p>
+    <div class="hero-cta">
+      <a href="#pricing" class="btn btn-primary">See pricing →</a>
+      <a href="#demo" class="btn btn-outline">Talk to Orby first</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container footer-inner">
+    <div>© 2026 Orby AI · Reno, NV</div>
+    <div>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/refund">Refund</a>
+      <a href="/personal">Personal Orby</a>
+      <a href="mailto:franklstreet@yahoo.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<!-- BUY FLOW — all purchases go through Orby in the chat -->
+<script>
+const TIER_PROMPTS = {
+  starter: "I'd like to buy the Starter tier — let's set me up.",
+  growth:  "I'd like to buy the Growth tier — let's set me up.",
+  pro:     "I'd like to buy the Pro tier — let's set me up.",
+};
+
+function buyWC(tier) {
+  const promptText = TIER_PROMPTS[tier] || TIER_PROMPTS.growth;
+  const inputEl = document.getElementById('demoInput');
+  const demoEl = document.getElementById('demo');
+  if (inputEl && demoEl) {
+    inputEl.value = promptText;
+    demoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => { inputEl.focus(); }, 600);
+  }
+}
+
+// If the visitor came back from refusing legal, surface a friendly note
+(function () {
+  const params = new URLSearchParams(location.search);
+  if (params.get('refused') === '1') {
+    setTimeout(() => {
+      const demoEl = document.getElementById('demo');
+      if (demoEl) demoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+    // Show a one-time banner above the chat
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:rgba(212,160,23,0.12);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin:24px auto;max-width:880px;color:var(--text);font-size:14.5px;text-align:center;';
+    banner.textContent = "No worries — you can change your mind any time. Orby's right below if you want to talk.";
+    const demo = document.getElementById('demo');
+    if (demo) demo.parentNode.insertBefore(banner, demo);
+  }
+})();
+</script>
+
+<!-- INLINE DEMO CHAT -->
+<script>
+(function () {
+  const msgs = document.getElementById('demoMsgs');
+  const input = document.getElementById('demoInput');
+  const send = document.getElementById('demoSend');
+  const sessionId = 'demo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+
+  function add(role, text) {
+    const div = document.createElement('div');
+    div.className = 'demo-msg ' + role;
+    div.textContent = text;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function addTyping() {
+    const div = document.createElement('div');
+    div.className = 'demo-msg typing';
+    div.id = 'demo-typing';
+    div.textContent = 'Orby is typing…';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('demo-typing');
+    if (t) t.remove();
+  }
+
+  // Opening greeting
+  add('bot', "Hi! I'm Orby. This page is being run by me — I'm the AI Website Controller in action. Ask me anything about the products, pricing, how I work, or my privacy promise. Or just say hi and we'll figure out where to go from there.");
+
+  async function ship() {
+    const text = (input.value || '').trim();
+    if (!text) return;
+    input.value = '';
+    send.disabled = true;
+    add('user', text);
+    addTyping();
+    try {
+      const r = await fetch('/business_demo_chat', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: text, session_id: sessionId})
+      });
+      let data = {};
+      try { data = await r.json(); } catch (e) {}
+      removeTyping();
+      const reply = data.reply || data.message || "Sorry — I hit a snag. Try again or email franklstreet@yahoo.com.";
+      add('bot', reply);
+      // If Orby triggered the hand-off to legal review, redirect after a short read pause
+      if (data.redirect_url) {
+        setTimeout(() => { location.href = data.redirect_url; }, 1600);
+      }
+    } catch (e) {
+      removeTyping();
+      add('bot', "I couldn't reach the brain right now. Please email franklstreet@yahoo.com — Frank will get back to you fast.");
+    } finally {
+      send.disabled = false;
+      input.focus();
+    }
+  }
+
+  send.addEventListener('click', ship);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ship(); }
+  });
+})();
+</script>
+
+</body>
+</html>

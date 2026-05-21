@@ -1,0 +1,49 @@
+{
+  "industry_slug": "restaurant",
+  "display_name": "Restaurant / Food Service Industry Pack",
+  "applies_to_keywords": [
+    "restaurant", "diner", "cafe", "bistro", "grill", "pizzeria", "pizza",
+    "bar and grill", "eatery", "kitchen", "food truck", "catering", "deli",
+    "sandwich shop", "bakery", "coffee shop", "brunch"
+  ],
+  "services_typical": [
+    "Dine-in service",
+    "Takeout / pickup orders",
+    "Delivery (in-house or via DoorDash/UberEats/Grubhub)",
+    "Reservations",
+    "Private events / catering",
+    "Daily specials",
+    "Online ordering"
+  ],
+  "emergency_keywords": [
+    "food allergy", "allergic reaction", "epi pen", "anaphylaxis",
+    "food poisoning", "choking", "burn", "kitchen fire"
+  ],
+  "qualifying_questions_order": [
+    "Are you looking to dine in, order takeout, or book something for an event?",
+    "How many people in your party?",
+    "What date and time?",
+    "Any food allergies or dietary restrictions we should know about?",
+    "Best phone number for the reservation?"
+  ],
+  "common_questions": [
+    {"q": "Do you take reservations?", "a": "We do — what day, time, and party size?"},
+    {"q": "Are you open today?", "a": "Let me confirm — what time were you thinking?"},
+    {"q": "Do you do takeout?", "a": "Yes, we offer takeout — would you like to place an order now, or just have our hours and menu?"},
+    {"q": "Do you cater?", "a": "Yes — what's the event, how many people, and what date? I'll get the catering team to send you a quote."},
+    {"q": "Do you have a kids menu?", "a": "Yes — kids menu is available all day. Anything specific you're looking for?"},
+    {"q": "Are you accepting reservations for tonight?", "a": "Let me check availability — what time and how many?"}
+  ],
+  "tone_hint": "warm, hospitable, food-forward, never make a caller feel rushed",
+  "pricing_language": "Our menu pricing is on our website; for catering or private events, the team will send you a written quote based on guest count, menu, and date.",
+  "out_of_scope": [
+    "Never confirm a reservation without getting name, phone, party size, date, and time",
+    "Never quote a final catering price — those are bespoke and quoted by the team",
+    "If a caller mentions food allergy concerns or food poisoning, ESCALATE to the manager immediately"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords", "tonight", "right now", "catering for tomorrow"],
+    "medium": ["reservation", "catering quote", "private event", "large party"],
+    "low": ["just browsing menu", "what time do you open"]
+  }
+}

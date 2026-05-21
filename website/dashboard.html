@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orby Owner Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --gold: #d4a017;
+    --gold-light: #f0c040;
+    --text: #e8eaf0;
+    --text-muted: #8892a4;
+    --danger: #ef4444;
+    --success: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .topbar {
+    background: linear-gradient(90deg, var(--surface), var(--surface2));
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    font-weight: 800;
+    font-size: 20px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .biz-name { color: var(--text-muted); font-size: 14px; }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.2);
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 12px 18px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--gold-light);
+    border-bottom-color: var(--gold);
+  }
+  .tab .badge {
+    background: var(--gold);
+    color: var(--bg);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    margin-left: 6px;
+    font-weight: 700;
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card {
+    background: var(--surface);
+    border: 1px solid rgba(212, 160, 23, 0.15);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .card-title { font-weight: 700; margin-bottom: 8px; color: var(--gold-light); }
+  .muted { color: var(--text-muted); font-size: 13px; }
+  .ts { color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
+  textarea, input[type=text], input[type=email], input[type=tel] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid rgba(212, 160, 23, 0.3);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    margin-top: 6px;
+    outline: none;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  textarea:focus, input:focus { border-color: var(--gold); }
+  label { display: block; margin-bottom: 12px; }
+  label .lbl { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  button.btn {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--bg);
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  button.btn:hover { filter: brightness(1.1); }
+  button.btn.outline {
+    background: transparent;
+    color: var(--gold-light);
+    border: 1px solid var(--gold);
+  }
+  button.btn.small { padding: 6px 12px; font-size: 12px; }
+  button.btn.danger {
+    background: var(--danger);
+    color: white;
+  }
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  pre.code {
+    background: var(--bg);
+    border: 1px solid rgba(212, 160, 23, 0.25);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    user-select: all;
+  }
+  .copy-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+  .lead-info { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+  .lead-info span strong { color: var(--gold-light); }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .urgency-high { color: var(--danger); font-weight: 700; }
+  .urgency-normal { color: var(--text-muted); }
+  .notice {
+    background: rgba(212, 160, 23, 0.1);
+    border-left: 3px solid var(--gold);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  .error {
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--danger);
+    padding: 14px 18px;
+    border-radius: 6px;
+    color: #fca5a5;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="brand">Orby — Owner Dashboard</div>
+    <div class="biz-name" id="bizName">Loading…</div>
+  </div>
+  <div class="muted" id="ownerEmail"></div>
+</div>
+
+<div class="container" id="root">
+  <div class="notice" id="notice" style="display:none;"></div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="pending">Pending Questions<span class="badge" id="badge-pending" style="display:none;">0</span></button>
+    <button class="tab" data-panel="leads">Leads<span class="badge" id="badge-leads" style="display:none;">0</span></button>
+    <button class="tab" data-panel="notifications">Notifications<span class="badge" id="badge-notif" style="display:none;">0</span></button>
+    <button class="tab" data-panel="profile">Business Profile</button>
+    <button class="tab" data-panel="embed">Embed Code</button>
+  </div>
+
+  <div class="panel active" id="panel-pending">
+    <div id="pendingList"></div>
+  </div>
+
+  <div class="panel" id="panel-leads">
+    <div id="leadsList"></div>
+  </div>
+
+  <div class="panel" id="panel-notifications">
+    <div id="notifList"></div>
+  </div>
+
+  <div class="panel" id="panel-profile">
+    <div class="card">
+      <div class="card-title">Business Profile</div>
+      <div class="muted" style="margin-bottom:14px;">Orby uses these details when she talks to your visitors and callers. Keep them accurate.</div>
+      <label><span class="lbl">Business Name</span><input type="text" id="prof-name" /></label>
+      <label><span class="lbl">Phone</span><input type="tel" id="prof-phone" /></label>
+      <label><span class="lbl">Email</span><input type="email" id="prof-email" /></label>
+      <label><span class="lbl">Website</span><input type="text" id="prof-website" /></label>
+      <label><span class="lbl">Address</span><input type="text" id="prof-address" /></label>
+      <label><span class="lbl">Hours</span><input type="text" id="prof-hours" placeholder="e.g., Mon-Fri 9am-5pm" /></label>
+      <label><span class="lbl">Services (comma-separated)</span><textarea id="prof-services" placeholder="e.g., Plumbing, Drain Cleaning, Water Heater Install"></textarea></label>
+      <label><span class="lbl">Service Area</span><input type="text" id="prof-area" placeholder="e.g., Reno, Sparks, Carson City" /></label>
+      <label><span class="lbl">Owner Name</span><input type="text" id="prof-owner" /></label>
+      <button class="btn" id="saveProfile">Save Profile</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-embed">
+    <div class="card">
+      <div class="card-title">Your Website Controller Embed Code</div>
+      <div class="muted" style="margin-bottom:12px;">Paste this snippet anywhere in your website's <code>&lt;body&gt;</code>. Orby will appear as a floating chat in the bottom-right of every page.</div>
+      <pre class="code" id="embedCode">Loading…</pre>
+      <div class="copy-row"><button class="btn outline" id="copyEmbed">Copy to clipboard</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Installation Help</div>
+      <div class="muted">
+        <p><strong>WordPress:</strong> Add to <em>Appearance → Theme Editor → footer.php</em>, right before <code>&lt;/body&gt;</code>.</p>
+        <p><strong>Shopify:</strong> <em>Online Store → Themes → Actions → Edit code → theme.liquid</em>, paste before <code>&lt;/body&gt;</code>.</p>
+        <p><strong>Squarespace:</strong> <em>Settings → Advanced → Code Injection → Footer</em>.</p>
+        <p><strong>Wix:</strong> <em>Settings → Custom Code → Add Custom Code</em>, choose "Body — end", paste the snippet.</p>
+        <p>Reload your site and Orby should appear within 5 seconds. If she doesn't show up, contact support@twickell.com with a screenshot.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var TOKEN = new URLSearchParams(location.search).get('token');
+  if (!TOKEN) {
+    document.getElementById('root').innerHTML = '<div class="error">Missing owner token. The dashboard link you clicked is invalid. Check your welcome email for the correct link, or contact support@twickell.com.</div>';
+    return;
+  }
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s || '').replace(/[&<>"']/g, function (c) { return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]); }); }
+  function fmt(ts) { if (!ts) return ''; try { return new Date(ts).toLocaleString(); } catch (e) { return ts; } }
+
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      document.querySelectorAll('.panel').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      $('panel-' + t.dataset.panel).classList.add('active');
+    });
+  });
+
+  function api(path, opts) {
+    opts = opts || {};
+    var url = path + (path.indexOf('?') === -1 ? '?' : '&') + 'token=' + encodeURIComponent(TOKEN);
+    var init = { method: opts.method || 'GET', headers: { 'Content-Type': 'application/json' } };
+    if (opts.body) init.body = JSON.stringify(Object.assign({ token: TOKEN }, opts.body));
+    return fetch(url, init).then(function (r) { return r.json(); });
+  }
+
+  function renderPending(pending) {
+    var c = $('pendingList');
+    if (!pending || !pending.length) {
+      c.innerHTML = '<div class="empty">No pending questions. Orby will collect any she doesn’t know the answer to and they’ll appear here for you to answer.</div>';
+      $('badge-pending').style.display = 'none';
+      return;
+    }
+    $('badge-pending').style.display = '';
+    $('badge-pending').textContent = pending.length;
+    c.innerHTML = pending.map(function (p) {
+      return '<div class="card" data-id="' + esc(p.id) + '">'
+        + '<div class="ts">First asked ' + esc(fmt(p.created_at)) + ' • asked ' + esc(p.times_asked || 1) + ' time(s)</div>'
+        + '<div class="card-title">' + esc(p.question) + '</div>'
+        + '<textarea class="ans-text" placeholder="Your answer. Orby will use this from now on."></textarea>'
+        + '<div class="row"><button class="btn small ans-save">Save Answer</button></div>'
+        + '</div>';
+    }).join('');
+    c.querySelectorAll('.ans-save').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var card = btn.closest('.card');
+        var id = card.dataset.id;
+        var ans = card.querySelector('.ans-text').value.trim();
+        if (!ans) { alert('Please type an answer first.'); return; }
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        api('/api/dashboard/answer-pending', { method: 'POST', body: { entry_id: id, answer: ans } })
+          .then(function (data) {
+            if (data.ok) {
+              card.style.opacity = '0.4';
+              btn.textContent = 'Saved ✓';
+              setTimeout(load, 400);
+            } else {
+              btn.disabled = false;
+              btn.textContent = 'Save Answer';
+              alert('Save failed: ' + (data.error || 'unknown'));
+            }
+          });
+      });
+    });
+  }
+
+  function renderLeads(leads) {
+    var c = $('leadsList');
+    if (!leads || !leads.length) {
+      c.innerHTML = '<div class="empty">No leads yet. When a visitor shows buying intent, Orby will capture them and they’ll appear here.</div>';
+      $('badge-leads').style.display = 'none';
+      return;
+    }
+    $('badge-leads').style.display = '';
+    $('badge-leads').textContent = leads.length;
+    c.innerHTML = leads.map(function (l) {
+      return '<div class="card">'
+        + '<div class="ts">' + esc(fmt(l.created_at)) + '</div>'
+        + '<div class="card-title">' + esc(l.name || 'Anonymous') + '</div>'
+        + '<div class="lead-info">'
+        +   (l.phone ? '<span><strong>Phone:</strong> ' + esc(l.phone) + '</span>' : '')
+        +   (l.email ? '<span><strong>Email:</strong> ' + esc(l.email) + '</span>' : '')
+        +   (l.service_interest ? '<span><strong>Wants:</strong> ' + esc(l.service_interest) + '</span>' : '')
+        +   (l.urgency ? '<span><strong>Urgency:</strong> ' + esc(l.urgency) + '</span>' : '')
+        + '</div>'
+        + (l.notes ? '<div class="muted" style="margin-top:8px;">' + esc(l.notes) + '</div>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+  function renderNotifs(notifs) {
+    var c = $('notifList');
+    var unread = notifs.filter(function (n) { return !n.acknowledged_at; });
+    if (!notifs || !notifs.length) {
+      c.innerHTML = '<div class="empty">No notifications.</div>';
+      $('badge-notif').style.display = 'none';
+      return;
+    }
+    if (unread.length) {
+      $('badge-notif').style.display = '';
+      $('badge-notif').textContent = unread.length;
+    } else {
+      $('badge-notif').style.display = 'none';
+    }
+    c.innerHTML = notifs.map(function (n) {
+      var ack = !!n.acknowledged_at;
+      return '<div class="card" data-id="' + esc(n.id) + '" style="' + (ack ? 'opacity:0.5;' : '') + '">'
+        + '<div class="ts ' + (n.urgency === 'high' ? 'urgency-high' : 'urgency-normal') + '">'
+        +   esc(n.kind || 'notification') + ' • ' + esc(fmt(n.created_at))
+        +   (n.urgency === 'high' ? ' • HIGH PRIORITY' : '')
+        + '</div>'
+        + '<div class="card-title">' + esc(n.summary || '') + '</div>'
+        + (n.recommended_action ? '<div class="muted">Recommended: ' + esc(n.recommended_action) + '</div>' : '')
+        + (!ack ? '<div class="row"><button class="btn small outline mark-read">Mark read</button></div>' : '<div class="muted" style="margin-top:8px;">Acknowledged ' + esc(fmt(n.acknowledged_at)) + '</div>')
+        + '</div>';
+    }).join('');
+    c.querySelectorAll('.mark-read').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var card = btn.closest('.card');
+        var id = card.dataset.id;
+        btn.disabled = true;
+        api('/api/dashboard/mark-notification', { method: 'POST', body: { id: id } })
+          .then(function (data) { if (data.ok) load(); });
+      });
+    });
+  }
+
+  function fillProfile(p) {
+    $('prof-name').value = p.name || '';
+    $('prof-phone').value = p.contact_phone || p.phone || '';
+    $('prof-email').value = p.contact_email || p.email || '';
+    $('prof-website').value = p.website || '';
+    $('prof-address').value = p.address || '';
+    $('prof-hours').value = p.hours || '';
+    var services = p.services || [];
+    $('prof-services').value = Array.isArray(services) ? services.join(', ') : String(services || '');
+    var area = p.service_area || [];
+    $('prof-area').value = Array.isArray(area) ? area.join(', ') : String(area || '');
+    $('prof-owner').value = p.owner_name || p.owner || '';
+  }
+
+  $('saveProfile').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    var updates = {
+      name: $('prof-name').value.trim(),
+      contact_phone: $('prof-phone').value.trim(),
+      contact_email: $('prof-email').value.trim(),
+      website: $('prof-website').value.trim(),
+      address: $('prof-address').value.trim(),
+      hours: $('prof-hours').value.trim(),
+      services: $('prof-services').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+      service_area: $('prof-area').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
+      owner_name: $('prof-owner').value.trim(),
+    };
+    api('/api/dashboard/update-profile', { method: 'POST', body: { updates: updates } })
+      .then(function (data) {
+        btn.disabled = false;
+        btn.textContent = 'Save Profile';
+        if (data.ok) {
+          btn.textContent = 'Saved ✓';
+          setTimeout(function () { btn.textContent = 'Save Profile'; }, 1500);
+        } else {
+          alert('Save failed: ' + (data.error || 'unknown'));
+        }
+      });
+  });
+
+  $('copyEmbed').addEventListener('click', function () {
+    var code = $('embedCode').textContent || '';
+    var btn = this;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(function () {
+        btn.textContent = 'Copied ✓';
+        setTimeout(function () { btn.textContent = 'Copy to clipboard'; }, 1500);
+      });
+    }
+  });
+
+  function load() {
+    api('/api/dashboard/data').then(function (data) {
+      if (!data.ok) {
+        document.getElementById('root').innerHTML = '<div class="error">' + esc(data.error || 'Could not load dashboard.') + '</div>';
+        return;
+      }
+      $('bizName').textContent = (data.profile && data.profile.name) || data.customer_id;
+      $('ownerEmail').textContent = data.owner_email || '';
+      renderPending(data.pending || []);
+      renderLeads(data.leads || []);
+      renderNotifs(data.notifications || []);
+      fillProfile(data.profile || {});
+      $('embedCode').textContent = data.embed_code || '(No active Website Controller instance — buy one to get an embed code.)';
+    });
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

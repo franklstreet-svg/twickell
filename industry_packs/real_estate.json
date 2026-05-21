@@ -1,0 +1,51 @@
+{
+  "industry_slug": "real_estate",
+  "display_name": "Real Estate / Property Industry Pack",
+  "applies_to_keywords": [
+    "real estate", "realtor", "real estate agent", "broker", "brokerage",
+    "property management", "property manager", "landlord", "rental",
+    "leasing agent", "listing agent", "buyer's agent"
+  ],
+  "services_typical": [
+    "Listing your home for sale",
+    "Buyer representation",
+    "Rental search / leasing",
+    "Property management",
+    "Market valuation / CMA",
+    "Investment property advisory",
+    "Relocation services"
+  ],
+  "emergency_keywords": [
+    "lockout", "locked out", "no water", "no heat", "no power",
+    "flood", "fire", "break-in", "leak coming through ceiling",
+    "eviction served", "unsafe condition"
+  ],
+  "qualifying_questions_order": [
+    "Are you looking to buy, sell, rent, or get a property managed?",
+    "What's the property address or general area you're focused on?",
+    "What's your timeline — this month, this quarter, or just exploring?",
+    "Have you been pre-approved (if buying) / done a CMA (if selling)?",
+    "Best phone number and email to follow up with you?"
+  ],
+  "common_questions": [
+    {"q": "How much is my home worth?", "a": "I can get one of our agents to put together a free comparative market analysis (CMA). What's the address and how soon are you thinking of selling?"},
+    {"q": "Do you handle rentals?", "a": "Yes — both leasing and full property management. Are you a tenant looking to rent, an owner looking to lease out, or both?"},
+    {"q": "What's your commission?", "a": "Commission is negotiable depending on the service level — the agent will explain the structure on your first call. Want me to set one up?"},
+    {"q": "Are you accepting new clients?", "a": "Yes — what brings you to us? Looking to buy, sell, rent, or invest?"},
+    {"q": "Can you recommend a lender?", "a": "I can connect you with the lenders our clients have had good experiences with. What kind of loan are you thinking — conventional, FHA, VA, jumbo?"},
+    {"q": "How long does it take to sell a house?", "a": "Average days on market depends on price point and area. For your zip code, let me have an agent send you a recent market report — best phone or email?"}
+  ],
+  "tone_hint": "professional, knowledgeable, no high-pressure tactics, respect the size of the decision",
+  "pricing_language": "Commissions, management fees, and rates are negotiable based on service level and property. The agent or property manager will go over the structure during your initial consultation.",
+  "out_of_scope": [
+    "Never give specific legal advice about property law, evictions, or fair housing — refer to an attorney",
+    "Never give tax advice — refer to a CPA",
+    "Never give a specific home value — defer to a CMA / appraisal",
+    "If a tenant calls about an unsafe condition, escalate to the property manager immediately"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords", "this week", "closing soon", "need to find a place by"],
+    "medium": ["thinking of selling", "ready to buy", "looking to lease", "investment property"],
+    "low": ["just curious", "researching the market"]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "industry_slug": "automotive",
+  "display_name": "Auto Repair / Mechanic Industry Pack",
+  "applies_to_keywords": [
+    "auto repair", "mechanic", "auto shop", "car repair", "automotive",
+    "transmission shop", "body shop", "collision", "muffler", "brake shop",
+    "tire shop", "oil change", "smog", "detailing"
+  ],
+  "services_typical": [
+    "Diagnostics / check engine light",
+    "Oil changes",
+    "Brake service",
+    "Tire rotation / replacement",
+    "Transmission service",
+    "Engine repair",
+    "Alignment",
+    "Smog / emissions testing",
+    "Body and paint repair",
+    "Towing arrangement (sometimes)"
+  ],
+  "emergency_keywords": [
+    "won't start", "broken down", "stranded", "on the side of the road",
+    "smoke from engine", "fluid leaking", "brakes failing", "lost steering",
+    "accident", "rear-ended", "totaled", "tow"
+  ],
+  "qualifying_questions_order": [
+    "What's the make, model, and year of the vehicle?",
+    "What's it doing (or not doing) — any noises, lights, smells?",
+    "When did the problem start, and is it getting worse?",
+    "Where is the car right now — drivable, or do you need a tow?",
+    "Best phone number to call you back at?"
+  ],
+  "common_questions": [
+    {"q": "How much for an oil change?", "a": "Standard oil change pricing is on our menu — synthetic versus conventional makes a difference. Want me to get you on the schedule? What's the make and model?"},
+    {"q": "Do you do diagnostics?", "a": "Yes — diagnostic fee is typically applied toward the repair if you have us do the work. What's the car doing?"},
+    {"q": "Can you tow my car?", "a": "We arrange towing through a trusted partner. Where is the car, and what's the nearest cross street?"},
+    {"q": "Do you do estimates?", "a": "Free estimates on most repairs — bring it in or describe what's going on and we'll give you a ballpark. What's happening?"},
+    {"q": "Do you take walk-ins?", "a": "We try, but appointments get priority. What's going on with the car? If it's urgent we'll work it in."},
+    {"q": "Do you warranty your work?", "a": "Yes — our labor warranty details are in your invoice. Need a specific warranty question answered?"}
+  ],
+  "tone_hint": "straightforward, no-bs, honest about costs, calm with stressed customers",
+  "pricing_language": "Most jobs are quoted after a quick diagnostic. We don't give 'over the phone' final prices because they almost always change — but ranges are fair, and the written estimate is firm.",
+  "out_of_scope": [
+    "Never give DIY repair advice that could be dangerous (brakes, fuel systems, electrical)",
+    "Never give an exact repair price over chat — defer to the written estimate after inspection",
+    "If the caller is stranded or in an accident, ESCALATE — get their location and dispatch tow / connect to owner"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords", "broken down right now", "won't start", "in an accident"],
+    "medium": ["estimate", "appointment", "diagnostic", "schedule service"],
+    "low": ["just curious", "future maintenance"]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "industry_slug": "dentist",
+  "display_name": "Dentistry Industry Pack",
+  "applies_to_keywords": [
+    "dentist", "dental", "dentistry", "orthodontist", "oral surgeon",
+    "periodontist", "endodontist", "dental hygienist"
+  ],
+  "services_typical": [
+    "Cleanings & exams",
+    "Fillings",
+    "Crowns & bridges",
+    "Root canals",
+    "Extractions",
+    "Cosmetic dentistry (whitening, veneers — confirm in profile)",
+    "Orthodontics / Invisalign (if offered)",
+    "Emergency dental visits"
+  ],
+  "emergency_keywords": [
+    "knocked out tooth", "lost a tooth", "chipped tooth", "broken tooth",
+    "severe pain", "swelling", "abscess", "bleeding won't stop",
+    "trauma to mouth", "can't sleep from pain", "fever and tooth pain"
+  ],
+  "qualifying_questions_order": [
+    "Are you an existing patient or new to the practice?",
+    "What's going on — routine cleaning, specific issue, or emergency?",
+    "If pain: on a 1-10 scale, where are you at right now?",
+    "When would you like to come in — today, this week, soon?",
+    "Best phone number to call you back on?"
+  ],
+  "common_questions": [
+    {"q": "Do you take my insurance?", "a": "We work with most dental insurance plans (Delta, Cigna, MetLife, BlueCross, others). Let me grab your plan info and we'll verify before your visit. What carrier are you with?"},
+    {"q": "Are you accepting new patients?", "a": "Yes! Let me get you scheduled — would you like a cleaning + exam to start, or is there a specific issue?"},
+    {"q": "How much is a cleaning?", "a": "With most insurance, cleanings are covered. Without insurance, our cash rate is in the standard range — let me have the front desk confirm and call you back."},
+    {"q": "Do you offer financing?", "a": "Yes — we work with CareCredit and similar plans for larger treatments. The team can walk you through options at your visit."},
+    {"q": "Do you do Invisalign / whitening / cosmetic?", "a": "Cosmetic services depend on the practice — let me confirm what's offered and get you set up for a consultation. What are you considering?"}
+  ],
+  "tone_hint": "warm, reassuring (lots of patients are nervous about dental work), gentle on pain questions",
+  "pricing_language": "Cleaning and exam costs depend on insurance; cash rates are quoted up front. Larger work (crowns, root canals, implants) gets a written treatment plan with cost before any work starts.",
+  "out_of_scope": [
+    "NEVER give specific medical or dental advice",
+    "NEVER diagnose pain ('it sounds like a cavity' is OK; 'you have an infection' is not)",
+    "If trauma or severe-pain signals: escalate to emergency line / recommend ER for significant facial trauma",
+    "Never quote specific treatment prices unless they're in the published price list"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords above", "severe pain", "broken tooth", "can't eat"],
+    "medium": ["new patient", "cleaning", "checkup", "consultation"],
+    "low": ["just curious", "thinking about", "researching"]
+  }
+}

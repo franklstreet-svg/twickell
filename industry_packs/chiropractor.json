@@ -1,0 +1,47 @@
+{
+  "industry_slug": "chiropractor",
+  "display_name": "Chiropractor Industry Pack",
+  "applies_to_keywords": [
+    "chiropractor", "chiropractic", "spinal", "adjustment", "back pain clinic"
+  ],
+  "services_typical": [
+    "Spinal adjustments",
+    "New patient evaluations",
+    "Sports injury rehab",
+    "Auto accident / personal injury",
+    "Massage therapy (if offered — confirm in profile)",
+    "X-rays / imaging on-site (if offered)"
+  ],
+  "emergency_keywords": [
+    "can't move", "can't walk", "numb", "numbness", "tingling in legs",
+    "lost sensation", "fell", "accident today", "car accident",
+    "shooting pain", "loss of bladder control"
+  ],
+  "qualifying_questions_order": [
+    "Are you a current patient with us, or new to the practice?",
+    "What's going on — what's hurting?",
+    "When did this start, and is it getting worse?",
+    "Are you wanting to come in today, or schedule for later this week?",
+    "Best phone number to reach you on?"
+  ],
+  "common_questions": [
+    {"q": "Do you take my insurance?", "a": "We work with most major insurance plans. Let me get your insurance info and we'll verify coverage before your visit — that way there are no surprises. What plan are you on?"},
+    {"q": "Are you accepting new patients?", "a": "Yes — let me get you scheduled for an initial visit. What's going on that brought you in?"},
+    {"q": "How much does it cost without insurance?", "a": "Cash rates vary — let me check with the front desk on current rates and get back to you. Want me to take down your number?"},
+    {"q": "Do I need a referral?", "a": "Most patients don't need one, but it depends on your insurance. Easiest is to have us verify your benefits — got your insurance info?"},
+    {"q": "How long does a visit take?", "a": "First visit is usually 45-60 minutes (eval + adjustment). Follow-ups are typically 15-30 minutes. Let me get you scheduled."}
+  ],
+  "tone_hint": "warm, patient-friendly, never alarming, reassuring about pain",
+  "pricing_language": "First-visit cost depends on your insurance and any imaging needed. We verify benefits before your appointment so you know exactly what to expect.",
+  "out_of_scope": [
+    "NEVER give medical advice or diagnoses",
+    "NEVER tell a patient their condition will or won't get better",
+    "If acute/red-flag symptoms appear (numbness, loss of bladder control, severe trauma) — escalate to the doctor or recommend they go to the ER",
+    "Never quote insurance copay numbers unless explicitly listed in the profile"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords above", "in pain right now", "can't move", "auto accident today"],
+    "medium": ["new patient", "appointment", "evaluation", "consultation"],
+    "low": ["just curious", "thinking about", "researching options"]
+  }
+}

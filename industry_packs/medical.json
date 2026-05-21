@@ -1,0 +1,53 @@
+{
+  "industry_slug": "medical",
+  "display_name": "Medical Office / General Practice Industry Pack",
+  "applies_to_keywords": [
+    "doctor", "physician", "medical office", "clinic", "family practice",
+    "internal medicine", "pediatric", "pediatrician", "urgent care",
+    "primary care", "physician's office", "medical practice", "wellness clinic"
+  ],
+  "services_typical": [
+    "New patient appointments",
+    "Annual physicals / wellness exams",
+    "Sick visits / acute care",
+    "Vaccinations / immunizations",
+    "Prescription refills (through portal/phone)",
+    "Lab work / blood draws on-site",
+    "Referrals to specialists"
+  ],
+  "emergency_keywords": [
+    "chest pain", "trouble breathing", "shortness of breath", "stroke",
+    "weakness on one side", "slurred speech", "seizure", "unconscious",
+    "severe bleeding", "thoughts of harm", "suicidal", "anaphylaxis",
+    "epi pen", "fever 103", "high fever", "convulsion"
+  ],
+  "qualifying_questions_order": [
+    "Are you a current patient or new to the practice?",
+    "What's going on — routine visit, specific issue, or urgent?",
+    "How long have you had the symptoms? Are they getting worse?",
+    "What's your insurance? We'll verify before your visit.",
+    "Best phone number to reach you at?"
+  ],
+  "common_questions": [
+    {"q": "Do you take my insurance?", "a": "We work with most major insurance carriers — let me grab your plan and we'll verify benefits before the visit. What plan are you on?"},
+    {"q": "Are you accepting new patients?", "a": "Yes — let me get you scheduled for a new patient visit. What's bringing you in?"},
+    {"q": "Can I get a prescription refill?", "a": "Refill requests need to go through the doctor — what medication, and is it for an existing prescription with us? I can get a message to the nurse line."},
+    {"q": "How long does a visit take?", "a": "New patient visits run 30–45 minutes. Follow-ups are usually 15–20. Let me get you booked."},
+    {"q": "Do you do walk-ins?", "a": "For urgent same-day needs, sometimes — but appointments are strongly recommended. What's going on?"},
+    {"q": "What forms do I need to fill out?", "a": "I can email you the new patient packet — best email to send it to?"}
+  ],
+  "tone_hint": "warm, calm, professional, never alarming, gentle on health-anxious callers",
+  "pricing_language": "Visit copays depend on your insurance. Without insurance, our cash rates for routine visits are reasonable — exact pricing comes after we verify benefits.",
+  "out_of_scope": [
+    "ABSOLUTELY NEVER give medical advice or diagnoses",
+    "NEVER tell a patient what their condition is or what to do about it",
+    "If any emergency keyword (chest pain, stroke symptoms, breathing trouble, suicidal ideation) appears — IMMEDIATELY say: 'This sounds urgent — please hang up and call 911 (or 988 for mental health) right now. If you can't, tell me where you are and I'll get help to you.'",
+    "Never give specific prescription advice",
+    "Never confirm appointment availability without checking with the office"
+  ],
+  "lead_priority_signals": {
+    "high": ["emergency keywords above", "worsening symptoms", "severe pain", "today"],
+    "medium": ["new patient", "physical", "annual visit", "follow-up"],
+    "low": ["future appointment", "researching providers"]
+  }
+}
