@@ -1589,22 +1589,30 @@ def _scrape_summary(url: str) -> str:
     try:
         from modules.business.scraper.site_scraper import SiteScraper
         result = SiteScraper(max_pages=8).scrape(url)
-        if not isinstance(result, dict):
+        if not isinstance(result, dict) or not result.get('ok'):
             return f"[SCRAPER_RESULT: could not fetch {url}]"
-        profile = (result.get('business_profile') or {})
+        # business_profile is nested inside structured_data — NOT top level.
+        profile = ((result.get('structured_data') or {}).get('business_profile')) or {}
         bits = []
         if profile.get('name'): bits.append(f"business name: {profile['name']}")
+        if profile.get('description'): bits.append(f"description: {profile['description'][:160]}")
         if profile.get('business_type'): bits.append(f"type: {profile['business_type']}")
         if profile.get('owner_name'): bits.append(f"owner: {profile['owner_name']}")
+        # Contact is nested
+        contact = profile.get('contact') or {}
+        if contact.get('phones'): bits.append("phone: " + contact['phones'][0])
+        if contact.get('emails'): bits.append("email: " + contact['emails'][0])
+        if contact.get('addresses'): bits.append("address: " + contact['addresses'][0])
         if profile.get('services'):
             svs = profile['services']
             if isinstance(svs, list) and svs:
-                bits.append("services: " + ", ".join(str(s) for s in svs[:6]))
-        if profile.get('service_area'):
-            area = profile['service_area']
-            if isinstance(area, list) and area: bits.append("area: " + ", ".join(str(a) for a in area[:3]))
-            elif area: bits.append(f"area: {area}")
-        if profile.get('hours'): bits.append(f"hours: {profile['hours']}")
+                bits.append("services: " + ", ".join(str(s) for s in svs[:8]))
+        if profile.get('hours'):
+            hrs = profile['hours']
+            if isinstance(hrs, list) and hrs:
+                bits.append("hours: " + "; ".join(str(h) for h in hrs[:3]))
+            elif hrs:
+                bits.append(f"hours: {hrs}")
         if not bits:
             return f"[SCRAPER_RESULT: site fetched ({url}) but couldn't extract clean business details — confirm manually with the visitor]"
         return f"[SCRAPER_RESULT for {url}: " + " | ".join(bits) + "]"

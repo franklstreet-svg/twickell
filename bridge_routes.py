@@ -1355,21 +1355,33 @@ def wc_webhook():
                     # Scraper is shipped with the twickell deploy at modules/business/scraper/
                     from modules.business.scraper.site_scraper import SiteScraper
                     result = SiteScraper(max_pages=15).scrape(url)
-                    if not result.get('ok', True):
-                        log.warning('Scrape failed for %s: %s', cid, result.get('error'))
+                    if not isinstance(result, dict) or not result.get('ok', True):
+                        log.warning('Scrape failed for %s: %s', cid, result.get('error') if isinstance(result, dict) else '?')
                         return
-                    scraped_profile = result.get('business_profile', {})
+                    # business_profile lives inside structured_data
+                    scraped_profile = ((result.get('structured_data') or {}).get('business_profile')) or {}
+                    # Flatten contact dict into the customer profile shape
+                    contact = scraped_profile.get('contact') or {}
+                    if contact:
+                        if contact.get('phones') and 'contact_phone' not in scraped_profile:
+                            scraped_profile['contact_phone'] = contact['phones'][0]
+                        if contact.get('emails') and 'contact_email' not in scraped_profile:
+                            scraped_profile['contact_email'] = contact['emails'][0]
+                        if contact.get('addresses') and 'address' not in scraped_profile:
+                            scraped_profile['address'] = contact['addresses'][0]
                     if scraped_profile:
                         with _lock:
                             p = cdir / 'business_profile.json'
                             cur = _read(p, {})
                             # Only fill in fields that aren't already set
                             for k, v in scraped_profile.items():
+                                if k == 'contact':
+                                    continue  # already flattened above
                                 if k not in cur or cur[k] in (None, '', [], {}):
                                     cur[k] = v
                             cur['updated_at'] = _now_iso()
                             _atomic_write(p, cur)
-                        log.info('Scrape enriched profile for %s', cid)
+                        log.info('Scrape enriched profile for %s (%d fields)', cid, len(scraped_profile))
                 except Exception as e:
                     log.warning('Background scrape failed for %s: %s', cid, e)
             threading.Thread(target=_scrape_in_bg, args=(customer_id, business_website),
