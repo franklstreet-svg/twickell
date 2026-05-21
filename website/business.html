@@ -998,10 +998,18 @@ function buyWC(tier) {
     if (state === 'speaking') mic.classList.add('speaking');
   }
 
+  // Strip markdown so the chat bubble doesn't show literal **asterisks** etc.
+  function _stripMarkdown(t) {
+    return String(t || '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/\*([^*]+)\*/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/`([^`]+)`/g, '$1');
+  }
   function add(role, text) {
     const div = document.createElement('div');
     div.className = 'demo-msg ' + role;
-    div.textContent = text;
+    div.textContent = role === 'bot' ? _stripMarkdown(text) : text;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
   }
@@ -1361,11 +1369,16 @@ function buyWC(tier) {
     add('user', text);
     addTyping();
     try {
+      // 60s timeout because Orby's reply may include a scrape (up to 15s) + TTS synth (1-3s)
+      const _ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      const _tid = _ctrl ? setTimeout(() => _ctrl.abort(), 60000) : null;
       const r = await fetch('/business_demo_chat', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({message: text, session_id: sessionId})
+        body: JSON.stringify({message: text, session_id: sessionId}),
+        signal: _ctrl ? _ctrl.signal : undefined,
       });
+      if (_tid) clearTimeout(_tid);
       let data = {};
       try { data = await r.json(); } catch (e) {}
       removeTyping();
