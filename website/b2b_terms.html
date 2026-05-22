@@ -47,6 +47,21 @@
   </div>
 </nav>
 
+<div style="background:linear-gradient(90deg,rgba(212,160,23,.12),rgba(240,192,64,.06));border-bottom:1px solid var(--border);padding:14px 24px;text-align:center;position:sticky;top:60px;z-index:99;">
+  <button onclick="_orbiCloseTab()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--bg);border:none;padding:11px 26px;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 0 16px rgba(212,160,23,.4);">← Close this tab and go back to your checkout</button>
+  <div style="color:var(--text-muted);font-size:12px;margin-top:6px;">This document opened in a separate browser tab. Click above to close it and return to your checkout page — your progress and checkboxes are still there.</div>
+</div>
+<script>
+function _orbiCloseTab(){
+  try { window.close(); } catch(e){}
+  // Some browsers refuse window.close() if the tab wasn't opened by script.
+  // Fall back to history.back() so the user can at least navigate back.
+  setTimeout(function(){
+    if (!window.closed) { try { history.back(); } catch(e){ location.href='/'; } }
+  }, 200);
+}
+</script>
+
 <div class="page">
 
   <div class="page-header">
