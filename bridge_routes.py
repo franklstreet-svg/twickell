@@ -44,6 +44,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import requests as _requests
 from flask import Blueprint, Flask, request, jsonify
 from flask_cors import CORS
 
@@ -945,15 +946,63 @@ def _email_config() -> dict:
 
 
 def send_email(to_email: str, subject: str, text_body: str, html_body: str = '') -> dict:
-    """Sends an email via Gmail SMTP using ORBI_EMAIL credentials.
-    If ORBI_EMAIL_DRY_RUN is set, just logs the message and returns ok=True without sending."""
+    """Sends an email. Resend HTTP API is tried first (port 443 — works on
+    HuggingFace Spaces, which blocks outbound SMTP). Falls back to Gmail SMTP
+    if RESEND_API_KEY isn't set (so local dev still works with the old creds).
+    If ORBI_EMAIL_DRY_RUN, logs and returns ok=True without sending."""
     cfg = _email_config()
-    if not to_email or not cfg['user']:
-        return {'ok': False, 'error': 'missing to_email or ORBI_EMAIL'}
-    if cfg['dry_run'] or not cfg['password']:
+    if not to_email:
+        return {'ok': False, 'error': 'missing to_email'}
+    if cfg['dry_run']:
         log.info('[EMAIL DRY-RUN] To: %s | Subject: %s | First 200 chars: %s',
                  to_email, subject, text_body[:200].replace('\n', ' '))
         return {'ok': True, 'dry_run': True}
+
+    # ── Path 1: Resend HTTP API (works through HF Spaces port 443) ──────────
+    resend_key = os.environ.get('RESEND_API_KEY', '').strip()
+    if resend_key:
+        try:
+            # Until Frank verifies a domain at resend.com, sender must be
+            # onboarding@resend.dev. Override via RESEND_FROM_EMAIL once a
+            # domain (e.g., twickell.com) is verified there.
+            from_email = os.environ.get('RESEND_FROM_EMAIL', 'onboarding@resend.dev').strip()
+            from_name = cfg['from_name']
+            payload = {
+                'from': f"{from_name} <{from_email}>",
+                'to': [to_email],
+                'subject': subject,
+                'text': text_body,
+            }
+            if html_body:
+                payload['html'] = html_body
+            # Optional reply-to so customers can reply to the operator address
+            reply_to = os.environ.get('RESEND_REPLY_TO', '').strip()
+            if reply_to:
+                payload['reply_to'] = reply_to
+            r = _requests.post(
+                'https://api.resend.com/emails',
+                headers={
+                    'Authorization': f'Bearer {resend_key}',
+                    'Content-Type': 'application/json',
+                },
+                json=payload,
+                timeout=15,
+            )
+            if r.status_code in (200, 202):
+                data = r.json() if r.content else {}
+                log.info('Email sent via Resend: to=%s subject=%s id=%s',
+                         to_email, subject, data.get('id', ''))
+                return {'ok': True, 'via': 'resend', 'id': data.get('id', '')}
+            log.warning('Resend send failed: status=%s body=%s',
+                        r.status_code, r.text[:300])
+            return {'ok': False, 'error': f'Resend HTTP {r.status_code}: {r.text[:200]}'}
+        except Exception as e:
+            log.warning('Resend send exception: %s', e)
+            return {'ok': False, 'error': f'Resend exception: {e}'}
+
+    # ── Path 2: Gmail SMTP fallback (works locally; HF blocks SMTP) ─────────
+    if not cfg['user'] or not cfg['password']:
+        return {'ok': False, 'error': 'no RESEND_API_KEY and no SMTP credentials configured'}
     try:
         import smtplib
         import ssl
@@ -970,10 +1019,10 @@ def send_email(to_email: str, subject: str, text_body: str, html_body: str = '')
         with smtplib.SMTP_SSL(cfg['host'], cfg['port'], context=ctx, timeout=20) as server:
             server.login(cfg['user'], cfg['password'])
             server.sendmail(cfg['user'], [to_email], msg.as_string())
-        log.info('Email sent: to=%s subject=%s', to_email, subject)
-        return {'ok': True}
+        log.info('Email sent via SMTP: to=%s subject=%s', to_email, subject)
+        return {'ok': True, 'via': 'smtp'}
     except Exception as e:
-        log.warning('Email send failed: %s', e)
+        log.warning('SMTP send failed: %s', e)
         return {'ok': False, 'error': str(e)}
 
 
@@ -1567,6 +1616,8 @@ def system_health():
             'stripe_wc_webhook_secret_configured': bool(os.environ.get('STRIPE_WC_WEBHOOK_SECRET')),
             'email_user_configured': bool(os.environ.get('ORBI_EMAIL')),
             'email_password_configured': bool(os.environ.get('ORBI_EMAIL_PASSWORD')),
+            'resend_api_configured': bool(os.environ.get('RESEND_API_KEY')),
+            'resend_from_email': os.environ.get('RESEND_FROM_EMAIL', 'onboarding@resend.dev'),
             'data_dir': str(DATA_DIR),
             'data_dir_writable': os.access(str(DATA_DIR), os.W_OK),
             'persistent_storage_active': str(DATA_DIR).startswith('/data'),
