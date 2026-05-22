@@ -1384,6 +1384,8 @@ Confirm the order one last time:
 When they say yes, output this EXACT marker at the very end of your message (the system will redirect them):
 ##GO_TO_LEGAL##{"business_name":"<name>","industry":"<industry>","website":"<url>","email":"<email>","tier":"<starter|growth|pro>","modules":["<pack name>"]}##GO_TO_LEGAL##
 
+CRITICAL: the tier value MUST be exactly one of: starter, growth, pro — ALL LOWERCASE. Never "Starter", never "GROWTH", never "Pro". Lowercase only. The downstream checkout reads it case-sensitively.
+
 DO NOT output ##GO_TO_LEGAL## until you have all the fields and they have confirmed.
 
 Step 8 — If they refuse or abandon legal

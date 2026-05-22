@@ -244,23 +244,66 @@ function updateAcceptState() {
   $('acceptBtn').disabled = !allChecked;
 }
 
-function renderSummary(intent, foundingInfo) {
-  const tier = TIER_DETAIL[intent.tier] || TIER_DETAIL.starter;
-  const modList = (intent.modules || []).map(m => `<li>${m}</li>`).join('') || '<li>Custom — confirmed in your dashboard after setup</li>';
-  // Founding member math
-  const isFounder = !!(foundingInfo && foundingInfo.eligible);
-  const founderNumber = (foundingInfo && foundingInfo.next_number) || '—';
+function _currentTierKey() {
+  const sel = document.getElementById('tierEdit');
+  if (sel && sel.value) return sel.value.toLowerCase();
+  const intent = window._intent || {};
+  return (intent.tier || 'starter').toLowerCase();
+}
+
+function _renderPriceArea() {
+  const tierKey = _currentTierKey();
+  const tier = TIER_DETAIL[tierKey] || TIER_DETAIL.starter;
+  const founding = window._founding || { eligible: true, next_number: '?' };
+  const isFounder = !!founding.eligible;
+  const founderNumber = founding.next_number || '—';
   const actualSetup = isFounder ? 149.50 : SETUP_FEE;
   const setupDisplay = isFounder
     ? `<span style="text-decoration:line-through;color:var(--text-muted);margin-right:8px;">$${SETUP_FEE}</span><strong>$149.50</strong>`
     : `$${SETUP_FEE}`;
   const today = (tier.monthly + actualSetup).toFixed(2);
+  const area = document.getElementById('priceArea');
+  if (!area) return;
+  area.innerHTML = `
+    <div class="price-line"><span>${tier.name}</span><span>$${tier.monthly}/mo · ${tier.limit}</span></div>
+    <div class="price-line">
+      <span>One-time setup ${isFounder ? `<span style="color:var(--gold-light);font-weight:700;">⭐ Founding Member #${founderNumber} of 1,000 — 50% off</span>` : ''}</span>
+      <span>${setupDisplay}</span>
+    </div>
+    <div class="price-line total"><span>Charged today</span><span>$${today}</span></div>
+    <div class="price-line" style="color:var(--text-muted);font-size:13px;">
+      <span>Then $${tier.monthly}/mo — cancel any time from your dashboard. Monthly rate may change for new customers later; you'll be notified before any change to your bill.</span>
+      <span></span>
+    </div>
+  `;
+}
 
-  // Email row — editable so the customer can enter/fix it if Orby missed it
+function renderSummary(intent, foundingInfo) {
+  // Normalize tier key to lowercase so 'Starter' / 'Growth' / 'Pro' all work
+  const tierKey = (intent.tier || 'starter').toLowerCase();
+  window._founding = foundingInfo || { eligible: true, next_number: '?' };
+  const modList = (intent.modules || []).map(m => `<li>${m}</li>`).join('') || '<li>Custom — confirmed in your dashboard after setup</li>';
+
+  // Editable email
   const emailRow = `
     <div class="summary-row">
       <span class="label">Owner email <span style="color:#fca5a5;">*</span></span>
       <input type="email" id="emailEdit" placeholder="you@yourbusiness.com" value="${(intent.email || '').replace(/"/g,'&quot;')}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:14px;width:240px;text-align:right;outline:none;" />
+    </div>`;
+
+  // Editable tier picker so customer can change what Orby selected (or fix
+  // any case where Orby misread their volume)
+  const tierPickerOptions = [
+    {k:'starter', l:'Starter — $99/mo (up to 500 chats)'},
+    {k:'growth',  l:'Growth — $199/mo (up to 2,500 chats)'},
+    {k:'pro',     l:'Pro — $349/mo (up to 10,000 chats)'},
+  ].map(t => `<option value="${t.k}" ${t.k===tierKey?'selected':''}>${t.l}</option>`).join('');
+  const tierRow = `
+    <div class="summary-row">
+      <span class="label">Plan tier</span>
+      <select id="tierEdit" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:14px;outline:none;">
+        ${tierPickerOptions}
+      </select>
     </div>`;
 
   $('summary').innerHTML = `
@@ -268,20 +311,14 @@ function renderSummary(intent, foundingInfo) {
     <div class="summary-row"><span class="label">Type</span><span class="value">${intent.industry || '—'}</span></div>
     <div class="summary-row"><span class="label">Website</span><span class="value">${intent.website || '—'}</span></div>
     ${emailRow}
+    ${tierRow}
     <div class="summary-row"><span class="label">Modules Orby will attach</span><span class="value" style="text-align:right;"><ul style="margin:0;padding:0;list-style:none;">${modList}</ul></span></div>
-    <div style="margin-top:18px;">
-      <div class="price-line"><span>${tier.name}</span><span>$${tier.monthly}/mo · ${tier.limit}</span></div>
-      <div class="price-line">
-        <span>One-time setup ${isFounder ? `<span style="color:var(--gold-light);font-weight:700;">⭐ Founding Member #${founderNumber} of 1,000 — 50% off</span>` : ''}</span>
-        <span>${setupDisplay}</span>
-      </div>
-      <div class="price-line total"><span>Charged today</span><span>$${today}</span></div>
-      <div class="price-line" style="color:var(--text-muted);font-size:13px;">
-        <span>Then $${tier.monthly}/mo — cancel any time from your dashboard. Monthly rate may change for new customers later; you'll be notified before any change to your bill.</span>
-        <span></span>
-      </div>
-    </div>
+    <div style="margin-top:18px;" id="priceArea"></div>
   `;
+  _renderPriceArea();
+  // Re-render price whenever tier changes
+  const sel = document.getElementById('tierEdit');
+  if (sel) sel.addEventListener('change', _renderPriceArea);
 }
 
 async function loadIntent() {
@@ -335,7 +372,9 @@ $('acceptBtn').addEventListener('click', async () => {
   const errEl = $('error');
   errEl.classList.remove('show');
   const intent = window._intent || {};
-  const tier = (intent.tier || 'starter').toLowerCase();
+  // Read the tier from the EDITABLE picker (not the original intent) so the
+  // customer's correction wins. Lowercase for safe lookup.
+  const tier = _currentTierKey();
   const td = TIER_DETAIL[tier] || TIER_DETAIL.starter;
 
   // Email is required — pull from the editable field, validate
