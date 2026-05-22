@@ -121,6 +121,21 @@ def personal_home():
     return send_from_directory(WEBSITE_DIR, 'index.html')
 
 
+@app.route('/b2b-terms')
+def b2b_terms_page():
+    return send_from_directory(WEBSITE_DIR, 'b2b_terms.html')
+
+
+@app.route('/b2b-privacy')
+def b2b_privacy_page():
+    return send_from_directory(WEBSITE_DIR, 'b2b_privacy.html')
+
+
+@app.route('/b2b-refund')
+def b2b_refund_page():
+    return send_from_directory(WEBSITE_DIR, 'b2b_refund.html')
+
+
 # /api/wc/checkout is registered by bridge_routes.register_bridge_routes() — no proxy needed.
 
 

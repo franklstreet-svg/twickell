@@ -210,12 +210,13 @@ const TOKEN = new URLSearchParams(location.search).get('token');
 const $ = (id) => document.getElementById(id);
 
 const CHECKLIST = [
-  { id: 'terms',    title: "I've read the Terms of Service.",   body: 'In particular, <a href="/terms#section_20" target="_blank">Section 20</a> covers the B2B Products: cancellation, refunds, tier overage, compliance.' },
-  { id: 'privacy',  title: "I've read the Privacy Policy.",     body: 'Especially <a href="/privacy#section_14" target="_blank">Section 14</a> on data routing — my business data lives on hardware I control. The Orbi Bridge routes connections but does not store call or chat content.' },
-  { id: 'refund',   title: "I've read the Refund Policy.",      body: 'The one-time $299 setup fee is non-refundable. The first 7 days of a billing cycle are pro-rated refundable. Cancel any time from my dashboard. See <a href="/refund" target="_blank">refund policy</a>.' },
-  { id: 'hard',     title: 'I understand Orby has hard limits.', body: 'Orby will not give legal, medical, or financial advice on my behalf. She refuses those topics and refers callers/visitors to licensed professionals. That protects me and my customers.' },
+  { id: 'terms',    title: "I've read the B2B Terms of Service.",   body: 'Click here to <a href="/b2b-terms" target="_blank">open the full B2B Terms of Service</a> — 20 sections covering license, IP, AI disclaimer, customer responsibilities, billing, cancellation, liability limits, indemnification, dispute resolution, compliance (HIPAA, GDPR, CCPA, TCPA), and more.' },
+  { id: 'privacy',  title: "I've read the B2B Privacy Policy.",     body: 'Click here to <a href="/b2b-privacy" target="_blank">open the full B2B Privacy Policy</a> — explains exactly what data lives where, what the Bridge does and does NOT do, third-party providers (Stripe, Twilio, LLM providers), data retention, and CCPA/GDPR rights.' },
+  { id: 'refund',   title: "I've read the B2B Refund &amp; Cancellation Policy.", body: 'Click here to <a href="/b2b-refund" target="_blank">open the full Refund Policy</a> — covers the non-refundable setup fee, 7-day pro-rated monthly refund window, cancellation methods, service-interruption credits, tier-change rules.' },
+  { id: 'hard',     title: 'I understand Orby has hard limits.',    body: 'Orby will refuse to give legal, medical, or financial advice on my behalf and will refer callers/visitors to licensed professionals. I am responsible for the consequences of any response Orby generates for my customers.' },
   { id: 'data',     title: "I'll obtain any required consent for call/chat recording.", body: 'In some jurisdictions (e.g., two-party consent states in the US), I need to inform callers when an AI is recording or transcribing. Orbi AI provides the technology; consent obligations rest with me as the operator.' },
-  { id: 'fairuse',  title: 'I agree to fair-use limits.',         body: "I won't use the service to harass, defraud, or spam, or for anything unlawful. Orbi AI may suspend service for clear abuse." },
+  { id: 'fairuse',  title: 'I agree to fair-use and acceptable use limits.', body: "I won't use the service to harass, defraud, spam, or for any unlawful purpose. Orbi AI may suspend service for clear abuse." },
+  { id: 'pricing',  title: 'I understand monthly pricing may change for new customers later.', body: 'My Founding Member status applies only to the 50% setup-fee discount, not to my monthly rate. If Orbi AI raises monthly subscription prices, I will be notified by email at least 30 days before any change to my bill and may cancel before the new rate takes effect.' },
 ];
 
 function renderChecks() {
