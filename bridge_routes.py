@@ -1451,6 +1451,23 @@ def wc_cancel_page():
             '</body></html>')
 
 
+@bp.get('/api/wc/founding-status')
+def wc_founding_status():
+    """Tells the checkout-prep page whether the next purchase qualifies for the
+    founding-member 50% setup discount. Used to render the discount line and
+    calculate 'charged today' accurately before Stripe confirms."""
+    count = _count_founding_members('website_controller')
+    eligible = count < FOUNDING_MEMBER_CAP
+    return jsonify({
+        'ok': True,
+        'eligible': eligible,
+        'next_number': count + 1 if eligible else None,
+        'taken': count,
+        'cap': FOUNDING_MEMBER_CAP,
+        'setup_fee_cents': WC_SETUP_FEE_CENTS // 2 if eligible else WC_SETUP_FEE_CENTS,
+    })
+
+
 @bp.get('/api/wc/delivery/<customer_id>')
 def wc_get_delivery(customer_id):
     """Internal admin endpoint — fetch the delivery payload for an existing customer.

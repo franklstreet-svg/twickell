@@ -244,20 +244,42 @@ function updateAcceptState() {
   $('acceptBtn').disabled = !allChecked;
 }
 
-function renderSummary(intent) {
+function renderSummary(intent, foundingInfo) {
   const tier = TIER_DETAIL[intent.tier] || TIER_DETAIL.starter;
   const modList = (intent.modules || []).map(m => `<li>${m}</li>`).join('') || '<li>Custom — confirmed in your dashboard after setup</li>';
+  // Founding member math
+  const isFounder = !!(foundingInfo && foundingInfo.eligible);
+  const founderNumber = (foundingInfo && foundingInfo.next_number) || '—';
+  const actualSetup = isFounder ? 149.50 : SETUP_FEE;
+  const setupDisplay = isFounder
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);margin-right:8px;">$${SETUP_FEE}</span><strong>$149.50</strong>`
+    : `$${SETUP_FEE}`;
+  const today = (tier.monthly + actualSetup).toFixed(2);
+
+  // Email row — editable so the customer can enter/fix it if Orby missed it
+  const emailRow = `
+    <div class="summary-row">
+      <span class="label">Owner email <span style="color:#fca5a5;">*</span></span>
+      <input type="email" id="emailEdit" placeholder="you@yourbusiness.com" value="${(intent.email || '').replace(/"/g,'&quot;')}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:14px;width:240px;text-align:right;outline:none;" />
+    </div>`;
+
   $('summary').innerHTML = `
     <div class="summary-row"><span class="label">Business</span><span class="value">${intent.business_name || '—'}</span></div>
     <div class="summary-row"><span class="label">Type</span><span class="value">${intent.industry || '—'}</span></div>
     <div class="summary-row"><span class="label">Website</span><span class="value">${intent.website || '—'}</span></div>
-    <div class="summary-row"><span class="label">Owner email</span><span class="value">${intent.email || '—'}</span></div>
+    ${emailRow}
     <div class="summary-row"><span class="label">Modules Orby will attach</span><span class="value" style="text-align:right;"><ul style="margin:0;padding:0;list-style:none;">${modList}</ul></span></div>
     <div style="margin-top:18px;">
       <div class="price-line"><span>${tier.name}</span><span>$${tier.monthly}/mo · ${tier.limit}</span></div>
-      <div class="price-line"><span>One-time setup</span><span>$${SETUP_FEE}</span></div>
-      <div class="price-line total"><span>Charged today</span><span>$${tier.monthly + SETUP_FEE}</span></div>
-      <div class="price-line" style="color:var(--text-muted);font-size:13px;"><span>Then $${tier.monthly}/mo until you cancel</span><span></span></div>
+      <div class="price-line">
+        <span>One-time setup ${isFounder ? `<span style="color:var(--gold-light);font-weight:700;">⭐ Founding Member #${founderNumber} of 1,000 — 50% off</span>` : ''}</span>
+        <span>${setupDisplay}</span>
+      </div>
+      <div class="price-line total"><span>Charged today</span><span>$${today}</span></div>
+      <div class="price-line" style="color:var(--text-muted);font-size:13px;">
+        <span>Then $${tier.monthly}/mo — cancel any time from your dashboard. Monthly rate may change for new customers later; you'll be notified before any change to your bill.</span>
+        <span></span>
+      </div>
     </div>
   `;
 }
@@ -269,7 +291,16 @@ async function loadIntent() {
     const data = await r.json();
     if (!data.ok) { invalid(data.error || "Couldn't load your order."); return; }
     window._intent = data.intent;
-    renderSummary(data.intent);
+    // Check founding-member eligibility (best-effort; defaults to eligible since we're far from 1000)
+    let founding = { eligible: true, next_number: '?' };
+    try {
+      const fr = await fetch('/api/wc/founding-status');
+      if (fr.ok) {
+        const fd = await fr.json();
+        if (fd && typeof fd.eligible === 'boolean') founding = fd;
+      }
+    } catch (e) {}
+    renderSummary(data.intent, founding);
     renderChecks();
   } catch (e) {
     invalid("Network problem loading your order.");
@@ -290,12 +321,32 @@ $('refuseBtn').addEventListener('click', async () => {
   location.href = '/?refused=1';
 });
 
+// Helper: parse JSON safely so a Flask HTML error page doesn't crash the UI
+async function _safeJson(resp) {
+  const ct = resp.headers.get('content-type') || '';
+  if (ct.includes('application/json')) {
+    try { return await resp.json(); } catch (e) {}
+  }
+  const text = await resp.text();
+  return { ok: false, error: text.length > 500 ? 'Server returned an error page' : (text || ('HTTP ' + resp.status)) };
+}
+
 $('acceptBtn').addEventListener('click', async () => {
   const errEl = $('error');
   errEl.classList.remove('show');
   const intent = window._intent || {};
   const tier = (intent.tier || 'starter').toLowerCase();
   const td = TIER_DETAIL[tier] || TIER_DETAIL.starter;
+
+  // Email is required — pull from the editable field, validate
+  const emailInput = $('emailEdit');
+  const emailValue = emailInput ? emailInput.value.trim() : (intent.email || '');
+  if (!emailValue || emailValue.indexOf('@') < 0) {
+    errEl.textContent = 'Please enter your email address (this is where your dashboard link will go).';
+    errEl.classList.add('show');
+    if (emailInput) emailInput.focus();
+    return;
+  }
 
   $('acceptBtn').disabled = true;
   $('refuseBtn').disabled = true;
@@ -305,8 +356,8 @@ $('acceptBtn').addEventListener('click', async () => {
     const legalResp = await fetch('/api/legal_accept', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        name: intent.business_name || intent.email || 'Owner',
-        email: intent.email,
+        name: intent.business_name || emailValue || 'Owner',
+        email: emailValue,
         cart_summary: `${td.name} ($${td.monthly}/mo) + $${SETUP_FEE} setup. Modules: ${(intent.modules||[]).join(', ')||'TBD'}`,
         product: 'website_controller',
         tier: tier,
@@ -315,7 +366,7 @@ $('acceptBtn').addEventListener('click', async () => {
         terms_version: '2026-05'
       })
     });
-    const legalData = await legalResp.json();
+    const legalData = await _safeJson(legalResp);
     if (!legalResp.ok || !legalData.acceptance_id) throw new Error(legalData.error || 'Legal record failed.');
 
     const checkoutResp = await fetch('/api/wc/checkout', {
@@ -323,16 +374,16 @@ $('acceptBtn').addEventListener('click', async () => {
       body: JSON.stringify({
         acceptance_id: legalData.acceptance_id,
         tier: tier,
-        owner_email: intent.email,
+        owner_email: emailValue,
         business_name: intent.business_name || '',
         business_website: intent.website || ''
       })
     });
-    const co = await checkoutResp.json();
+    const co = await _safeJson(checkoutResp);
     if (co && co.url) {
       location.href = co.url;
     } else {
-      throw new Error((co && co.error) || 'Could not start checkout.');
+      throw new Error((co && co.error) || ('Could not start checkout (HTTP ' + checkoutResp.status + ')'));
     }
   } catch (e) {
     $('spinner').classList.remove('show');
