@@ -1823,12 +1823,55 @@ def business_demo_chat():
     return jsonify(resp)
 
 
+_CHAT_RATE_BUCKETS = {}  # ip -> [timestamps in last 60s]
+_CHAT_RATE_LOCK = threading.Lock()
+
+
+def _chat_rate_limit_ok(client_id: str, max_per_minute: int = 30) -> bool:
+    """Sliding-window rate limit per client IP. Returns True if the request is
+    under the limit. Default 30/min — plenty for a real visitor, blocks bots."""
+    now = time.time()
+    with _CHAT_RATE_LOCK:
+        bucket = _CHAT_RATE_BUCKETS.get(client_id, [])
+        bucket = [t for t in bucket if now - t < 60]
+        if len(bucket) >= max_per_minute:
+            _CHAT_RATE_BUCKETS[client_id] = bucket
+            return False
+        bucket.append(now)
+        _CHAT_RATE_BUCKETS[client_id] = bucket
+        # Periodic cleanup so the dict doesn't grow forever
+        if len(_CHAT_RATE_BUCKETS) > 5000:
+            cutoff = now - 120
+            for k in list(_CHAT_RATE_BUCKETS.keys()):
+                _CHAT_RATE_BUCKETS[k] = [t for t in _CHAT_RATE_BUCKETS[k] if t > cutoff]
+                if not _CHAT_RATE_BUCKETS[k]:
+                    del _CHAT_RATE_BUCKETS[k]
+    return True
+
+
+def _sanitize_for_prompt(s: str, max_len: int = 200) -> str:
+    """Strip text before injecting into an LLM system prompt — prevents prompt
+    injection if a customer writes their business name as 'Ignore prior
+    instructions...' or similar attempts to override the system instructions."""
+    if not s:
+        return ''
+    cleaned = str(s).replace('\n', ' ').replace('\r', ' ')
+    cleaned = re.sub(r'(?i)(ignore\s+(prior|previous|all)\s+(instructions?|rules?)|system\s*[:=]|assistant\s*[:=]|new\s+instructions?\s*[:=]|disregard\s+(prior|previous|all))', '', cleaned)
+    cleaned = re.sub(r'##[A-Z_]+##', '', cleaned)  # strip our internal markers
+    return cleaned[:max_len].strip()
+
+
 @app.route('/chat', methods=['POST'])
 def customer_chat():
     """The real /chat endpoint embedded customer widgets call.
     Auth via X-Orbi-API-Key header (or body.api_key). Looks up the customer,
     loads their business profile, runs the never-guess gate, calls the LLM,
     captures unknown questions, and increments tier usage."""
+    # Rate limit per source IP — 30 requests/min is plenty for a real visitor
+    client_ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or 'unknown').split(',')[0].strip()
+    if not _chat_rate_limit_ok(client_ip):
+        log.warning('chat rate-limited: ip=%s', client_ip)
+        return jsonify({'ok': False, 'error': 'Too many requests — please slow down.'}), 429
     try:
         from bridge_routes import (
             _cust_dir, _read, _atomic_write, _api_keys_path, _now_iso,
@@ -2180,20 +2223,23 @@ def _load_industry_pack(industry_or_type: str) -> dict:
 def _build_customer_system_prompt(profile: dict, product: str) -> str:
     """Render a customer-specific Orby system prompt from their business profile,
     enriched with any matching industry pack."""
-    biz_name = profile.get('name', 'this business') or 'this business'
+    # Sanitize EVERY field before injection — prevents prompt injection if a
+    # customer profile contains malicious instructions.
+    biz_name = _sanitize_for_prompt(profile.get('name', 'this business') or 'this business', 80)
     services = profile.get('services') or []
     if isinstance(services, list):
-        services_str = ', '.join(str(s) for s in services[:10])
+        services_str = _sanitize_for_prompt(', '.join(str(s) for s in services[:10]), 400)
     else:
-        services_str = str(services)
-    hours = profile.get('hours', '') or 'see our website for hours'
+        services_str = _sanitize_for_prompt(str(services), 400)
+    hours = _sanitize_for_prompt(profile.get('hours', '') or 'see our website for hours', 200)
     area = profile.get('service_area') or ''
     if isinstance(area, list):
         area = ', '.join(str(a) for a in area[:3])
-    contact_phone = profile.get('contact_phone', '') or profile.get('phone', '')
-    contact_email = profile.get('contact_email', '') or profile.get('email', '')
-    owner = profile.get('owner_name', '') or profile.get('owner', '')
-    biz_type = profile.get('business_type', '') or profile.get('industry', '')
+    area = _sanitize_for_prompt(area, 120)
+    contact_phone = _sanitize_for_prompt(profile.get('contact_phone', '') or profile.get('phone', ''), 40)
+    contact_email = _sanitize_for_prompt(profile.get('contact_email', '') or profile.get('email', ''), 80)
+    owner = _sanitize_for_prompt(profile.get('owner_name', '') or profile.get('owner', ''), 80)
+    biz_type = _sanitize_for_prompt(profile.get('business_type', '') or profile.get('industry', ''), 80)
 
     # Build the base prompt
     prompt = f"""You are Orby — the AI Website Controller running on the website of {biz_name}.

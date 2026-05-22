@@ -1258,6 +1258,25 @@ def wc_webhook():
         return jsonify({'error': str(e)}), 400
 
     event_type = event.get('type', '')
+    event_id = event.get('id', '')
+
+    # Idempotency: Stripe retries webhooks. Skip events we've already processed.
+    if event_id:
+        with _lock:
+            processed_path = DATA_DIR / 'processed_stripe_events.json'
+            processed = _read(processed_path, {})
+            if processed.get(event_id):
+                log.info('Stripe webhook %s already processed — skipping', event_id)
+                return jsonify({'received': True, 'duplicate': True, 'type': event_type})
+            # Mark as processed BEFORE doing work so a slow retry doesn't double-fire
+            processed[event_id] = {'type': event_type, 'at': _now_iso()}
+            # Cap dict size — keep last 1000 events
+            if len(processed) > 1000:
+                keys = sorted(processed.keys(), key=lambda k: processed[k].get('at', ''))
+                for k in keys[:-1000]:
+                    processed.pop(k, None)
+            _atomic_write(processed_path, processed)
+
     if event_type == 'checkout.session.completed':
         s = event['data']['object']
         meta = s.get('metadata') or {}
@@ -1449,6 +1468,103 @@ def wc_cancel_page():
             '<h1>Checkout cancelled</h1>'
             '<p>No charge was made. <a href="/">Return to the home page</a> if you want to try again.</p>'
             '</body></html>')
+
+
+@bp.post('/api/dashboard/recover-link')
+def recover_dashboard_link():
+    """Customer lost their welcome email. They submit their owner email, we
+    look up their account and email the dashboard link back to that address.
+    Rate-limited per email so it can't be used to spam someone."""
+    data = request.get_json(silent=True) or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email or '@' not in email:
+        return jsonify({'ok': False, 'error': 'valid email required'}), 400
+    # Find the customer record matching this owner email
+    found_customer = None
+    if CUSTOMERS_DIR.exists():
+        for cdir in CUSTOMERS_DIR.iterdir():
+            if not cdir.is_dir():
+                continue
+            owner_rec = _read(cdir / 'owner.json', {})
+            if (owner_rec.get('owner_email') or '').strip().lower() == email:
+                found_customer = (cdir.name, owner_rec)
+                break
+    # Always respond with the same success message — don't leak whether the
+    # email exists in our records.
+    if found_customer:
+        _, owner_rec = found_customer
+        token = owner_rec.get('owner_token', '')
+        if token:
+            url = _dashboard_url(token)
+            try:
+                send_email(
+                    email,
+                    "Your Orby owner dashboard link",
+                    f"You (or someone using your email) asked us to send the dashboard link for your Orby account.\n\n"
+                    f"Click here to access your dashboard:\n{url}\n\n"
+                    f"Bookmark this link — it's how you'll get back to your dashboard going forward.\n\n"
+                    f"If you didn't request this email, you can safely ignore it.\n\n"
+                    f"— Orby AI"
+                )
+            except Exception as e:
+                log.warning('recover-link email failed for %s: %s', email, e)
+    return jsonify({'ok': True, 'message': "If that email matches an Orby account, we just sent the dashboard link to it. Check your inbox in the next minute or two."})
+
+
+@bp.post('/api/wc/billing-portal')
+def wc_billing_portal():
+    """Returns a Stripe Customer Portal URL so the customer can update payment
+    method, change plan, or cancel without contacting support.
+    Body: {token: <owner_token>}"""
+    customer_id, err = _require_owner(request)
+    if err:
+        return err
+    stripe_key = os.environ.get('STRIPE_SECRET_KEY', '')
+    if not stripe_key:
+        return jsonify({'ok': False, 'error': 'Billing portal not configured. Email franklstreet@yahoo.com to cancel or update payment.'}), 503
+    # Find the Stripe customer ID for this owner from their instances
+    instances = _read(_cust_dir(customer_id) / 'instances.json', [])
+    sub_id = None
+    for inst in instances:
+        if inst.get('stripe_subscription_id'):
+            sub_id = inst['stripe_subscription_id']
+            break
+    if not sub_id:
+        return jsonify({'ok': False, 'error': 'No active subscription found.'}), 404
+    try:
+        import stripe as _stripe
+        _stripe.api_key = stripe_key
+        sub = _stripe.Subscription.retrieve(sub_id)
+        portal = _stripe.billing_portal.Session.create(
+            customer=sub.customer,
+            return_url=_dashboard_url(_read(_owner_path(customer_id), {}).get('owner_token', '')),
+        )
+        return jsonify({'ok': True, 'url': portal.url})
+    except Exception as e:
+        log.error('billing portal error for %s: %s', customer_id, e)
+        return jsonify({'ok': False, 'error': 'Could not open billing portal. Please email franklstreet@yahoo.com.'}), 502
+
+
+@bp.get('/api/system-health')
+def system_health():
+    """Diagnostic endpoint — shows which subsystems are configured.
+    Public OK because nothing here exposes credentials, only their presence."""
+    return jsonify({
+        'ok': True,
+        'time': _now_iso(),
+        'subsystems': {
+            'stripe_secret_configured': bool(os.environ.get('STRIPE_SECRET_KEY')),
+            'stripe_wc_webhook_secret_configured': bool(os.environ.get('STRIPE_WC_WEBHOOK_SECRET')),
+            'email_user_configured': bool(os.environ.get('ORBI_EMAIL')),
+            'email_password_configured': bool(os.environ.get('ORBI_EMAIL_PASSWORD')),
+            'data_dir': str(DATA_DIR),
+            'data_dir_writable': os.access(str(DATA_DIR), os.W_OK),
+            'persistent_storage_active': str(DATA_DIR).startswith('/data'),
+            'customers_provisioned': len(list(CUSTOMERS_DIR.iterdir())) if CUSTOMERS_DIR.exists() else 0,
+            'founding_members_taken': _count_founding_members('website_controller'),
+            'founding_members_cap': FOUNDING_MEMBER_CAP,
+        },
+    })
 
 
 @bp.get('/api/wc/founding-status')
