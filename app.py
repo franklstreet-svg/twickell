@@ -1779,6 +1779,14 @@ def business_demo_chat():
     if not reply:
         reply = "Got it — what else would you like to know?"
 
+    # Pricing safety net — Llama sometimes quotes a monthly amount without the
+    # setup fee even with explicit prompt instructions. Catch and append it.
+    _monthly_re = re.compile(r'\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
+    _setup_mentioned_re = re.compile(r'\$\s*299|\$\s*149\.?50|setup fee|one[\s-]time setup|setup is', re.IGNORECASE)
+    if _monthly_re.search(reply) and not _setup_mentioned_re.search(reply):
+        # Trim trailing punctuation, then append the missing setup fee mention
+        reply = reply.rstrip(' .!?') + ". And there's a one-time $299 setup fee — or $149.50 if you're one of our first 1,000 founding members."
+
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
     audio_b64 = ''
