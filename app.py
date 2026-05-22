@@ -35,7 +35,106 @@ from modules.paid import (
     image_studio, creator_3d, video_studio,
 )
 
-ORBY_VOICE = 'en-US-AvaNeural'  # battle-tested original — cleaner audio than Multilingual variant
+ORBY_VOICE = 'en-US-AvaNeural'  # English default; per-language voices below override when non-English detected
+
+# Multilingual voices — all female neural voices via Microsoft Edge TTS (free).
+# Each is the language's NATIVE voice, not the "Multilingual" blended voice
+# (which had audio glitching). These sound clean and properly localized.
+VOICE_BY_LANG = {
+    'en': 'en-US-AvaNeural',
+    'es': 'es-MX-DaliaNeural',      # Mexican Spanish — widely understood across Latin America
+    'fr': 'fr-FR-DeniseNeural',     # France French
+    'de': 'de-DE-KatjaNeural',      # German
+    'pt': 'pt-BR-FranciscaNeural',  # Brazilian Portuguese
+    'it': 'it-IT-IsabellaNeural',   # Italian
+    'tl': 'fil-PH-BlessicaNeural',  # Tagalog / Filipino
+    'ja': 'ja-JP-NanamiNeural',     # Japanese
+    'zh': 'zh-CN-XiaoxiaoNeural',   # Mandarin
+    'ko': 'ko-KR-SunHiNeural',      # Korean
+    'vi': 'vi-VN-HoaiMyNeural',     # Vietnamese
+    'ar': 'ar-EG-SalmaNeural',      # Arabic (Egyptian)
+    'hi': 'hi-IN-SwaraNeural',      # Hindi
+    'ru': 'ru-RU-SvetlanaNeural',   # Russian
+    'pl': 'pl-PL-AgnieszkaNeural',  # Polish
+    'nl': 'nl-NL-FennaNeural',      # Dutch
+}
+
+# Strong single-word markers — one hit is enough to classify (words unique
+# enough to that language that they almost never appear in others).
+_STRONG_LANG = {
+    'es': {'hola','gracias','sí','qué','dónde','cuándo','cómo','está','estás','español','quiero','comprar','precio','restaurante','vendes','vende','tienes','tiene','por favor','dígame','dime','quisiera','buenos días','buenas tardes','buenas noches'},
+    'fr': {'bonjour','bonsoir','merci','oui','où','français','voudrais','acheter','vendez','prix','restaurant','sʼil vous plaît','sʼil te plaît','combien','quʼest','aujourdʼhui'},
+    'de': {'hallo','danke','nein','deutsch','möchten','möchte','guten tag','guten morgen','guten abend','wie geht','verkaufen','kaufen','restaurant','preis','bitte','schönen tag'},
+    'pt': {'olá','obrigado','obrigada','sim','português','quero','comprar','vende','vendes','restaurante','preço','por favor','bom dia','boa tarde','boa noite'},
+    'it': {'ciao','salve','grazie','sì','italiano','voglio','comprare','vendete','ristorante','prezzo','per favore','buongiorno','buonasera'},
+    'tl': {'kumusta','salamat','gusto','tagalog','bumili','presyo','restawran','magkano','paki','tao po'},
+    'nl': {'hallo','hoi','dank','dankjewel','nederlands','wil','kopen','restaurant','prijs','alstublieft','goedemorgen','goedemiddag'},
+    'pl': {'cześć','dzień dobry','dziękuję','dziekuje','polski','chcę','kupić','restauracja','cena','proszę'},
+    'vi': {'xin chào','cảm ơn','muốn','tiếng việt','nhà hàng','giá','vui lòng','bao nhiêu'},
+}
+
+
+def _detect_language(text: str) -> str:
+    """Return a 2-letter language code for the input text. Defaults to 'en'.
+    Uses character ranges first (for CJK and Cyrillic) then a common-word check."""
+    if not text or not text.strip():
+        return 'en'
+    sample = text[:500]
+    # CJK + Cyrillic + Arabic + Hindi — strong signals from character range
+    if any('一' <= c <= '鿿' for c in sample):
+        return 'zh'  # Chinese ideographs
+    if any('぀' <= c <= 'ゟ' or '゠' <= c <= 'ヿ' for c in sample):
+        return 'ja'  # Hiragana or Katakana → Japanese
+    if any('가' <= c <= '힯' for c in sample):
+        return 'ko'  # Hangul
+    if any('Ѐ' <= c <= 'ӿ' for c in sample):
+        return 'ru'  # Cyrillic
+    if any('؀' <= c <= 'ۿ' for c in sample):
+        return 'ar'  # Arabic
+    if any('ऀ' <= c <= 'ॿ' for c in sample):
+        return 'hi'  # Devanagari → Hindi
+    # Diacritic-based fast paths for Western European languages
+    low = sample.lower()
+    if any(c in low for c in 'ñ¿¡'):
+        return 'es'
+    if any(c in low for c in 'äöüß'):
+        return 'de'
+    # Strong-word markers — first hit wins, even on short phrases
+    # Check multi-word markers first (substring), then single-word (set membership)
+    best_lang = 'en'
+    best_score = 0
+    for lang, markers in _STRONG_LANG.items():
+        score = 0
+        for marker in markers:
+            if ' ' in marker:
+                if marker in low:
+                    score += 2  # multi-word phrases are very strong signals
+            else:
+                # Check word boundary by padding spaces
+                if f' {marker} ' in f' {low} ' or low.startswith(marker + ' ') or low.startswith(marker + ',') or low.startswith(marker + '!') or low.startswith(marker + '.') or low == marker:
+                    score += 1
+        if score > best_score:
+            best_score = score
+            best_lang = lang
+    if best_score >= 1:
+        return best_lang
+    # Diacritic fallback for languages with accents that didn't word-match
+    if any(c in low for c in 'àâèéêëîïôùû'):
+        # French most likely if also has unique French letters/patterns; Portuguese has ã/õ
+        if any(c in low for c in 'ãõ'):
+            return 'pt'
+        return 'fr'
+    return 'en'
+
+
+def _voice_for_text(text: str, override: str = '') -> str:
+    """Pick the right Edge TTS voice for a given response text.
+    If override is provided, use it directly (caller knows best)."""
+    if override:
+        return override
+    lang = _detect_language(text)
+    return VOICE_BY_LANG.get(lang, ORBY_VOICE)
+
 
 def _clean_for_tts(text: str) -> str:
     t = re.sub(r'##CONFIG##.*?##CONFIG##', '', text, flags=re.DOTALL)
@@ -51,8 +150,11 @@ def _clean_for_tts(text: str) -> str:
     t = re.sub(r'\s+', ' ', t).strip()
     return t
 
-async def _synthesize(text):
-    communicate = edge_tts.Communicate(text, ORBY_VOICE)
+async def _synthesize(text, voice=None):
+    """Synthesize text to MP3 audio via Edge TTS.
+    voice defaults to the auto-detected language voice; pass explicit voice to override."""
+    chosen = voice or _voice_for_text(text)
+    communicate = edge_tts.Communicate(text, chosen)
     audio = b''
     async for chunk in communicate.stream():
         if chunk['type'] == 'audio':
@@ -1534,6 +1636,11 @@ DON'T RE-ASK QUESTIONS YOU ALREADY KNOW THE ANSWER TO:
 - Before asking ANY qualification question, scan back through the conversation: did they already mention this? If yes, skip to the next missing piece.
 - Re-asking the same question is the #1 way to make Orby feel broken. Don't do it.
 
+LANGUAGE MIRRORING — IMPORTANT:
+- ALWAYS respond in the same language the visitor uses. If they greet you in Spanish ("Hola"), respond in Spanish. If they switch to French mid-conversation, switch with them.
+- The voice synthesizer will automatically pick the matching native voice (Mexican Spanish, French, German, Brazilian Portuguese, Italian, Filipino/Tagalog, Japanese, Mandarin, Korean, Vietnamese, Arabic, Hindi, Russian, Polish, Dutch, English — among others).
+- Never assume the visitor wants English. Detect from their words.
+
 VOICE TRANSCRIPTION QUIRK — IMPORTANT:
 - Visitors speaking by voice will sometimes have their words transcribed as "Orbeez" (the toy brand), "Orby's", "Orbis", or "Orbie". These are ALL just mishearings of "Orby" (your name). Treat them as the visitor saying your name correctly.
 - If a visitor asks "I want to buy Orby" / "I want to buy Orbeez" / "I want Orby" — that means they want to BUY YOUR PRODUCT (the AI Website Controller or Receptionist). It does NOT mean the toy. Go straight into the buy flow — ask their business name first.
@@ -2349,6 +2456,10 @@ def tts():
     data    = request.get_json(silent=True) or {}
     text    = _clean_for_tts((data.get('text') or '').strip())
     tts_key = data.get('tts_key', '')
+    # Voice override: explicit voice name, or just a 2-letter lang code that maps via VOICE_BY_LANG
+    voice_override = (data.get('voice') or '').strip()
+    if not voice_override and data.get('lang'):
+        voice_override = VOICE_BY_LANG.get(str(data['lang']).strip().lower(), '')
     if not text:
         return '', 400
 
@@ -2362,7 +2473,7 @@ def tts():
             time.sleep(0.05)
 
     try:
-        audio = asyncio.run(_synthesize(text))
+        audio = asyncio.run(_synthesize(text, voice=voice_override or None))
         return Response(audio, mimetype='audio/mpeg')
     except Exception as e:
         log.error('TTS error: %s', e)
