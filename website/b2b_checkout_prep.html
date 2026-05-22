@@ -84,20 +84,63 @@ h1 {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   margin-bottom: 10px;
-  cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
 .checks .item:hover { border-color: var(--gold); }
 .checks .item.checked { border-color: var(--gold); background: rgba(212,160,23,0.07); }
-.checks .item label { display: flex; gap: 14px; cursor: pointer; align-items: flex-start; }
-.checks input[type="checkbox"] {
-  margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--gold);
+.checks .item-top {
+  display: flex; gap: 12px; align-items: flex-start;
 }
-.checks .item .head { font-weight: 700; color: var(--text); margin-bottom: 4px; font-size: 14.5px; }
-.checks .item .body { color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
-.checks .item a { color: var(--gold-light); text-decoration: underline; }
+.checks input[type="checkbox"] {
+  margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--gold); cursor: pointer;
+}
+.checks .item-head { flex: 1; cursor: pointer; }
+.checks .item .title { font-weight: 700; color: var(--text); font-size: 14.5px; margin-bottom: 4px; }
+.checks .item .summary { color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
+.checks .chevron {
+  background: rgba(212,160,23,0.12);
+  border: 1px solid var(--border);
+  color: var(--gold-light);
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+  font-family: monospace;
+}
+.checks .chevron:hover { background: rgba(212,160,23,0.22); color: #fff; }
+.checks .item.open .chevron { transform: rotate(180deg); }
+.checks .expanded {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.checks .item.open .expanded {
+  max-height: 1200px;  /* generous so any reasonable section fits without re-clipping */
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(212,160,23,0.25);
+}
+.checks .expanded p { margin-bottom: 10px; }
+.checks .expanded p:last-child { margin-bottom: 0; }
+.checks .expanded strong { color: var(--text); }
+.checks .expanded a { color: var(--gold-light); }
+.checks .expanded ul { margin: 8px 0 8px 22px; }
+.checks .expanded li { margin-bottom: 4px; }
+.checks .expanded .read-full {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--gold-light);
+  font-size: 12px;
+  text-decoration: underline;
+}
 
 .notes {
   background: rgba(212,160,23,0.06);
@@ -210,31 +253,146 @@ const TOKEN = new URLSearchParams(location.search).get('token');
 const $ = (id) => document.getElementById(id);
 
 const CHECKLIST = [
-  { id: 'terms',    title: "I've read the B2B Terms of Service.",   body: 'Click here to <a href="/b2b-terms" target="_blank">open the full B2B Terms of Service</a> — 20 sections covering license, IP, AI disclaimer, customer responsibilities, billing, cancellation, liability limits, indemnification, dispute resolution, compliance (HIPAA, GDPR, CCPA, TCPA), and more.' },
-  { id: 'privacy',  title: "I've read the B2B Privacy Policy.",     body: 'Click here to <a href="/b2b-privacy" target="_blank">open the full B2B Privacy Policy</a> — explains exactly what data lives where, what the Bridge does and does NOT do, third-party providers (Stripe, Twilio, LLM providers), data retention, and CCPA/GDPR rights.' },
-  { id: 'refund',   title: "I've read the B2B Refund &amp; Cancellation Policy.", body: 'Click here to <a href="/b2b-refund" target="_blank">open the full Refund Policy</a> — covers the non-refundable setup fee, 7-day pro-rated monthly refund window, cancellation methods, service-interruption credits, tier-change rules.' },
-  { id: 'hard',     title: 'I understand Orby has hard limits.',    body: 'Orby will refuse to give legal, medical, or financial advice on my behalf and will refer callers/visitors to licensed professionals. I am responsible for the consequences of any response Orby generates for my customers.' },
-  { id: 'data',     title: "I'll obtain any required consent for call/chat recording.", body: 'In some jurisdictions (e.g., two-party consent states in the US), I need to inform callers when an AI is recording or transcribing. Orbi AI provides the technology; consent obligations rest with me as the operator.' },
-  { id: 'fairuse',  title: 'I agree to fair-use and acceptable use limits.', body: "I won't use the service to harass, defraud, spam, or for any unlawful purpose. Orbi AI may suspend service for clear abuse." },
-  { id: 'pricing',  title: 'I understand monthly pricing may change for new customers later.', body: 'My Founding Member status applies only to the 50% setup-fee discount, not to my monthly rate. If Orbi AI raises monthly subscription prices, I will be notified by email at least 30 days before any change to my bill and may cancel before the new rate takes effect.' },
+  {
+    id: 'terms',
+    title: "B2B Terms of Service",
+    summary: "Covers what I'm buying, license to use Orby, my responsibilities, billing &amp; cancellation, liability limits, dispute resolution, and compliance.",
+    expanded: `
+      <p><strong>What you're agreeing to:</strong> a monthly subscription to the AI Website Controller (and AI Receptionist when launched), with a one-time setup fee per product. Your subscription renews automatically until you cancel.</p>
+      <p><strong>License:</strong> we grant you a limited license to embed the chat widget on websites you control and use Orby's responses for your business. Each subscription is one business + one website (or one phone line). Multiple businesses or websites require separate subscriptions.</p>
+      <p><strong>Your obligations:</strong> keep your business profile accurate, obtain any consent your jurisdiction requires for recording/transcribing communications (especially in two-party consent states like California, Florida, Pennsylvania), embed the widget only on sites you have authority over, and don't use Orby for harassment, fraud, telemarketing violations, or anything illegal.</p>
+      <p><strong>AI disclaimer (important):</strong> Orby's responses are generated probabilistically and can be wrong. She is not a licensed attorney, doctor, therapist, or accountant — regardless of which industry pack is attached. You are responsible for the consequences of any response Orby generates for your customers. Hard limits: she won't give legal/medical/financial advice.</p>
+      <p><strong>Billing:</strong> tier pricing as published (Starter $99/mo, Growth $199/mo, Pro $349/mo for Website Controller, plus $299 setup — $149.50 for Founding Members). Monthly prices can change for new customers with at least 30 days' email notice before your bill changes; you can cancel before any new rate takes effect.</p>
+      <p><strong>Cancellation:</strong> any time via dashboard, email, or Stripe portal. Effective immediately, service continues through end of current cycle. Setup fee non-refundable; monthly fee pro-rated refundable in the first 7 days of a cycle, otherwise non-refundable for that cycle.</p>
+      <p><strong>Liability:</strong> our total liability is capped at the greater of $100 or what you've paid us in the prior 3 months. No indirect, consequential, or lost-profit damages. Disputes go to binding arbitration in Reno, Nevada (no class actions). Nevada law governs.</p>
+      <p><strong>Compliance statements:</strong> we don't sign HIPAA Business Associate Agreements off-the-shelf (contact us if you need one). You're responsible for GDPR, CCPA, TCPA, and your professional licensing rules. Service provided AS IS without warranty.</p>
+      <a class="read-full" href="/b2b-terms" target="_blank">↗ Open the full 20-section Terms of Service in a new tab</a>
+    `
+  },
+  {
+    id: 'privacy',
+    title: "B2B Privacy Policy",
+    summary: "Customer data stays on hardware you control. Bridge routes connections but does NOT store call/chat content. Auditable architecture.",
+    expanded: `
+      <p><strong>The core promise:</strong> conversation transcripts, captured leads, your business profile, and learned answers all live on hardware YOU control — not in a shared cloud database we control. The Orbi Bridge service routes secure connections between your hardware and the voice/web services that need to reach it, but the Bridge does NOT persist the content of customer conversations.</p>
+      <p><strong>What we hold about you:</strong> account email, business name, website URL, owner authentication token, your API key, Founding Member number if applicable, heartbeat timestamps (only "alive at time T" — no content), and support correspondence. Billing details are held by Stripe; we never see your full card number.</p>
+      <p><strong>What we do NOT do:</strong> sell or share your customer data with brokers, advertisers, or marketers; profile your customers across multiple businesses; use the content of your conversations to train AI models.</p>
+      <p><strong>Third-party providers and their role:</strong> Stripe (payment processing — they see your card, we don't); Twilio (telephony carrier for the Receptionist — voice in transit); Groq, HuggingFace, Anthropic (large language model providers — process conversation context transiently to generate replies in that order of preference); Hugging Face Spaces (hosts our Bridge service); Microsoft Edge TTS (synthesizes Orby's voice).</p>
+      <p><strong>Cookies:</strong> we use session-only cookies and localStorage to maintain your chat session and dashboard auth. No cross-site tracking, no advertising cookies, no profiling cookies.</p>
+      <p><strong>Data retention:</strong> account records kept while active + 90 days post-cancellation, then archived; billing records 7 years (US tax law); heartbeat logs 30 days; support emails 2 years.</p>
+      <p><strong>Your rights:</strong> CCPA / CPRA rights if you're in California (access, deletion subject to retention rules, opt-out — though we don't sell or share). GDPR / UK GDPR rights if you operate in the EEA/UK (access, rectification, erasure, portability, objection). For either, email franklstreet@yahoo.com.</p>
+      <a class="read-full" href="/b2b-privacy" target="_blank">↗ Open the full 14-section Privacy Policy in a new tab</a>
+    `
+  },
+  {
+    id: 'refund',
+    title: "B2B Refund &amp; Cancellation Policy",
+    summary: "Setup fee non-refundable. Monthly subscription pro-rated refundable in first 7 days. Cancel any time, multiple methods.",
+    expanded: `
+      <p><strong>One-time setup fee ($299 / $149.50 Founder):</strong> non-refundable except where required by law. The fee compensates Orbi AI for the work performed at checkout — provisioning your account, generating your API key + owner token, running our scraper on your website, configuring your industry pack, and sending your welcome email. That work is done in the first few minutes regardless of how long you stay subscribed.</p>
+      <p><strong>Monthly subscription — 7-day pro-rated refund:</strong> cancel within the first 7 days of any monthly billing cycle and we'll refund a pro-rated portion of the unused days. Example: cancel on day 4 of a 30-day cycle → refund of 26/30 of that month's fee. After day 7, the current month is not refundable but the subscription will not renew once canceled.</p>
+      <p><strong>How to cancel:</strong> (1) Owner dashboard cancel button (recommended); (2) email franklstreet@yahoo.com with subject "Cancel Subscription"; (3) Stripe customer portal if available. All three are equally effective. Cancellation is immediate; service continues through the end of the current cycle.</p>
+      <p><strong>What happens to your data:</strong> data on your hardware stays yours — you delete or retain at your discretion. Your API key is revoked (embed code stops working). Your Receptionist phone number is released. Our account record is marked canceled and archived for 90 days then deleted; billing records retained 7 years for tax law.</p>
+      <p><strong>Service-interruption credits:</strong> if we're down for more than 24 consecutive hours in a calendar month due to causes in our control, we'll credit your next bill pro-rated. Not available for upstream-provider outages (Twilio, HF Spaces, LLM providers), your own internet/hardware, scheduled maintenance, or force majeure.</p>
+      <p><strong>Tier changes:</strong> upgrades take effect immediately (price difference pro-rated for the rest of the cycle). Downgrades take effect at the next cycle (no credit for the difference within the current cycle — you had the higher tier available the whole time).</p>
+      <p><strong>Chargebacks:</strong> contact us BEFORE initiating one with your card issuer. Most billing issues resolve in 1-3 days through direct email.</p>
+      <a class="read-full" href="/b2b-refund" target="_blank">↗ Open the full 10-section Refund Policy in a new tab</a>
+    `
+  },
+  {
+    id: 'hard',
+    title: "Orby has hard limits — I understand",
+    summary: "She refuses to give legal, medical, or financial advice. I'm responsible for what she says to my customers.",
+    expanded: `
+      <p>Orby uses large language model technology. Her responses are generated probabilistically and can be wrong, outdated, or inappropriate for a specific situation. The hard limits below are baked into her configuration and apply regardless of which industry pack you have attached:</p>
+      <ul>
+        <li><strong>No legal advice.</strong> Even with the Attorney Industry Pack, Orby refuses to interpret your customers' specific legal situations and refers them to consultation with the attorney.</li>
+        <li><strong>No medical advice or diagnosis.</strong> Even with the Medical or Chiropractor pack, Orby will not tell a caller "you have X condition" or "you should take Y medication." She captures the symptoms, escalates emergencies to 911, and routes to the practice.</li>
+        <li><strong>No financial / tax / investment advice.</strong> No specific investment recommendations, tax positions, or accounting advice.</li>
+        <li><strong>No mental-health diagnosis or therapy.</strong> If a caller mentions self-harm or crisis, Orby directs them to 988 (Suicide &amp; Crisis Lifeline) and 911 if in immediate danger.</li>
+      </ul>
+      <p><strong>Your responsibility:</strong> you are accountable for the consequences of any response Orby generates on your behalf. Review the conversation logs in your dashboard regularly. Correct or supplement her knowledge where her responses are inadequate (the never-guess loop is built for exactly this).</p>
+      <p>If you're a licensed professional (attorney, doctor, therapist, CPA), you're also responsible for ensuring Orby's communications with your clients comply with your licensing authority's rules — including client confidentiality, conflicts of interest, advertising, and unauthorized-practice rules.</p>
+    `
+  },
+  {
+    id: 'data',
+    title: "I'll obtain any required consent for recording / transcription",
+    summary: "Some states require informing callers that calls are AI-handled or transcribed. That's my obligation, not Orbi AI's.",
+    expanded: `
+      <p>The AI Receptionist transcribes inbound voice calls into text in order to operate. Orby AI Solutions does NOT store the original audio by default, but text transcripts of conversations are stored on hardware you control.</p>
+      <p><strong>Two-party-consent jurisdictions (US):</strong> California, Connecticut, Florida, Illinois, Maryland, Massachusetts, Michigan, Montana, Nevada, New Hampshire, Pennsylvania, and Washington (among others) require that all parties to a phone call consent to recording or substantive transcription. You are responsible for ensuring your Orby greeting or your business's published policies disclose to callers that the call is being handled by an AI assistant that creates a written transcript.</p>
+      <p><strong>One-party-consent jurisdictions:</strong> most US states require only one party (you) to consent. You should still consider disclosing for trust reasons.</p>
+      <p><strong>EU / UK / Canada:</strong> GDPR, UK GDPR, and PIPEDA each impose their own notification and lawful-basis requirements. If your customers are in these jurisdictions, you must ensure your privacy notices cover AI handling and transcription.</p>
+      <p>Orby AI Solutions provides the technology; the consent obligations rest with you as the operator of the business. We do not provide legal advice on what your specific jurisdiction requires.</p>
+    `
+  },
+  {
+    id: 'fairuse',
+    title: "Fair use and acceptable use limits",
+    summary: "Don't use Orby to harass, defraud, spam, or for anything illegal. Repeat abuse may suspend the account.",
+    expanded: `
+      <p>You agree not to use the B2B Products to:</p>
+      <ul>
+        <li>Harass, threaten, intimidate, or defraud any person</li>
+        <li>Violate telemarketing laws (TCPA), the FCC's automated-call rules, the FTC's Telemarketing Sales Rule, state telemarketing laws, anti-spam laws (CAN-SPAM), do-not-call registries, or consumer-protection statutes</li>
+        <li>Market or promote a business or service you don't actually operate</li>
+        <li>Impersonate any person or entity other than the business you registered</li>
+        <li>Capture personal information from your customers in violation of applicable privacy laws</li>
+        <li>Engage in the unauthorized practice of a licensed profession (law, medicine, etc.) in any jurisdiction</li>
+        <li>Attempt to circumvent tier limits, security controls, or rate limits</li>
+        <li>Send automated/bot traffic to the chat widget or place automated calls to the Receptionist number</li>
+      </ul>
+      <p><strong>Lawful business representation:</strong> you represent that your underlying business is operated in compliance with applicable laws, that you hold any required licenses or permits, and that your use of Orby will not cause Orby AI Solutions to be a party to unlawful activity.</p>
+      <p><strong>Suspension for misuse:</strong> if Orby AI Solutions reasonably suspects abuse or illegal use, we may suspend or terminate your account immediately, without refund of any setup fee. We will try to give notice before suspension where doing so won't enable the violation to continue.</p>
+    `
+  },
+  {
+    id: 'pricing',
+    title: "Monthly pricing may change for new customers later",
+    summary: "Founding Member discount is on the SETUP fee only. Monthly subscription rates aren't locked — but you get 30 days' notice and can cancel.",
+    expanded: `
+      <p><strong>What the Founding Member discount covers:</strong> the one-time $299 setup fee is reduced to $149.50 (50% off) for the first 1,000 paying customers per product. Your Founding Member number is recorded permanently in your dashboard.</p>
+      <p><strong>What the Founding Member discount does NOT cover:</strong> your monthly subscription rate. Founders pay the same Starter $99/mo, Growth $199/mo, or Pro $349/mo as anyone else.</p>
+      <p><strong>Monthly pricing may change.</strong> Orbi AI Solutions reserves the right to raise monthly subscription pricing in the future. If we ever do, we will email you at least 30 days before any change affects your bill. You can cancel before the new rate takes effect; you are never auto-charged at a new higher rate without notice.</p>
+      <p><strong>Why this matters:</strong> we're early in this product's life. Some advertised features (direct calendar integration with Google/Outlook/Calendly, OpenTable/Resy reservation integration, in-chat payment processing, SMS owner notifications) are rolling out as Phase 2 updates. Founding Members get every future update at no extra charge during their active subscription — that's the real long-term value. The flip side is that the published monthly price reflects today's feature set; we may need to adjust pricing as the product matures.</p>
+      <p><strong>Your rights:</strong> 30 days' advance email notice before any price change to your bill, the ability to cancel at any time before a new rate kicks in (no penalty, no notice period), and a refund of the unused portion of your current month if you cancel within the first 7 days of the cycle.</p>
+    `
+  },
 ];
 
 function renderChecks() {
   $('checks').innerHTML = CHECKLIST.map(c => `
     <div class="item" data-id="${c.id}">
-      <label>
+      <div class="item-top">
         <input type="checkbox" data-id="${c.id}">
-        <span>
-          <div class="head">${c.title}</div>
-          <div class="body">${c.body}</div>
-        </span>
-      </label>
+        <div class="item-head" data-toggle="1">
+          <div class="title">${c.title}</div>
+          <div class="summary">${c.summary}</div>
+        </div>
+        <button class="chevron" type="button" data-toggle="1" aria-label="Expand">▼</button>
+      </div>
+      <div class="expanded">${c.expanded || ''}</div>
     </div>
   `).join('');
+
+  // Checkbox toggles the "checked" border highlight
   document.querySelectorAll('.checks input[type="checkbox"]').forEach(cb => {
-    cb.addEventListener('change', () => {
+    cb.addEventListener('change', (e) => {
+      e.stopPropagation();
       cb.closest('.item').classList.toggle('checked', cb.checked);
       updateAcceptState();
+    });
+    // Clicking the checkbox shouldn't open/close the accordion
+    cb.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  // Clicking the head text or the chevron toggles the accordion
+  document.querySelectorAll('.checks [data-toggle="1"]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const item = el.closest('.item');
+      if (!item) return;
+      item.classList.toggle('open');
     });
   });
 }
