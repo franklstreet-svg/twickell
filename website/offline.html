@@ -75,12 +75,42 @@
   }
   .service .what { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
   .service .desc { color: var(--text-muted); font-size: 14.5px; }
-  .service .price {
-    font-weight: 800;
-    color: var(--gold-light);
-    font-size: 1.05rem;
+  .service .price-group {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
     white-space: nowrap;
   }
+  .service .price-original {
+    text-decoration: line-through;
+    text-decoration-color: #ef4444;
+    text-decoration-thickness: 2px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .service .price-launch {
+    color: var(--gold-light);
+    font-weight: 800;
+    font-size: 1.18rem;
+  }
+  .launch-banner {
+    background: linear-gradient(135deg, rgba(212,160,23,0.16), rgba(240,192,64,0.04));
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    padding: 18px 24px;
+    margin-bottom: 32px;
+    color: var(--text);
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .launch-banner .head {
+    color: var(--gold-light);
+    font-weight: 800;
+    font-size: 1.05rem;
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+  .launch-banner .sub { color: var(--text-muted); font-size: 13.5px; }
   .how-it-works ol { padding-left: 22px; color: var(--text-muted); }
   .how-it-works li { padding: 6px 0; font-size: 15px; }
   .how-it-works li strong { color: var(--text); }
@@ -113,7 +143,7 @@
   }
   @media (max-width: 560px) {
     .service { grid-template-columns: 1fr; }
-    .service .price { text-align: left; }
+    .service .price-group { align-items: flex-start; }
   }
 </style>
 </head>
@@ -127,6 +157,12 @@
     <div class="who">Hi, I'm Frank Street. I help small businesses get the website, payment, document, and online-presence work done — fast, flat-fee, no agency overhead, no jargon.</div>
   </header>
 
+  <div class="launch-banner">
+    <div class="head">🎯 Reno Launch Special — first 25 customers</div>
+    First 25 customers get the <strong>launch prices</strong> below. Once we hit 25, prices return to the standard rates (shown <span style="text-decoration:line-through;text-decoration-color:#ef4444;">struck-through</span>). Book early, save real money.
+    <div class="sub">No catch — just my way of getting word-of-mouth started in Reno.</div>
+  </div>
+
   <div class="section">
     <h2>Website &amp; Online Payments</h2>
     <div class="services-grid">
@@ -136,7 +172,10 @@
           <div class="what">Online payments / Stripe setup</div>
           <div class="desc">Take credit cards on your website — checkout pages, payment links you can text or email to a customer, recurring monthly subscriptions, invoices. Money lands in your bank in 2 business days.</div>
         </div>
-        <div class="price">$400</div>
+        <div class="price-group">
+          <div class="price-original">$400</div>
+          <div class="price-launch">$295</div>
+        </div>
       </div>
 
       <div class="service">
@@ -144,7 +183,10 @@
           <div class="what">Chat widget for your site</div>
           <div class="desc">Floating chat bubble in the corner of your website so visitors can ask "are you open Sunday?" or "do you handle X?" without picking up the phone. Their questions and contact info land in your inbox.</div>
         </div>
-        <div class="price">$300</div>
+        <div class="price-group">
+          <div class="price-original">$300</div>
+          <div class="price-launch">$195</div>
+        </div>
       </div>
 
       <div class="service">
@@ -152,7 +194,10 @@
           <div class="what">Contact / booking forms</div>
           <div class="desc">Custom "Contact Us" or "Request a Quote" forms that email you the second someone fills them out. Includes spam protection so you only see real leads.</div>
         </div>
-        <div class="price">$200</div>
+        <div class="price-group">
+          <div class="price-original">$200</div>
+          <div class="price-launch">$145</div>
+        </div>
       </div>
 
       <div class="service">
@@ -160,7 +205,10 @@
           <div class="what">Email automation</div>
           <div class="desc">"Thank you for your inquiry" auto-replies, welcome emails for new customers, instant lead notifications to your phone or email. Set it once, runs forever.</div>
         </div>
-        <div class="price">$250</div>
+        <div class="price-group">
+          <div class="price-original">$250</div>
+          <div class="price-launch">$195</div>
+        </div>
       </div>
 
       <div class="service">
@@ -168,7 +216,10 @@
           <div class="what">Website fixes &amp; mobile optimization</div>
           <div class="desc">Slow site, broken links, looks terrible on phones, images too big, typo on the homepage — I fix it. Most small fixes done same day.</div>
         </div>
-        <div class="price">$300</div>
+        <div class="price-group">
+          <div class="price-original">$300</div>
+          <div class="price-launch">$245</div>
+        </div>
       </div>
 
     </div>
@@ -183,7 +234,10 @@
           <div class="what">Document help</div>
           <div class="desc">Mail merge (send one personalized letter to 50 customers in one go), build templates for invoices, proposals, contracts, and quotes you can reuse. Format messy Word docs. Combine, split, or convert PDFs.</div>
         </div>
-        <div class="price">$200</div>
+        <div class="price-group">
+          <div class="price-original">$200</div>
+          <div class="price-launch">$145</div>
+        </div>
       </div>
 
       <div class="service">
@@ -191,7 +245,10 @@
           <div class="what">Excel / Google Sheets help</div>
           <div class="desc">Build formulas that do the math for you. Turn a chaotic spreadsheet into a clean monthly report. Set up dashboards so you see your numbers at a glance. Clean up duplicate or messy customer data.</div>
         </div>
-        <div class="price">$200</div>
+        <div class="price-group">
+          <div class="price-original">$200</div>
+          <div class="price-launch">$145</div>
+        </div>
       </div>
 
     </div>
@@ -206,7 +263,10 @@
           <div class="what">Google Business Profile setup</div>
           <div class="desc">Get your business showing up on Google Maps and Google Search. Set up hours, photos, services, posts, and reviews. The thing that gets "OPEN NOW" shown next to your name when someone searches.</div>
         </div>
-        <div class="price">$150</div>
+        <div class="price-group">
+          <div class="price-original">$150</div>
+          <div class="price-launch">$95</div>
+        </div>
       </div>
 
       <div class="service">
@@ -214,7 +274,10 @@
           <div class="what">Online booking setup</div>
           <div class="desc">Calendly, Acuity, or Square Appointments installed on your site so customers can pick a time and book themselves — synced to your Google or Outlook calendar so you never double-book. Optional: take a deposit at booking.</div>
         </div>
-        <div class="price">$250</div>
+        <div class="price-group">
+          <div class="price-original">$250</div>
+          <div class="price-launch">$195</div>
+        </div>
       </div>
 
       <div class="service">
@@ -222,7 +285,10 @@
           <div class="what">Business email setup</div>
           <div class="desc">yourname@yourbusiness.com instead of @yahoo or @gmail. Set up Google Workspace (or equivalent) with a real signature, away-message, calendar, and phone sync. Looks far more professional to customers.</div>
         </div>
-        <div class="price">$200</div>
+        <div class="price-group">
+          <div class="price-original">$200</div>
+          <div class="price-launch">$145</div>
+        </div>
       </div>
 
     </div>
@@ -237,7 +303,10 @@
           <div class="what">General small-business tech help</div>
           <div class="desc">"I can't figure out this thing" sessions — by the hour, no minimum. New computer setup, software install, transfer files from old to new, set up printer or backup, figure out why something stopped working.</div>
         </div>
-        <div class="price">$60/hr</div>
+        <div class="price-group">
+          <div class="price-original">$60/hr</div>
+          <div class="price-launch">$45/hr</div>
+        </div>
       </div>
 
     </div>
