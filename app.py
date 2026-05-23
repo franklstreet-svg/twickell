@@ -212,6 +212,41 @@ except Exception as _bridge_err:  # don't crash twickell if bridge_routes has an
     logging.getLogger(__name__).warning('Bridge routes not loaded: %s', _bridge_err)
 
 
+# ───────────────────────────────────────────────────────────────────────────
+# OFFLINE MODE — every public-facing request returns the offline page (HTML)
+# or a clean JSON "service paused" response (API / widget). Code, data, and
+# git history are all preserved. To bring twickell.com back online, delete
+# this block (the OFFLINE_MODE flag and the before_request handler below).
+# ───────────────────────────────────────────────────────────────────────────
+OFFLINE_MODE = True
+
+
+@app.before_request
+def _offline_gate():
+    if not OFFLINE_MODE:
+        return None
+    path = (request.path or '/').rstrip('/') or '/'
+    # Always let static health probes through so HF can confirm the container
+    # is alive (otherwise it'll be marked unhealthy and rebooted in a loop).
+    if path in ('/health', '/api/system-health'):
+        return None
+    # API / widget / chat endpoints — return JSON so consuming code (like the
+    # embed widget on customer sites) gets something it can parse instead of
+    # the HTML offline page.
+    api_prefixes = ('/api/', '/chat', '/business_demo_chat', '/demo_chat',
+                    '/builder_chat', '/twilio/', '/stripe_webhook', '/tts',
+                    '/widget/', '/escalate/')
+    if path.startswith(api_prefixes) or any(path == p.rstrip('/') for p in api_prefixes):
+        return jsonify({
+            'ok': False,
+            'offline': True,
+            'error': 'Orby AI is paused — not taking new requests right now. Contact franklstreet@yahoo.com for updates.',
+        }), 503
+    # Everything else (homepage, dashboard, legal pages, static files): serve
+    # the offline HTML page.
+    return send_from_directory(WEBSITE_DIR, 'offline.html'), 503
+
+
 def _get_profile_dir() -> str:
     if 'sid' not in session:
         session['sid'] = str(uuid.uuid4())
