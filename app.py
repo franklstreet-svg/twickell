@@ -1610,8 +1610,17 @@ PRODUCT 2 — AI Receptionist (LAUNCHING SHORTLY — waitlist only):
   • Pro: $449/mo PLUS $299 one-time setup (founding members: $149.50 setup)
 - Interested? Direct to email franklstreet@yahoo.com for waitlist.
 
-PRICING RULE — NON-NEGOTIABLE:
-When you mention ANY monthly amount, you MUST mention the $299 setup fee in the same breath. NEVER quote a monthly amount alone. Example: "Growth is 199 dollars a month, plus a one-time 299 dollar setup fee — and if you're one of our first 1,000 customers you get the setup at half off, just 149 dollars and 50 cents." If you say just "$99/mo" without the setup fee, you've misquoted the price.
+PRICING RULE — NON-NEGOTIABLE — THREE PIECES TRAVEL TOGETHER:
+Every time you quote ANY monthly amount OR the $299 setup fee, you MUST ALSO mention the founding-member 50%-off setup ($149.50 instead of $299, for our first 1,000 customers per product). The monthly, the setup fee, and the founding-member discount are ONE pricing statement — never split them up.
+
+Correct: "Growth is 199 dollars a month, plus a one-time 299 dollar setup fee — and if you're one of our first 1,000 founding members, the setup is half off at 149 dollars and 50 cents."
+Correct: "The setup fee is 299 dollars, but you'd get it half off — 149 dollars and 50 cents — as a founding member, since we're still under 1,000 customers."
+WRONG: "Growth is 199 a month plus 299 setup." (missing founding-member discount)
+WRONG: "It's 99 dollars a month." (missing setup fee AND founding-member discount)
+WRONG: "The setup fee is 299 dollars." (missing founding-member discount)
+WRONG: "There's a 299 dollar setup fee, by the way." (missing founding-member discount)
+
+If you mention the setup fee without the founding-member half-off in the same breath, you've misquoted the price.
 
 ══════════════════════════════════════════
 PRIVACY PROMISE
@@ -1945,19 +1954,26 @@ def business_demo_chat():
         reply = "Got it — what else would you like to know?"
 
     # Pricing safety net — Llama frequently misquotes by omitting the setup
-    # fee OR the founding-member 50%-off discount. Catch BOTH cases independently.
+    # fee OR the founding-member 50%-off discount. Catch every combination.
+    # Fires on monthly mentions AND on bare setup-fee mentions, since the
+    # founding-member discount must ride with EITHER price piece.
     _monthly_re   = re.compile(r'\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
     _setup_re     = re.compile(r'\$\s*299|setup fee|one[\s-]time setup|setup is', re.IGNORECASE)
     _founding_re  = re.compile(r'\$\s*149\.?\s*50|149 dollars|half off|fifty percent off|50%\s*off|founding member', re.IGNORECASE)
-    if _monthly_re.search(reply):
-        missing_setup    = not _setup_re.search(reply)
-        missing_founding = not _founding_re.search(reply)
-        if missing_setup and missing_founding:
-            reply = reply.rstrip(' .!?') + ". And there's a one-time $299 setup fee — or $149.50 if you're one of our first 1,000 founding members."
-        elif missing_setup:
-            reply = reply.rstrip(' .!?') + ". Plus a one-time $299 setup fee (or $149.50 if you're a founding member, first 1,000 only)."
-        elif missing_founding:
-            reply = reply.rstrip(' .!?') + " — and if you're one of our first 1,000 founding members, the setup is half off at $149.50."
+    mentions_monthly  = bool(_monthly_re.search(reply))
+    mentions_setup    = bool(_setup_re.search(reply))
+    mentions_founding = bool(_founding_re.search(reply))
+    if mentions_monthly and not mentions_setup and not mentions_founding:
+        reply = reply.rstrip(' .!?') + ". And there's a one-time $299 setup fee — or $149.50 if you're one of our first 1,000 founding members."
+    elif mentions_monthly and not mentions_setup:
+        reply = reply.rstrip(' .!?') + ". Plus a one-time $299 setup fee (or $149.50 if you're a founding member, first 1,000 only)."
+    elif mentions_monthly and not mentions_founding:
+        reply = reply.rstrip(' .!?') + " — and if you're one of our first 1,000 founding members, the setup is half off at $149.50."
+    elif mentions_setup and not mentions_founding:
+        # Setup fee quoted without the founding-member discount — Frank's
+        # specific complaint. Tack the half-off on so the customer always
+        # hears it alongside the $299.
+        reply = reply.rstrip(' .!?') + " — and that setup fee is half off at $149.50 if you're one of our first 1,000 founding members."
 
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
