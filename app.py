@@ -1767,6 +1767,284 @@ _B2B_INTENT_DIR   = DATA_DIR / 'orby_b2b_intents'   # persistent — survives co
 _EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$')
 
 
+# ── Deterministic handoff fallback ─────────────────────────────────────────
+# Llama-8B intermittently narrates the legal-handoff step in English without
+# emitting the literal ##GO_TO_LEGAL## marker (or runs out of token budget
+# mid-marker). When that happens, the visitor gets stuck. The helpers below
+# reconstruct the handoff intent from conversation state and fire the redirect
+# in code, so handoff reliability no longer depends on the small model
+# emitting exact characters.
+
+# Match a monthly chat volume number stated by the visitor (1,000 / 3k / 2500).
+_USER_VOLUME_NUM_RE = re.compile(r'\b(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?\s*[kK]|\d+)\b')
+_VOLUME_CONTEXT_KEYWORDS = (
+    'chat', 'message', 'visitor', 'volume', 'traffic', 'how many',
+    'month', 'people', 'busy', 'inquir', 'lead', 'customer',
+)
+
+
+def _infer_volume_from_history(history) -> int | None:
+    """Walk back through user messages to find the most recently stated
+    monthly chat volume. Conservative: requires a volume-context keyword
+    in the message OR in the assistant turn just before it, so unrelated
+    numbers (phone numbers, address digits, prices) aren't mistaken for
+    chat volume."""
+    n = len(history)
+    for i in range(n - 1, -1, -1):
+        turn = history[i]
+        if turn.get('role') != 'user':
+            continue
+        msg = turn.get('content', '') or ''
+        nums = _USER_VOLUME_NUM_RE.findall(msg)
+        if not nums:
+            continue
+        context = msg.lower()
+        if i > 0 and history[i - 1].get('role') == 'assistant':
+            context += ' ' + (history[i - 1].get('content', '') or '').lower()
+        if not any(k in context for k in _VOLUME_CONTEXT_KEYWORDS):
+            continue
+        for raw in nums:
+            r = raw.lower().replace(',', '').replace(' ', '')
+            try:
+                val = int(float(r[:-1]) * 1000) if r.endswith('k') else int(r)
+            except ValueError:
+                continue
+            if 10 <= val <= 1_000_000:
+                return val
+    return None
+
+
+def _tier_for_volume(volume: int) -> str | None:
+    """Map monthly chat volume → tier. Boundary 500 belongs to Growth;
+    2,500 belongs to Pro. Returns None for 10,000+ (Enterprise, no
+    self-serve checkout — the handoff shouldn't fire for those)."""
+    if volume < 500:
+        return 'starter'
+    if volume < 2500:
+        return 'growth'
+    if volume <= 10000:
+        return 'pro'
+    return None
+
+
+# Affirmative replies the visitor might give after Orby's "ready to go?" ask.
+# Anchored at start (^) so "yes that's the wrong email" doesn't qualify — we
+# want a clean affirmation that's directed at the prior assistant question.
+_AFFIRM_RE = re.compile(
+    r"^\s*(?:"
+    r"yes|yeah|yep|yup|sure|ok|okay|alright|all right|right|"
+    r"let'?s (?:do|go|try|set)|do it|fire away|go ahead|sign me up|"
+    r"sounds (?:good|great|right|perfect|about right)|"
+    r"good|great|perfect|excellent|awesome|wonderful|"
+    r"ready|i'?m ready|i am ready|"
+    r"absolutely|definitely|for sure|sure thing|of course|"
+    r"that'?s (?:right|correct|me)|correct|"
+    r"i agree|agreed"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+# Signals that Orby's previous reply was a pricing summary / handoff-ready ask.
+# These anchor the visitor's affirmative to "yes, send me onward" rather than
+# "yes, that's my email" or any other unrelated yes.
+_PRICING_SUMMARY_RE = re.compile(
+    r"(?:"
+    r"\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)"
+    r"|setup fee|one[\s-]time setup"
+    r"|legal review|legal page|legal step"
+    r"|ready to (?:go|proceed|move|head|do)"
+    r"|sound (?:right|good)"
+    r"|onto (?:legal|checkout|payment)"
+    r"|move (?:to|onto|over to) (?:legal|checkout|payment)"
+    r"|here'?s where we (?:land|are)"
+    r"|here we go"
+    r")",
+    re.IGNORECASE,
+)
+
+
+# Industry-keyword → industry pack mapping. Mirrors the explicit list in the
+# B2B_DEMO_SYSTEM prompt at Step 5. First match wins.
+_INDUSTRY_TO_PACK = [
+    (('plumb', 'electric', 'hvac', 'contract', 'trades', 'roof', 'handyman', 'remodel'),
+     'Contractor Industry Pack'),
+    (('attorney', 'lawyer', 'law firm', 'law office', 'legal'),
+     'Attorney Industry Pack'),
+    (('chiropract',),
+     'Chiropractor Industry Pack'),
+    (('dentist', 'dental', 'orthodont'),
+     'Dentistry Industry Pack'),
+    (('doctor', 'physician', 'clinic', 'medical practice', 'family medicine'),
+     'Medical Industry Pack'),
+    (('restaurant', 'cafe', 'café', 'deli', 'bakery', 'pizzeria', 'food truck', 'catering'),
+     'Restaurant Industry Pack'),
+    (('salon', 'barber', 'spa', 'esthetician', 'beauty', 'nail', 'lash'),
+     'Salon & Spa Industry Pack'),
+    (('auto repair', 'mechanic', 'body shop', 'tire shop', 'oil change', 'automotive'),
+     'Automotive Industry Pack'),
+    (('therapist', 'counselor', 'mental health', 'couples counseling', 'therapy'),
+     'Therapy & Counseling Industry Pack'),
+    (('real estate', 'property mgmt', 'property management', 'landlord', 'realtor'),
+     'Real Estate Industry Pack'),
+]
+
+
+def _industry_to_module(industry: str) -> str:
+    if not industry:
+        return "Custom Industry Pack (we'll tailor this in your dashboard)"
+    low = industry.lower()
+    for keywords, pack in _INDUSTRY_TO_PACK:
+        if any(k in low for k in keywords):
+            return pack
+    return "Custom Industry Pack (we'll tailor this in your dashboard)"
+
+
+def _extract_intent_from_history(history) -> dict:
+    """Reconstruct the legal-handoff intent fields from the chat history.
+    Used by the deterministic fallback when Llama doesn't emit the marker.
+    Each field is filled by the FIRST user message that satisfies its rule,
+    so later mentions don't overwrite earlier confirmations."""
+    intent: dict = {}
+    _email_anywhere = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
+    _url_anywhere = re.compile(
+        r'\b((?:https?://)?(?:www\.)?[A-Za-z0-9][A-Za-z0-9\-]*\.[A-Za-z]{2,}(?:/[^\s]*)?)\b'
+    )
+    for i in range(1, len(history)):
+        turn = history[i]
+        if turn.get('role') != 'user':
+            continue
+        prev = history[i - 1]
+        prev_text = (prev.get('content') or '').lower() if prev.get('role') == 'assistant' else ''
+        user_text = (turn.get('content') or '').strip()
+        if not user_text:
+            continue
+
+        # Business name — anchored on Orby asking for it the turn before
+        if 'business_name' not in intent and prev_text and (
+            'business name' in prev_text or 'business called' in prev_text
+            or "what's the name" in prev_text or 'name of your business' in prev_text
+        ):
+            cleaned = re.sub(
+                r"^(?:it'?s\s+called|the\s+name\s+is|we'?re\s+called|i'?m|we'?re|it'?s|named|called)\s+",
+                '', user_text, flags=re.IGNORECASE,
+            ).strip()
+            cleaned = re.sub(r'[.!?,]+$', '', cleaned).strip()
+            if 2 < len(cleaned) < 80:
+                intent['business_name'] = cleaned
+
+        # Industry — anchored on Orby's "what kind of business" / "industry" ask
+        if 'industry' not in intent and prev_text and (
+            'kind of business' in prev_text or 'what industry' in prev_text
+            or 'what do you do' in prev_text or 'type of business' in prev_text
+        ):
+            cleaned = re.sub(r'[.!?,]+$', '', user_text).strip()
+            if 2 < len(cleaned) < 120:
+                intent['industry'] = cleaned
+
+        # Email — found anywhere in any user message
+        if 'email' not in intent:
+            em = _email_anywhere.search(user_text)
+            if em:
+                intent['email'] = em.group(0)
+
+        # Website — first URL-shaped match that isn't inside an email
+        if 'website' not in intent:
+            for um in _url_anywhere.finditer(user_text):
+                if um.start() > 0 and user_text[um.start() - 1] == '@':
+                    continue  # part of an email
+                w = um.group(1)
+                if not w.startswith('http'):
+                    w = 'https://' + w
+                intent['website'] = w
+                break
+    return intent
+
+
+def _try_server_side_handoff(history, session_id) -> str:
+    """Deterministic fallback for when Llama-8B fails to emit the
+    ##GO_TO_LEGAL## marker. Returns the redirect URL if all five
+    handoff conditions hold; empty string otherwise.
+
+    Conditions (ALL must be true):
+      1. extracted email exists and matches _EMAIL_RE
+      2. tier is determinable from the visitor's stated monthly volume
+      3. the visitor's latest message is a clean affirmative (yes / sure / ok / let's go / ...)
+      4. the assistant turn just before that affirmative contains
+         pricing-summary or handoff-ready language ("legal review",
+         "sound right", "$X/mo", etc.) — so it's a yes-to-handoff, not
+         a yes-to-something-else
+      5. the caller has already confirmed no marker fired this turn
+         (checked at the call site via `not legal_match`).
+    """
+    if not history:
+        return ''
+
+    # Condition 3 — affirmative from the visitor
+    last_user = None
+    for t in reversed(history):
+        if t.get('role') == 'user':
+            last_user = t
+            break
+    if not last_user:
+        return ''
+    if not _AFFIRM_RE.match((last_user.get('content') or '').strip()):
+        return ''
+
+    # Condition 4 — pricing/handoff signal in the assistant turn just before
+    prior_assistant = None
+    seen_last_user = False
+    for t in reversed(history):
+        if t is last_user:
+            seen_last_user = True
+            continue
+        if seen_last_user and t.get('role') == 'assistant':
+            prior_assistant = t
+            break
+    if not prior_assistant:
+        return ''
+    if not _PRICING_SUMMARY_RE.search(prior_assistant.get('content') or ''):
+        return ''
+
+    # Conditions 1 + 2 — email and tier must be deterministically recoverable
+    extracted = _extract_intent_from_history(history)
+    email = extracted.get('email', '')
+    if not email or not _EMAIL_RE.match(email):
+        return ''
+    volume = _infer_volume_from_history(history)
+    if volume is None:
+        return ''
+    tier = _tier_for_volume(volume)
+    if not tier:
+        return ''  # 10,000+ → Enterprise; needs manual quote, no self-serve
+
+    industry = extracted.get('industry', '')
+    intent = {
+        'business_name': extracted.get('business_name', ''),
+        'industry': industry,
+        'website': extracted.get('website', ''),
+        'email': email,
+        'tier': tier,
+        'modules': [_industry_to_module(industry)],
+    }
+
+    _B2B_INTENT_DIR.mkdir(parents=True, exist_ok=True)
+    token = uuid.uuid4().hex
+    intent_record = {
+        'token': token,
+        'created_at': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+        'session_id': session_id,
+        'server_side_handoff': True,  # marker for debugging / log filtering
+        **intent,
+    }
+    try:
+        (_B2B_INTENT_DIR / f'{token}.json').write_text(json.dumps(intent_record, indent=2))
+        return f'/b2b-checkout-prep?token={token}'
+    except Exception as e:
+        log.error('Could not save server-side handoff intent: %s', e)
+        return ''
+
+
 def _run_b2b_llm(history, system):
     """Try Groq → HF → Anthropic and return the first non-empty reply."""
     for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
@@ -1972,6 +2250,18 @@ def business_demo_chat():
                 "One last thing before we go to legal review — could you confirm "
                 + " and ".join(ask_parts) + "?"
             )
+
+    # DETERMINISTIC HANDOFF FALLBACK — if Llama failed to emit the marker at
+    # all (either narration without ##GO_TO_LEGAL##, or token-budget
+    # truncation mid-marker) and the conversation state shows all five
+    # handoff conditions are met, fire the handoff in code. Skipped when
+    # the marker DID fire (legal_match truthy) so the existing bad-data
+    # override path keeps its semantics.
+    if not legal_match and not redirect_url:
+        fallback_url = _try_server_side_handoff(history, session_id)
+        if fallback_url:
+            redirect_url = fallback_url
+            log.info('Server-side handoff fired (no marker emitted by LLM)')
 
     history.append({'role': 'assistant', 'content': reply})
     if history_path:
