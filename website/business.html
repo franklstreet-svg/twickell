@@ -1351,22 +1351,17 @@ function buyWC(tier) {
     recActive = false;
   }
 
-  // ── Mic toggle ──────────────────────────────────────────────────────────
-  mic.addEventListener('click', async () => {
+  // Shared "turn voice ON" path. Called directly from BOTH the mic button and
+  // the "Try Orby live" hero button so each click event is itself the user
+  // gesture that gates getUserMedia(). Programmatic mic.click() does NOT carry
+  // user activation across to permission-gated APIs, which is why routing the
+  // hero button through mic.click() looked silent in the browser.
+  async function activateVoice() {
     if (!SR) {
       setStatus("Voice not supported here — try Chrome/Edge, or type below.");
       return;
     }
-    if (voiceOn) {
-      voiceOn = false;
-      stopRec();
-      if (currentAudio) { try { currentAudio.pause(); } catch(e) {} }
-      speaking = false;
-      setMicVisual('off');
-      setStatus("Voice off. Click the mic again to turn it back on.");
-      return;
-    }
-    // Ask permission via a silent getUserMedia probe (so the prompt is friendly)
+    if (voiceOn) return;
     try {
       const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
       probe.getTracks().forEach(t => t.stop());
@@ -1376,25 +1371,37 @@ function buyWC(tier) {
     }
     voiceOn = true;
     setMicVisual('listening');
-    // Greet by voice on first activation so the user hears Orby
     if (!window._demoGreetedVocally) {
       window._demoGreetedVocally = true;
       speak("Hi! I'm Orby. I'm the AI website controller. Ask me anything — about the products, pricing, or how I work. I'm listening.");
     } else {
       scheduleRecStart(150);
     }
+  }
+
+  // ── Mic toggle ──────────────────────────────────────────────────────────
+  mic.addEventListener('click', async () => {
+    if (voiceOn) {
+      voiceOn = false;
+      stopRec();
+      if (currentAudio) { try { currentAudio.pause(); } catch(e) {} }
+      speaking = false;
+      setMicVisual('off');
+      setStatus("Voice off. Click the mic again to turn it back on.");
+      return;
+    }
+    await activateVoice();
   });
 
-  // "Try Orby live" hero button — scroll to the demo and start the same
-  // voice/chat flow the mic button does (asks mic permission, speaks greeting).
-  // Direct mic.click() preserves the user-gesture context so the mic prompt fires.
+  // "Try Orby live" hero button — scroll to the demo AND start voice in this
+  // same click event so getUserMedia sees a real user gesture.
   const tryBtn = document.getElementById('tryOrbyBtn');
   if (tryBtn) {
-    tryBtn.addEventListener('click', (e) => {
+    tryBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const demoEl = document.getElementById('demo');
       if (demoEl) demoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (!voiceOn) mic.click();
+      await activateVoice();
     });
   }
 
