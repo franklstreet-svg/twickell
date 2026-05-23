@@ -3,54 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orby AI</title>
+<title>FST LLC — Small-Business Tech Services · Reno, NV</title>
+<meta name="description" content="FST LLC — Frank Street, Reno NV. I help small businesses with online payments, website chat widgets, contact forms, and quick tech fixes. Flat fees, fast turnaround.">
 <style>
   :root {
     --bg: #0a0f1e;
     --surface: #111827;
+    --surface2: #1a2235;
     --gold: #d4a017;
     --gold-light: #f0c040;
     --text: #e8eaf0;
     --text-muted: #aab0bc;
+    --border: rgba(212,160,23,0.2);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-    line-height: 1.6;
+    line-height: 1.65;
+    padding: 24px 16px 80px;
   }
-  .card {
-    max-width: 520px;
+  .container { max-width: 760px; margin: 0 auto; }
+  header {
     text-align: center;
-    background: var(--surface);
-    border: 1px solid rgba(212,160,23,0.18);
-    border-radius: 16px;
-    padding: 48px 36px;
+    padding: 40px 0 48px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
   }
-  h1 {
-    color: var(--gold-light);
-    font-size: 1.7rem;
+  .brand {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 8px;
+  }
+  .tagline {
+    color: var(--text-muted);
+    font-size: 1.1rem;
     margin-bottom: 18px;
-    letter-spacing: -0.01em;
   }
-  p { color: var(--text-muted); margin-bottom: 14px; font-size: 15px; }
-  a { color: var(--gold-light); text-decoration: none; }
-  a:hover { color: #fff; }
+  .who {
+    color: var(--text);
+    font-size: 1rem;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+  h2 {
+    font-size: 1.4rem;
+    color: var(--gold-light);
+    margin-bottom: 18px;
+    margin-top: 8px;
+  }
+  .section { margin-bottom: 44px; }
+  .services-grid {
+    display: grid;
+    gap: 14px;
+  }
+  .service {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+  }
+  .service .what { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+  .service .desc { color: var(--text-muted); font-size: 14.5px; }
+  .service .price {
+    font-weight: 800;
+    color: var(--gold-light);
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+  .how-it-works ol { padding-left: 22px; color: var(--text-muted); }
+  .how-it-works li { padding: 6px 0; font-size: 15px; }
+  .how-it-works li strong { color: var(--text); }
+  .contact-box {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    padding: 32px;
+    text-align: center;
+  }
+  .contact-box .cta-email {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--bg);
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1.05rem;
+    text-decoration: none;
+    margin: 14px 0;
+  }
+  .contact-box p { color: var(--text-muted); font-size: 14.5px; }
+  footer {
+    text-align: center;
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  @media (max-width: 560px) {
+    .service { grid-template-columns: 1fr; }
+    .service .price { text-align: left; }
+  }
 </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Orby AI is not taking signups right now</h1>
-    <p>We're heads-down on the next version. Thanks for stopping by.</p>
-    <p>If you'd like to be on the list when we open back up, email
-       <a href="mailto:franklstreet@yahoo.com">franklstreet@yahoo.com</a>.</p>
+
+<div class="container">
+
+  <header>
+    <div class="brand">FST LLC</div>
+    <div class="tagline">Small-business tech services · Reno, Nevada</div>
+    <div class="who">Hi, I'm Frank Street. I help small businesses with the website and payment-setup work that's annoying to deal with on your own — fast, flat-fee, no agency overhead.</div>
+  </header>
+
+  <div class="section">
+    <h2>What I do</h2>
+    <div class="services-grid">
+
+      <div class="service">
+        <div>
+          <div class="what">Online payments / Stripe setup</div>
+          <div class="desc">Take payments on your website — checkout buttons, payment links, recurring subscriptions.</div>
+        </div>
+        <div class="price">$400</div>
+      </div>
+
+      <div class="service">
+        <div>
+          <div class="what">Chat widget on your site</div>
+          <div class="desc">Floating chat for visitors to ask questions, capture leads, send to your inbox.</div>
+        </div>
+        <div class="price">$300</div>
+      </div>
+
+      <div class="service">
+        <div>
+          <div class="what">Contact / booking forms</div>
+          <div class="desc">Custom forms that email you the moment someone fills them out. No more missed leads.</div>
+        </div>
+        <div class="price">$200</div>
+      </div>
+
+      <div class="service">
+        <div>
+          <div class="what">Email automation</div>
+          <div class="desc">Auto-replies, welcome emails, lead notifications. Connect your website to your inbox cleanly.</div>
+        </div>
+        <div class="price">$250</div>
+      </div>
+
+      <div class="service">
+        <div>
+          <div class="what">Website fixes &amp; mobile optimization</div>
+          <div class="desc">Slow site, broken links, looks terrible on phones — I fix it.</div>
+        </div>
+        <div class="price">$300</div>
+      </div>
+
+      <div class="service">
+        <div>
+          <div class="what">General small-business tech help</div>
+          <div class="desc">"I can't figure out this thing" sessions — by the hour, no minimum.</div>
+        </div>
+        <div class="price">$60/hr</div>
+      </div>
+
+    </div>
   </div>
+
+  <div class="section how-it-works">
+    <h2>How it works</h2>
+    <ol>
+      <li><strong>Email me</strong> — tell me what you need in plain English.</li>
+      <li><strong>Free 15-min call</strong> — we figure out if I'm the right fit and confirm the flat fee.</li>
+      <li><strong>I do the work</strong> — most jobs done in 2-5 days.</li>
+      <li><strong>You pay when it's done and working</strong> — no upfront deposit for projects under $500.</li>
+    </ol>
+  </div>
+
+  <div class="section">
+    <div class="contact-box">
+      <h2 style="margin-top:0;">Ready to talk?</h2>
+      <p>Email me with what you need — I usually reply same day.</p>
+      <a class="cta-email" href="mailto:franklstreet@yahoo.com?subject=Tech%20help%20for%20my%20business">franklstreet@yahoo.com</a>
+      <p>No pressure, no agency runaround.</p>
+    </div>
+  </div>
+
+  <footer>
+    FST LLC · Reno, Nevada · franklstreet@yahoo.com
+  </footer>
+
+</div>
+
 </body>
 </html>
 </content>
