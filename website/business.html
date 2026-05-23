@@ -476,7 +476,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
     <p class="subhead">Orby answers your business phones, greets your website visitors, captures leads, books appointments, and learns from you. Your customer data stays on hardware you own — never our cloud.</p>
     <div class="hero-cta">
       <a href="#pricing" class="btn btn-primary">See pricing →</a>
-      <a href="#demo" class="btn btn-outline">💬 Try Orby live</a>
+      <a href="#demo" id="tryOrbyBtn" class="btn btn-outline">💬 Try Orby live</a>
       <a href="tel:8886164997" class="btn btn-ghost">📞 (888) 616-4997</a>
     </div>
     <p class="hero-meta">No credit card to try. Setup takes under 24 hours.</p>
@@ -1384,6 +1384,19 @@ function buyWC(tier) {
       scheduleRecStart(150);
     }
   });
+
+  // "Try Orby live" hero button — scroll to the demo and start the same
+  // voice/chat flow the mic button does (asks mic permission, speaks greeting).
+  // Direct mic.click() preserves the user-gesture context so the mic prompt fires.
+  const tryBtn = document.getElementById('tryOrbyBtn');
+  if (tryBtn) {
+    tryBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const demoEl = document.getElementById('demo');
+      if (demoEl) demoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!voiceOn) mic.click();
+    });
+  }
 
   // Opening greeting (text only — voice greets after mic click)
   add('bot', "Hi! I'm Orby. Click the 🎤 mic button to talk to me with your voice (like calling a receptionist) — or type a question below. I'm running on this page exactly the way I'd run on your business website.");

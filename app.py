@@ -1913,11 +1913,15 @@ def business_demo_chat():
 
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
+    # Anchor voice language to the USER's message, not Orby's reply: her English
+    # replies can include loan-words (café, à la carte, bonjour) that flip the
+    # auto-detector to a French voice. User text is unambiguous about language.
     audio_b64 = ''
     try:
         _loop = asyncio.new_event_loop()
         try:
-            audio_bytes = _loop.run_until_complete(_synthesize(_clean_for_tts(reply)))
+            user_voice = _voice_for_text(user_message)
+            audio_bytes = _loop.run_until_complete(_synthesize(_clean_for_tts(reply), voice=user_voice))
             audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
         finally:
             _loop.close()
