@@ -38,6 +38,7 @@ GET  /api/products/<product_key>/restart-pending          watchdog polls this to
 import json
 import logging
 import os
+import re
 import threading
 import uuid
 from datetime import datetime, timezone
@@ -45,6 +46,11 @@ from pathlib import Path
 
 from flask import Blueprint, Flask, request, jsonify
 from flask_cors import CORS
+
+
+# Strict email format check — mirrors app.py:_EMAIL_RE and the regex used by
+# b2b_checkout_prep.html so a placeholder cannot reach Stripe at any layer.
+_EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$')
 
 
 # ── Setup ──────────────────────────────────────────────────────────────────
@@ -1161,8 +1167,8 @@ def wc_checkout():
     business_website = (data.get('business_website') or legal_record.get('business_website') or '').strip()
     if tier not in WC_PRICING:
         return jsonify({'ok': False, 'error': f'tier must be one of {list(WC_PRICING)}'}), 400
-    if not owner_email:
-        return jsonify({'ok': False, 'error': 'owner_email required'}), 400
+    if not owner_email or not _EMAIL_RE.match(owner_email):
+        return jsonify({'ok': False, 'error': 'A valid owner email is required before payment (e.g., you@yourbusiness.com).'}), 400
     try:
         import stripe as _stripe
         _stripe.api_key = stripe_key

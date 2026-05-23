@@ -248,6 +248,9 @@ const TIER_DETAIL = {
   pro:     { name: 'AI Website Controller — Pro',     monthly: 349, limit: 'up to 10,000 chats/month' },
 };
 const SETUP_FEE = 299;
+// Strict email format check — mirrors app.py:_EMAIL_RE and bridge_routes._EMAIL_RE.
+// Blocks "frank@", "test", "x@y" (no TLD) and other placeholders from reaching Stripe.
+const EMAIL_RE = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$/;
 
 const TOKEN = new URLSearchParams(location.search).get('token');
 const $ = (id) => document.getElementById(id);
@@ -395,12 +398,26 @@ function renderChecks() {
       item.classList.toggle('open');
     });
   });
+  // Initial Continue-button state — checkboxes just rendered, all unchecked,
+  // so the button must be disabled until the visitor checks every box.
+  updateAcceptState();
 }
 
 function updateAcceptState() {
   const all = document.querySelectorAll('.checks input[type="checkbox"]');
   const allChecked = Array.from(all).every(cb => cb.checked);
-  $('acceptBtn').disabled = !allChecked;
+  // Email must also pass strict format check — no proceeding without one.
+  const emailEl = document.getElementById('emailEdit');
+  const emailOk = emailEl ? EMAIL_RE.test(emailEl.value.trim()) : false;
+  // Visual cue on the input itself so a missing email is obvious.
+  if (emailEl) {
+    if (emailOk) {
+      emailEl.style.borderColor = '';
+    } else {
+      emailEl.style.borderColor = '#ef4444';
+    }
+  }
+  $('acceptBtn').disabled = !(allChecked && emailOk);
 }
 
 function _currentTierKey() {
@@ -443,11 +460,21 @@ function renderSummary(intent, foundingInfo) {
   window._founding = foundingInfo || { eligible: true, next_number: '?' };
   const modList = (intent.modules || []).map(m => `<li>${m}</li>`).join('') || '<li>Custom — confirmed in your dashboard after setup</li>';
 
-  // Editable email
+  // Editable email — but only pre-fill if Orby actually captured a valid one.
+  // Anything malformed (e.g. "frank@", "test") gets cleared so the visitor
+  // is FORCED to type a real address before the Accept button enables.
+  const rawIntentEmail = (intent.email || '').trim();
+  const prefillEmail = EMAIL_RE.test(rawIntentEmail) ? rawIntentEmail : '';
+  const emailMissingHint = prefillEmail
+    ? ''
+    : `<div style="font-size:12px;color:#fca5a5;margin-top:6px;text-align:right;">Required — please type a valid email so we can send your dashboard link.</div>`;
   const emailRow = `
-    <div class="summary-row">
-      <span class="label">Owner email <span style="color:#fca5a5;">*</span></span>
-      <input type="email" id="emailEdit" placeholder="you@yourbusiness.com" value="${(intent.email || '').replace(/"/g,'&quot;')}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:14px;width:240px;text-align:right;outline:none;" />
+    <div class="summary-row" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span class="label">Owner email <span style="color:#fca5a5;">*</span></span>
+        <input type="email" id="emailEdit" required placeholder="you@yourbusiness.com" value="${prefillEmail.replace(/"/g,'&quot;')}" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:14px;width:240px;text-align:right;outline:none;" />
+      </div>
+      ${emailMissingHint}
     </div>`;
 
   // Editable tier picker so customer can change what Orby selected (or fix
@@ -478,6 +505,16 @@ function renderSummary(intent, foundingInfo) {
   // Re-render price whenever tier changes
   const sel = document.getElementById('tierEdit');
   if (sel) sel.addEventListener('change', _renderPriceArea);
+  // Re-evaluate the Continue button (and the email field's red border) whenever
+  // the email field is edited — visitor must type a real email before payment.
+  const emailEl = document.getElementById('emailEdit');
+  if (emailEl) {
+    emailEl.addEventListener('input', updateAcceptState);
+    emailEl.addEventListener('blur', updateAcceptState);
+  }
+  // Reflect the initial email state immediately (red border + disabled Continue
+  // if Orby's pre-fill didn't pass the format check, or no email captured).
+  updateAcceptState();
 }
 
 async function loadIntent() {
@@ -536,13 +573,17 @@ $('acceptBtn').addEventListener('click', async () => {
   const tier = _currentTierKey();
   const td = TIER_DETAIL[tier] || TIER_DETAIL.starter;
 
-  // Email is required — pull from the editable field, validate
+  // Email is required — pull from the editable field and validate with the
+  // SAME strict regex the server uses. Block on empty OR malformed.
   const emailInput = $('emailEdit');
-  const emailValue = emailInput ? emailInput.value.trim() : (intent.email || '');
-  if (!emailValue || emailValue.indexOf('@') < 0) {
-    errEl.textContent = 'Please enter your email address (this is where your dashboard link will go).';
+  const emailValue = emailInput ? emailInput.value.trim() : '';
+  if (!emailValue || !EMAIL_RE.test(emailValue)) {
+    errEl.textContent = 'Please enter a valid email address (e.g., you@yourbusiness.com) — this is where your dashboard link will go.';
     errEl.classList.add('show');
-    if (emailInput) emailInput.focus();
+    if (emailInput) {
+      emailInput.style.borderColor = '#ef4444';
+      emailInput.focus();
+    }
     return;
   }
 

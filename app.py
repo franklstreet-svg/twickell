@@ -1744,6 +1744,11 @@ _SCRAPE_MARKER_RE = re.compile(r'##SCRAPE_WEBSITE##(.*?)##SCRAPE_WEBSITE##', re.
 _LEGAL_MARKER_RE  = re.compile(r'##GO_TO_LEGAL##(.*?)##GO_TO_LEGAL##', re.DOTALL)
 _B2B_INTENT_DIR   = DATA_DIR / 'orby_b2b_intents'   # persistent — survives container restart
 
+# Strict email format check — used at every layer of the B2B buy flow so that
+# a placeholder Orby hallucinates (e.g. "frank@" or "test") cannot reach Stripe.
+# Mirrored by the same regex in bridge_routes.py and in b2b_checkout_prep.html.
+_EMAIL_RE = re.compile(r'^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$')
+
 
 def _run_b2b_llm(history, system):
     """Try Groq → HF → Anthropic and return the first non-empty reply."""
@@ -1875,7 +1880,16 @@ def business_demo_chat():
             intent = json.loads(legal_match.group(1).strip())
         except Exception:
             intent = {}
-        if intent.get('tier') and intent.get('email'):
+        intent_email = (intent.get('email') or '').strip()
+        intent_tier  = (intent.get('tier') or '').strip()
+        missing = []
+        if not intent_tier:
+            missing.append('tier')
+        # Reject empty AND malformed emails (e.g. "frank@", "test", "x@y" with no TLD).
+        # Llama sometimes hallucinates a placeholder value — that must not reach Stripe.
+        if not intent_email or not _EMAIL_RE.match(intent_email):
+            missing.append('email')
+        if not missing:
             _B2B_INTENT_DIR.mkdir(parents=True, exist_ok=True)
             token = uuid.uuid4().hex
             intent_record = {
@@ -1889,10 +1903,27 @@ def business_demo_chat():
                 redirect_url = f'/b2b-checkout-prep?token={token}'
             except Exception as e:
                 log.error('Could not save b2b intent: %s', e)
-        # Strip the marker from the visible reply
-        reply = _LEGAL_MARKER_RE.sub('', reply).strip()
-        if not reply:
-            reply = "Sending you to the legal review now — won't take a minute."
+            reply = _LEGAL_MARKER_RE.sub('', reply).strip()
+            if not reply:
+                reply = "Sending you to the legal review now — won't take a minute."
+        else:
+            # Marker fired with incomplete/invalid intent. Don't ship Orby's
+            # "sending you to legal" text — override with an explicit ask so
+            # the customer doesn't stare at a page that never loads.
+            log.warning('Legal handoff ABORTED: missing/invalid %s. raw_email=%r tier=%r',
+                        missing, intent_email, intent_tier)
+            ask_parts = []
+            if 'tier' in missing:
+                ask_parts.append(
+                    "which tier you'd like — Starter ($99/mo, 500 chats), "
+                    "Growth ($199/mo, 2,500 chats), or Pro ($349/mo, 10,000 chats)"
+                )
+            if 'email' in missing:
+                ask_parts.append("the best email for your dashboard link (full address like you@yourbusiness.com)")
+            reply = (
+                "One last thing before we go to legal review — could you confirm "
+                + " and ".join(ask_parts) + "?"
+            )
 
     history.append({'role': 'assistant', 'content': reply})
     if history_path:
@@ -1913,13 +1944,20 @@ def business_demo_chat():
     if not reply:
         reply = "Got it — what else would you like to know?"
 
-    # Pricing safety net — Llama sometimes quotes a monthly amount without the
-    # setup fee even with explicit prompt instructions. Catch and append it.
-    _monthly_re = re.compile(r'\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
-    _setup_mentioned_re = re.compile(r'\$\s*299|\$\s*149\.?50|setup fee|one[\s-]time setup|setup is', re.IGNORECASE)
-    if _monthly_re.search(reply) and not _setup_mentioned_re.search(reply):
-        # Trim trailing punctuation, then append the missing setup fee mention
-        reply = reply.rstrip(' .!?') + ". And there's a one-time $299 setup fee — or $149.50 if you're one of our first 1,000 founding members."
+    # Pricing safety net — Llama frequently misquotes by omitting the setup
+    # fee OR the founding-member 50%-off discount. Catch BOTH cases independently.
+    _monthly_re   = re.compile(r'\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
+    _setup_re     = re.compile(r'\$\s*299|setup fee|one[\s-]time setup|setup is', re.IGNORECASE)
+    _founding_re  = re.compile(r'\$\s*149\.?\s*50|149 dollars|half off|fifty percent off|50%\s*off|founding member', re.IGNORECASE)
+    if _monthly_re.search(reply):
+        missing_setup    = not _setup_re.search(reply)
+        missing_founding = not _founding_re.search(reply)
+        if missing_setup and missing_founding:
+            reply = reply.rstrip(' .!?') + ". And there's a one-time $299 setup fee — or $149.50 if you're one of our first 1,000 founding members."
+        elif missing_setup:
+            reply = reply.rstrip(' .!?') + ". Plus a one-time $299 setup fee (or $149.50 if you're a founding member, first 1,000 only)."
+        elif missing_founding:
+            reply = reply.rstrip(' .!?') + " — and if you're one of our first 1,000 founding members, the setup is half off at $149.50."
 
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
@@ -2618,6 +2656,10 @@ def legal_accept():
     email = (data.get('email') or '').strip()
     if not name or not email:
         return jsonify({'error': 'name and email required'}), 400
+    # Reject malformed emails so a placeholder ("frank@", "test") cannot
+    # be locked into the legal record and rolled forward to Stripe.
+    if not _EMAIL_RE.match(email):
+        return jsonify({'error': 'Please provide a valid email address (e.g., you@yourbusiness.com).'}), 400
 
     _LEGAL_DIR.mkdir(parents=True, exist_ok=True)
     acceptance_id = str(uuid.uuid4())
