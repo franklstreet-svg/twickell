@@ -462,11 +462,31 @@ _NAV_PHRASE_WORDS = {
 }
 
 
-def _extract_body_name_candidates(pages, full_text):
+# Street-type suffixes — a phrase ending in one of these is an address
+# fragment, NOT a business name. Without this filter, the body-frequency
+# extractor was crowning footer addresses like "Sierra Market Lane" as
+# the company name and telling the owner they were called by their street.
+_STREET_SUFFIX_WORDS = {
+    'street', 'st', 'avenue', 'ave', 'road', 'rd', 'drive', 'dr',
+    'boulevard', 'blvd', 'lane', 'ln', 'way', 'court', 'ct',
+    'place', 'pl', 'plaza', 'pkwy', 'parkway',
+    'highway', 'hwy', 'circle', 'cir', 'terrace', 'ter',
+    'trail', 'trl',
+}
+
+
+def _extract_body_name_candidates(pages, full_text, addresses=None):
     """Find capitalized multi-word phrases that look like business names.
-    Rejects nav-menu concatenations and CTAs."""
+    Rejects nav-menu concatenations, CTAs, and address fragments.
+
+    `addresses` is a list of strings from `_extract_addresses`. Any candidate
+    whose words appear inside a known address gets dropped — that's how we
+    stop "Sierra Market Lane" (which is the footer street, not the company)
+    from beating the real name in the frequency rankings.
+    """
     candidates = {}
     pages_seen_in = {}  # phrase → set of urls (to detect "appears on every page = nav")
+    address_blob = (' '.join(addresses or [])).lower()
 
     pat = re.compile(
         r'\b('
@@ -490,6 +510,16 @@ def _extract_body_name_candidates(pages, full_text):
                 continue
             # REJECT: contains any nav/CTA word
             if any(w.strip(",.'’") in _NAV_PHRASE_WORDS for w in words):
+                continue
+            # REJECT: ends in a street-type suffix (Lane, Street, Avenue…)
+            # — that's an address fragment, not a business name.
+            last_word = words[-1].strip(",.'’")
+            if last_word in _STREET_SUFFIX_WORDS:
+                continue
+            # REJECT: the whole phrase is part of a known address. Catches the
+            # case where the body extractor finds "Sierra Market" or some other
+            # leading-portion-of-address that doesn't end in a street suffix.
+            if address_blob and low in address_blob:
                 continue
             # REJECT: known boilerplate
             if any(bad in low for bad in (
@@ -924,10 +954,18 @@ class BusinessDataExtractor:
         full_text = _clean(full_text)
         data = {}
 
+        # Extract addresses FIRST so the body-name filter can drop candidates
+        # that overlap with a known street address (the "Sierra Market Lane"
+        # problem — a footer street was beating the real company name).
+        addresses = _extract_addresses(full_text)
+
         # 1) JSON-LD has the highest signal — use it first
         jsonld = _gather_jsonld(pages)
         jl = _from_jsonld(jsonld)
-        if jl.get('name'):        data['name'] = jl['name']
+        if jl.get('name'):
+            data['name'] = jl['name']
+            data['name_confidence'] = 'high'
+            data['name_source'] = 'jsonld'
         if jl.get('description'): data['description'] = jl['description']
 
         # 1b) Find the TRUE company name from:
@@ -935,24 +973,34 @@ class BusinessDataExtractor:
         #     (b) body-text frequency analysis (most-mentioned formal phrase)
         if 'name' not in data:
             copy_names = _extract_copyright_names(pages)        # e.g. "Joe's Plumbing, Inc"
-            body_names = _extract_body_name_candidates(pages, full_text)  # frequency-ranked
-            # Prefer copyright if present (most authoritative)
-            # If copyright gave just an abbreviation, look in body for a full version
+            body_names = _extract_body_name_candidates(pages, full_text, addresses=addresses)
             chosen = None
+            chosen_source = ''
+            chosen_confidence = ''
             if copy_names:
                 chosen = copy_names[0]
+                chosen_source = 'copyright'
+                chosen_confidence = 'high'
                 # If copyright looks like an abbreviation (e.g. "SCS"), see if body
                 # has a full multi-word form that starts the same way
                 if len(chosen.split()) == 1 and len(chosen) <= 5:
                     for bn in body_names:
                         if bn.split()[0].lower().startswith(chosen.lower()[:3]):
                             chosen = bn
+                            chosen_source = 'copyright+body'
                             break
             elif body_names:
                 chosen = body_names[0]
+                chosen_source = 'body_frequency'
+                # Body-only candidates are inherently low-confidence — they're
+                # frequent capitalized phrases, which can still be a tagline or
+                # location name. Orby should confirm before stating as fact.
+                chosen_confidence = 'low'
             if chosen:
                 data['name'] = chosen
                 data['legal_entity'] = chosen
+                data['name_confidence'] = chosen_confidence or 'low'
+                data['name_source'] = chosen_source
                 if body_names:
                     data['name_candidates'] = body_names[:5]
 
@@ -965,10 +1013,23 @@ class BusinessDataExtractor:
         if jl.get('social'):  data['social_links'] = jl['social']
         if jl.get('faqs'):    data['faqs'] = jl['faqs']
 
-        # 2) Meta/<title> fills business name + description if JSON-LD didn't
+        # 2) Meta/<title> fills business name + description if JSON-LD and the
+        # copyright/body candidates didn't. Medium confidence — the <title> is
+        # almost always the company name but can be a SEO-stuffed marketing
+        # line ("Best Plumber In Reno | Get a Quote"); Orby should confirm.
+        # Meta/title ALSO overrides a low-confidence body candidate so that
+        # "<title>Pur Blum</title>" beats "About Pur Blum" (a frequent body
+        # phrase that won the frequency contest only because no stronger
+        # signal was available).
         meta = _from_meta(pages)
-        if 'name' not in data and meta.get('name'):
-            data['name'] = meta['name']
+        meta_name = meta.get('name')
+        if meta_name and (
+            'name' not in data
+            or data.get('name_confidence') == 'low'
+        ):
+            data['name'] = meta_name
+            data['name_confidence'] = 'medium'
+            data['name_source'] = 'meta_or_title'
         if 'description' not in data and meta.get('description'):
             data['description'] = meta['description']
 
@@ -985,7 +1046,7 @@ class BusinessDataExtractor:
             for e in emails:
                 if e not in contact['emails']:
                     contact['emails'].append(e)
-        addresses = _extract_addresses(full_text)
+        # addresses was already extracted above so the name filter could use it
         if addresses:
             contact.setdefault('addresses', [])
             for a in addresses:
@@ -1041,11 +1102,15 @@ class BusinessDataExtractor:
             if social:
                 data['social_links'] = social
 
-        # 10) Fallback business name from domain if all else failed
+        # 10) Fallback business name from domain if all else failed. Confidence
+        # is 'none' — this is purely a guess from the URL, and Orby must ASK
+        # the visitor rather than state it as fact.
         if 'name' not in data and pages:
             first_url = pages[0].get('url', '')
             host = urlparse(first_url).netloc.replace('www.', '')
             data['name'] = _domain_to_name(host)
+            data['name_confidence'] = 'none'
+            data['name_source'] = 'domain_guess'
 
         # 11) Page count + crawl stats
         data['_pages_scraped'] = len(pages)

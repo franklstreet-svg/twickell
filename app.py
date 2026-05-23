@@ -1483,6 +1483,14 @@ After the scrape result comes in, summarize warmly:
   "Okay — looks like you're [industry] [in area if found], offering [services]. I'm going to attach the [Industry Pack name] module set, which gives me built-in knowledge of [1-2 industry-specific examples]. Sound right?"
 If they say yes, move to tier selection. If they correct you, update and re-confirm.
 
+BUSINESS NAME RULE — NEVER GUESS:
+The [SCRAPER_RESULT] line will mark the business name one of four ways:
+  - "business name: <X>"  → confirmed; you may use it as fact.
+  - "likely business name (UNVERIFIED — ask the visitor to confirm before stating): <X>"  → DO NOT state <X> as fact. Instead ask "Just to make sure I've got it right — is your business called <X>?" before using it. If they correct you, use their version.
+  - "business name: NOT FOUND on the site — ASK the visitor..."  → you have no business name. Open Step 5 by asking "What's the name of your business?" before anything else. Never invent a name and never guess from the URL.
+  - No business name line at all → same: ask.
+Mentioning a wrong business name to an owner is the single fastest way to lose the sale. When in any doubt, ASK.
+
 Industry → Module pack mapping (use these names verbatim when confirming. NEVER invent a pack name not on this list):
   - Plumbing / electrical / HVAC / contractor / trades → "Contractor Industry Pack"
   - Attorney / lawyer / law office → "Attorney Industry Pack"
@@ -1797,7 +1805,20 @@ def _scrape_summary(url: str) -> str:
         # business_profile is nested inside structured_data — NOT top level.
         profile = ((result.get('structured_data') or {}).get('business_profile')) or {}
         bits = []
-        if profile.get('name'): bits.append(f"business name: {profile['name']}")
+        # Name surfaces differently depending on extractor confidence so Orby
+        # never states a guess as fact. High = JSON-LD/copyright. Medium =
+        # title/meta. Low = body-frequency only. None = pure domain guess.
+        name = profile.get('name', '')
+        name_conf = profile.get('name_confidence', 'medium')
+        if name:
+            if name_conf == 'high':
+                bits.append(f"business name: {name}")
+            elif name_conf in ('medium', 'low'):
+                bits.append(f"likely business name (UNVERIFIED — ask the visitor to confirm before stating): {name}")
+            else:  # 'none' or unknown
+                bits.append("business name: NOT FOUND on the site — ASK the visitor what their business is called; do NOT guess from the URL")
+        else:
+            bits.append("business name: NOT FOUND on the site — ASK the visitor what their business is called; do NOT guess")
         if profile.get('description'): bits.append(f"description: {profile['description'][:160]}")
         if profile.get('business_type'): bits.append(f"type: {profile['business_type']}")
         if profile.get('owner_name'): bits.append(f"owner: {profile['owner_name']}")
