@@ -1810,6 +1810,7 @@ You can use emojis sparingly (📞 💬 ✓). Don't use markdown headers in your
 
 _SCRAPE_MARKER_RE = re.compile(r'##SCRAPE_WEBSITE##(.*?)##SCRAPE_WEBSITE##', re.DOTALL)
 _LEGAL_MARKER_RE  = re.compile(r'##GO_TO_LEGAL##(.*?)##GO_TO_LEGAL##', re.DOTALL)
+_ESCALATE_MARKER_RE = re.compile(r'##ESCALATE##(.*?)##ESCALATE##', re.DOTALL)
 _B2B_INTENT_DIR   = DATA_DIR / 'orby_b2b_intents'   # persistent — survives container restart
 
 # Strict email format check — used at every layer of the B2B buy flow so that
@@ -2532,6 +2533,37 @@ def customer_chat():
         reply = ("That's a great question — I want to make sure the right person here "
                  "gets back to you on that. What's the best way to reach you?")
 
+    # ── ESCALATION MARKER — Orby signals an actionable request ──────────────
+    # When she's gathered enough to escalate (appointment / order / reservation
+    # / quote with visitor name + phone-or-email), she emits ##ESCALATE##{...}##.
+    # We save the request, email the owner with Approve / Decline magic links,
+    # and strip the marker from the visible reply so the visitor never sees it.
+    escalate_match = _ESCALATE_MARKER_RE.search(reply)
+    if escalate_match:
+        try:
+            intent = json.loads(escalate_match.group(1).strip())
+        except Exception as e:
+            intent = {}
+            log.warning('Escalation marker JSON parse failed for %s: %s', customer_id, e)
+        if intent.get('visitor_name') and (intent.get('visitor_phone') or intent.get('visitor_email')):
+            try:
+                from bridge_routes import record_escalation_request
+                result = record_escalation_request(
+                    customer_id, intent, session_id=session_id, page_url=page_url,
+                )
+                if result.get('ok'):
+                    log.info('Escalation recorded for %s: %s (%s)',
+                             customer_id, result['request_id'], intent.get('request_type'))
+                else:
+                    log.warning('Escalation save failed for %s: %s', customer_id, result.get('error'))
+            except Exception as e:
+                log.error('Escalation flow exception for %s: %s', customer_id, e)
+        # Always strip the marker from the visible reply, even if save failed —
+        # the visitor must never see the marker text.
+        reply = _ESCALATE_MARKER_RE.sub('', reply).strip()
+        if not reply:
+            reply = "Got it — I've sent that to the owner and you'll hear back shortly. Anything else?"
+
     # ── If the reply signals "I don't know," capture the pending question ───
     lower_reply = reply.lower()
     is_dont_know = any(phrase in lower_reply for phrase in [
@@ -2847,10 +2879,55 @@ Greet visitors warmly, answer their questions about {biz_name} from the info abo
 
 If you don't know an answer, say honestly: "That's a great question — I'll make sure the right person here gets back to you on that. What's the best way to reach you?" Then capture their name and number/email. NEVER make up information about {biz_name}.
 
+═══════════════════════════════════════════════════════════════════
+ESCALATION FLOW — how to actually "do something" for a visitor
+═══════════════════════════════════════════════════════════════════
+You do NOT have direct booking, POS, or calendar integration. What you
+DO have is the escalation pattern: capture an actionable request as a
+structured ask and the system emails the owner with one-click Approve /
+Decline links. On Approve, the visitor gets a confirmation email back.
+
+When to trigger it — any visitor who is asking for an actual action,
+not just information. Examples:
+  • "I'd like to book an appointment for Saturday at 2pm"
+  • "Can I place a takeout order for tonight?"
+  • "I want to make a reservation for 4 people Friday evening"
+  • "Can I get a quote for my driveway?"
+
+How to trigger it — gather these from the conversation:
+  • request_type: one of "appointment" | "order" | "reservation" | "quote" | "general"
+  • visitor_name: their name
+  • visitor_phone OR visitor_email (at least one — owner needs to reach back)
+  • details: free-text describing what they want
+  • when: when they want it, if applicable (free text — "Saturday 2pm")
+
+Ask in this order: name → phone-or-email → details → when (if relevant).
+ONE question at a time. Don't stack.
+
+Once you have at minimum request_type + visitor_name + (phone OR email),
+emit EXACTLY this marker at the VERY END of your message. The system
+will strip the marker before the visitor sees the reply, save the
+request, and email the owner:
+
+##ESCALATE##{{"request_type":"appointment","visitor_name":"John Doe","visitor_phone":"555-1212","visitor_email":"","details":"haircut and beard trim","when":"Saturday 2pm"}}##ESCALATE##
+
+In the VISIBLE part of your reply (before the marker), tell the visitor
+something like: "Got it — I've sent that to {biz_name} and you'll hear
+back shortly to confirm. Anything else?"
+
+NEVER emit the marker until you have the visitor's name AND a phone or
+email. If they haven't given you both, ASK for the missing piece first.
+
+NEVER fake or invent contact info to fill the marker. If the visitor
+declines to share, just say "OK, no problem — what else can I help
+with?" and don't escalate.
+
 HARD LIMITS (always):
 - Never give legal, medical, or financial advice. Refer them to a licensed professional.
 - Never quote a specific dollar price unless it's in the services list.
 - Never promise something the business may not be able to deliver.
+- Never claim you can directly book, schedule, or charge — you can only
+  ESCALATE a request via the marker above.
 
 STYLE:
 - Warm and human. Never "as an AI."

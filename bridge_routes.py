@@ -1689,5 +1689,290 @@ def check_restart(product_key):
     return jsonify({'restart': False})
 
 
+# ── ESCALATION FLOW ────────────────────────────────────────────────────────
+# When Orby detects an actionable intent in a chat (appointment / order /
+# reservation / quote), she emits ##ESCALATE##{json}##ESCALATE##. The chat
+# handler in app.py calls record_escalation_request() below, which:
+#   1. Writes a pending_requests.json entry for the customer
+#   2. Emails the owner with one-click Approve / Decline magic links
+# Owner clicks Approve → /escalate/approve/<token> marks the request resolved
+# and (if visitor email present) sends a confirmation back to the visitor.
+# Decline path is symmetric.
+
+import secrets
+
+
+def _pending_requests_path(customer_id: str) -> Path:
+    return _cust_dir(customer_id) / 'pending_requests.json'
+
+
+def _approval_index_path() -> Path:
+    """Top-level token → {customer_id, request_id} index so the /escalate/...
+    endpoints can resolve a token without scanning every customer folder."""
+    return DATA_DIR / 'escalation_approval_index.json'
+
+
+def _index_approval_token(token: str, customer_id: str, request_id: str):
+    with _lock:
+        idx = _read(_approval_index_path(), {})
+        idx[token] = {'customer_id': customer_id, 'request_id': request_id,
+                      'created_at': _now_iso()}
+        _atomic_write(_approval_index_path(), idx)
+
+
+def _lookup_approval_token(token: str) -> dict:
+    idx = _read(_approval_index_path(), {})
+    return idx.get(token, {})
+
+
+def _owner_email_for(customer_id: str) -> str:
+    """Find the owner's email — owner.json first, then business_profile.json."""
+    cdir = _cust_dir(customer_id)
+    owner_rec = _read(cdir / 'owner.json', {})
+    email = (owner_rec.get('owner_email') or '').strip()
+    if email:
+        return email
+    profile = _read(cdir / 'business_profile.json', {})
+    return (profile.get('contact_email') or profile.get('email') or '').strip()
+
+
+def _business_name_for(customer_id: str) -> str:
+    profile = _read(_cust_dir(customer_id) / 'business_profile.json', {})
+    return (profile.get('name') or '').strip() or customer_id
+
+
+def record_escalation_request(customer_id: str, intent: dict,
+                              session_id: str = '', page_url: str = '') -> dict:
+    """Save a pending escalation request and email the owner. Returns
+    {'ok': True, 'request_id': ..., 'approval_token': ...} on success."""
+    request_type = (intent.get('request_type') or 'general').strip().lower()
+    visitor_name = (intent.get('visitor_name') or '').strip()
+    visitor_phone = (intent.get('visitor_phone') or '').strip()
+    visitor_email = (intent.get('visitor_email') or '').strip()
+    details = (intent.get('details') or '').strip()
+    when_text = (intent.get('when') or '').strip()
+
+    if not visitor_name:
+        return {'ok': False, 'error': 'visitor_name required'}
+    if not visitor_phone and not visitor_email:
+        return {'ok': False, 'error': 'phone or email required'}
+
+    request_id = uuid.uuid4().hex[:12]
+    approval_token = secrets.token_urlsafe(24)
+    record = {
+        'id': request_id,
+        'customer_id': customer_id,
+        'request_type': request_type,
+        'visitor_name': visitor_name,
+        'visitor_phone': visitor_phone,
+        'visitor_email': visitor_email,
+        'details': details,
+        'when_text': when_text,
+        'session_id': session_id,
+        'page_url': page_url,
+        'created_at': _now_iso(),
+        'status': 'pending',
+        'approval_token': approval_token,
+        'approved_at': '',
+        'declined_at': '',
+    }
+    with _lock:
+        path = _pending_requests_path(customer_id)
+        items = _read(path, [])
+        items.append(record)
+        _atomic_write(path, items)
+        _index_approval_token(approval_token, customer_id, request_id)
+
+    # Fire the owner email — best-effort. Even if the email fails, the
+    # request is in pending_requests.json and the owner dashboard will show it.
+    try:
+        _send_owner_escalation_email(customer_id, record)
+    except Exception as e:
+        log.warning('escalation owner email failed for %s: %s', customer_id, e)
+
+    return {'ok': True, 'request_id': request_id, 'approval_token': approval_token}
+
+
+def _send_owner_escalation_email(customer_id: str, record: dict) -> dict:
+    owner_email = _owner_email_for(customer_id)
+    if not owner_email:
+        return {'ok': False, 'error': 'no owner email on file'}
+    biz = _business_name_for(customer_id)
+    base = _brain_url()
+    approve_url = f"{base}/escalate/approve/{record['approval_token']}"
+    decline_url = f"{base}/escalate/decline/{record['approval_token']}"
+
+    type_label = {
+        'appointment': 'New appointment request',
+        'order':       'New order request',
+        'reservation': 'New reservation request',
+        'quote':       'New quote request',
+        'general':     'New request',
+    }.get(record['request_type'], 'New request')
+
+    contact_lines = []
+    if record.get('visitor_phone'):
+        contact_lines.append(f"Phone: {record['visitor_phone']}")
+    if record.get('visitor_email'):
+        contact_lines.append(f"Email: {record['visitor_email']}")
+    contact_block = '\n'.join(contact_lines) or '(no contact — visitor anonymous)'
+
+    subject = f"[Orby] {type_label} from {record.get('visitor_name', 'visitor')}"
+
+    text_body = f"""{type_label} via your Orby chat on {biz}:
+
+From: {record.get('visitor_name', '(no name)')}
+{contact_block}
+
+What they want:
+{record.get('details') or '(no details captured)'}
+
+When:
+{record.get('when_text') or '(no time given)'}
+
+✓ Approve (sends confirmation to the visitor if they gave an email):
+{approve_url}
+
+✗ Decline (sends a polite decline to the visitor):
+{decline_url}
+
+— Orby AI"""
+
+    extra_rows = ''
+    if record.get('visitor_phone'):
+        extra_rows += f'<tr><td><strong>Phone:</strong></td><td>{record["visitor_phone"]}</td></tr>'
+    if record.get('visitor_email'):
+        extra_rows += f'<tr><td><strong>Email:</strong></td><td>{record["visitor_email"]}</td></tr>'
+    when_row = ''
+    if record.get('when_text'):
+        when_row = f'<tr><td><strong>When:</strong></td><td>{record["when_text"]}</td></tr>'
+
+    html_body = f"""<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
+  <h2 style="color:#d4a017;margin:0 0 8px;">{type_label}</h2>
+  <p style="color:#444;margin:0 0 16px;">via your Orby chat on <strong>{biz}</strong></p>
+  <table cellpadding="8" cellspacing="0" style="border-collapse:collapse;width:100%;background:#f7f7fa;border-radius:8px;">
+    <tr><td><strong>From:</strong></td><td>{record.get('visitor_name', '(no name)')}</td></tr>
+    {extra_rows}
+    <tr><td valign="top"><strong>Wants:</strong></td><td>{record.get('details') or '(no details captured)'}</td></tr>
+    {when_row}
+  </table>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="{approve_url}" style="display:inline-block;padding:14px 28px;background:#16a34a;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;margin:0 8px;">✓ Approve</a>
+    <a href="{decline_url}" style="display:inline-block;padding:14px 28px;background:#dc2626;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;margin:0 8px;">✗ Decline</a>
+  </div>
+  <p style="color:#888;font-size:13px;margin-top:24px;">
+    Approving sends a confirmation back to the visitor (if they gave an email).
+    Declining sends them a polite "not this time" note.
+  </p>
+</div>"""
+
+    return send_email(owner_email, subject, text_body, html_body)
+
+
+def _send_visitor_resolution_email(customer_id: str, record: dict, status: str) -> dict:
+    """Send the visitor a confirm or decline note. Silent no-op if no email."""
+    visitor_email = (record.get('visitor_email') or '').strip()
+    if not visitor_email:
+        return {'ok': False, 'error': 'no visitor email — silent skip'}
+    biz = _business_name_for(customer_id)
+    if status == 'approved':
+        subject = f"✓ {biz} received your request"
+        text_body = f"""Hi {record.get('visitor_name', 'there')},
+
+{biz} got your request:
+  {record.get('details') or '(your message)'}
+
+They'll be in touch shortly to confirm the details. If you need to reach
+them sooner, reply to this email and they'll see it.
+
+— sent on behalf of {biz} by Orby AI"""
+    else:
+        subject = f"{biz} couldn't accommodate this time"
+        text_body = f"""Hi {record.get('visitor_name', 'there')},
+
+Thanks for reaching out to {biz}. They weren't able to accommodate this
+particular request. If you'd like to try a different time or a different
+ask, just reply to this email and they'll see it.
+
+— sent on behalf of {biz} by Orby AI"""
+    return send_email(visitor_email, subject, text_body, '')
+
+
+def _resolve_escalation(token: str, new_status: str) -> tuple:
+    """Mark a request approved/declined by token. Returns (record, error_msg)."""
+    if new_status not in ('approved', 'declined'):
+        return None, 'invalid status'
+    info = _lookup_approval_token(token)
+    if not info:
+        return None, 'unknown or expired token'
+    customer_id = info.get('customer_id', '')
+    request_id = info.get('request_id', '')
+    if not customer_id or not request_id:
+        return None, 'corrupt token'
+    with _lock:
+        path = _pending_requests_path(customer_id)
+        items = _read(path, [])
+        target = None
+        for it in items:
+            if it.get('id') == request_id:
+                target = it
+                break
+        if not target:
+            return None, 'request not found'
+        if target.get('status') != 'pending':
+            return target, 'already resolved'
+        target['status'] = new_status
+        target['approved_at' if new_status == 'approved' else 'declined_at'] = _now_iso()
+        _atomic_write(path, items)
+    try:
+        _send_visitor_resolution_email(customer_id, target, new_status)
+    except Exception as e:
+        log.warning('visitor resolution email failed: %s', e)
+    return target, ''
+
+
+def _escalation_landing_html(action: str, record: dict, err: str) -> str:
+    if err and err != 'already resolved':
+        return f"""<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:60px auto;padding:24px;text-align:center;color:#111;">
+  <h1 style="color:#dc2626;">Couldn't process</h1>
+  <p>{err}</p>
+  <p style="color:#888;font-size:13px;">If you think this is wrong, contact franklstreet@yahoo.com.</p>
+</body></html>"""
+    if err == 'already resolved':
+        return f"""<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:60px auto;padding:24px;text-align:center;color:#111;">
+  <h1 style="color:#888;">Already handled</h1>
+  <p>This request was already {record.get('status', 'handled')}.</p>
+</body></html>"""
+    visitor_name = (record or {}).get('visitor_name', 'the visitor')
+    if action == 'approved':
+        return f"""<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:60px auto;padding:24px;text-align:center;color:#111;">
+  <h1 style="color:#16a34a;">✓ Approved</h1>
+  <p>{visitor_name} has been sent a confirmation. You can take it from here.</p>
+</body></html>"""
+    return f"""<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:520px;margin:60px auto;padding:24px;text-align:center;color:#111;">
+  <h1 style="color:#888;">Declined</h1>
+  <p>{visitor_name} has been sent a polite decline. Nothing further needed.</p>
+</body></html>"""
+
+
+@bp.get('/escalate/approve/<token>')
+def escalate_approve(token):
+    record, err = _resolve_escalation(token, 'approved')
+    return _escalation_landing_html('approved', record or {}, err)
+
+
+@bp.get('/escalate/decline/<token>')
+def escalate_decline(token):
+    record, err = _resolve_escalation(token, 'declined')
+    return _escalation_landing_html('declined', record or {}, err)
+
+
+@bp.get('/api/customer/<customer_id>/pending-requests')
+def get_pending_requests(customer_id):
+    """Owner dashboard view of all escalation requests for this customer."""
+    items = _read(_pending_requests_path(customer_id), [])
+    return jsonify({'ok': True, 'count': len(items), 'requests': items})
+
+
 # Module-only — no standalone server. Use register_bridge_routes(app) from the
 # host Flask application (see twickell_deploy/app.py for the call site).
