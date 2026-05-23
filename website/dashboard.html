@@ -214,8 +214,20 @@
       <label><span class="lbl">Services (comma-separated)</span><textarea id="prof-services" placeholder="e.g., Plumbing, Drain Cleaning, Water Heater Install"></textarea></label>
       <label><span class="lbl">Service Area</span><input type="text" id="prof-area" placeholder="e.g., Reno, Sparks, Carson City" /></label>
       <label><span class="lbl">Owner Name</span><input type="text" id="prof-owner" /></label>
-      <button class="btn" id="saveProfile">Save Profile</button>
     </div>
+
+    <div class="card">
+      <div class="card-title">Action URLs (optional)</div>
+      <div class="muted" style="margin-bottom:14px;">
+        When a visitor wants to pay, book, get a quote, or order, Orby will share the matching URL below. Leave blank if you don't have one — Orby will escalate the request to you instead.
+      </div>
+      <label><span class="lbl">Checkout / Payment URL</span><input type="text" id="prof-checkout-url" placeholder="https://your-payment-page.com" /></label>
+      <label><span class="lbl">Booking / Appointment URL</span><input type="text" id="prof-booking-url" placeholder="https://calendly.com/yourname or your booking page" /></label>
+      <label><span class="lbl">Quote / Contact Form URL</span><input type="text" id="prof-quote-url" placeholder="https://your-site.com/quote" /></label>
+      <label><span class="lbl">Menu / Order URL</span><input type="text" id="prof-menu-url" placeholder="https://your-online-order-page.com" /></label>
+    </div>
+
+    <button class="btn" id="saveProfile">Save Profile</button>
   </div>
 
   <div class="panel" id="panel-embed">
@@ -382,6 +394,11 @@
     var area = p.service_area || [];
     $('prof-area').value = Array.isArray(area) ? area.join(', ') : String(area || '');
     $('prof-owner').value = p.owner_name || p.owner || '';
+    // Action URLs (optional)
+    if ($('prof-checkout-url')) $('prof-checkout-url').value = p.checkout_url || '';
+    if ($('prof-booking-url'))  $('prof-booking-url').value  = p.booking_url  || '';
+    if ($('prof-quote-url'))    $('prof-quote-url').value    = p.quote_form_url || p.quote_url || '';
+    if ($('prof-menu-url'))     $('prof-menu-url').value     = p.menu_url     || '';
   }
 
   $('saveProfile').addEventListener('click', function () {
@@ -398,6 +415,10 @@
       services: $('prof-services').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
       service_area: $('prof-area').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
       owner_name: $('prof-owner').value.trim(),
+      checkout_url:   ($('prof-checkout-url') || {}).value ? $('prof-checkout-url').value.trim() : '',
+      booking_url:    ($('prof-booking-url')  || {}).value ? $('prof-booking-url').value.trim()  : '',
+      quote_form_url: ($('prof-quote-url')    || {}).value ? $('prof-quote-url').value.trim()    : '',
+      menu_url:       ($('prof-menu-url')     || {}).value ? $('prof-menu-url').value.trim()     : '',
     };
     api('/api/dashboard/update-profile', { method: 'POST', body: { updates: updates } })
       .then(function (data) {

@@ -2859,6 +2859,33 @@ def _build_customer_system_prompt(profile: dict, product: str) -> str:
     contact_email = _sanitize_for_prompt(profile.get('contact_email', '') or profile.get('email', ''), 80)
     owner = _sanitize_for_prompt(profile.get('owner_name', '') or profile.get('owner', ''), 80)
     biz_type = _sanitize_for_prompt(profile.get('business_type', '') or profile.get('industry', ''), 80)
+    # Owner-configured action URLs (set in the dashboard). Empty string if unset.
+    checkout_url = _sanitize_for_prompt(profile.get('checkout_url', ''), 200)
+    booking_url  = _sanitize_for_prompt(profile.get('booking_url', ''), 200)
+    quote_url    = _sanitize_for_prompt(profile.get('quote_form_url', '') or profile.get('quote_url', ''), 200)
+    menu_url     = _sanitize_for_prompt(profile.get('menu_url', ''), 200)
+
+    # Action URLs block — only included if the owner has set at least one.
+    # Lets Orby hand off to the customer's existing payment/booking flows.
+    action_url_lines = []
+    if checkout_url:
+        action_url_lines.append(f'- Checkout / payment page: {checkout_url}')
+    if booking_url:
+        action_url_lines.append(f'- Booking / appointment page: {booking_url}')
+    if quote_url:
+        action_url_lines.append(f'- Quote / contact form: {quote_url}')
+    if menu_url:
+        action_url_lines.append(f'- Menu / order page: {menu_url}')
+    action_urls_block = ''
+    if action_url_lines:
+        action_urls_block = (
+            "\nACTION URLS — share these in chat when a visitor is ready to act:\n"
+            + '\n'.join(action_url_lines)
+            + "\n\nWhen a visitor wants to pay / book / get a quote / order, give them the\n"
+              "matching URL above. Example: 'You can book a time here: <URL> — want me to\n"
+              "walk through what to expect first?' NEVER make up a URL. Only use what's\n"
+              "listed above; if no matching URL is set, ESCALATE the request instead.\n"
+        )
 
     # Build the base prompt
     prompt = f"""You are Orby — the AI Website Controller running on the website of {biz_name}.
@@ -2873,7 +2900,7 @@ WHAT YOU KNOW ABOUT {biz_name.upper()}:
 - Contact phone: {contact_phone or '—'}
 - Contact email: {contact_email or '—'}
 - Owner: {owner or '—'}
-"""
+{action_urls_block}"""
 
     # Layer in industry pack content if one matches
     pack = _load_industry_pack(biz_type)
