@@ -2720,31 +2720,58 @@ def _capture_lead_if_ready(customer_id: str, signals: dict, session_id: str,
             leads.append(lead)
             _atomic_write(leads_path, leads)
 
-        # Email the owner immediately (high urgency goes first)
+        # Email the owner immediately (high urgency goes first). Sends via
+        # Resend (HF blocks outbound SMTP so Gmail-only would silently fail).
         try:
             from bridge_routes import _owner_path, send_email
             owner_rec = _read(_owner_path(customer_id), {})
             owner_email = owner_rec.get('owner_email', '')
             if owner_email:
                 biz = (profile or {}).get('name', 'your business')
-                urgency_label = lead['urgency'].upper() if lead['urgency'] == 'high' else lead['urgency'].title()
+                urgency_high = lead['urgency'] == 'high'
+                urgency_label = 'HIGH PRIORITY' if urgency_high else 'New'
                 subj = f"[{urgency_label}] New lead for {biz}"
-                body = f"""Orby just captured a new lead on your website:
+                dashboard_url = _dashboard_url_for(customer_id)
+                text_body = f"""Orby just captured a new lead on your website:
 
-Name:        {lead['name'] or '(not given yet)'}
-Phone:       {lead['phone'] or '(not given yet)'}
-Email:       {lead['email'] or '(not given yet)'}
-Urgency:     {lead['urgency']}
-Interest:    {lead['service_interest'] or '(unspecified)'}
-Page:        {lead['page_url'] or '(unknown)'}
-Time:        {lead['created_at']}
+Name:     {lead['name'] or '(not given yet)'}
+Phone:    {lead['phone'] or '(not given yet)'}
+Email:    {lead['email'] or '(not given yet)'}
+Urgency:  {lead['urgency']}
+Interest: {lead['service_interest'] or '(unspecified)'}
+Page:     {lead['page_url'] or '(unknown)'}
+Time:     {lead['created_at']}
 
 See the full conversation context in your dashboard:
-{_dashboard_url_for(customer_id)}
+{dashboard_url}
 
 — Orby AI
 """
-                send_email(owner_email, subj, body)
+                # Build clean HTML version
+                accent = '#dc2626' if urgency_high else '#d4a017'
+                header = '🚨 HIGH PRIORITY lead' if urgency_high else 'New lead'
+                _empty = '<em style="color:#888">(not given yet)</em>'
+                def _row(k, v):
+                    cell = v if v else _empty
+                    return f'<tr><td style="padding:6px 12px;color:#666;"><strong>{k}:</strong></td><td style="padding:6px 12px;color:#111;">{cell}</td></tr>'
+                html_body = f"""<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#111;">
+  <h2 style="color:{accent};margin:0 0 8px;">{header}</h2>
+  <p style="color:#444;margin:0 0 16px;">on your Orby chat at <strong>{biz}</strong></p>
+  <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;background:#f7f7fa;border-radius:8px;overflow:hidden;">
+    {_row('Name', lead['name'])}
+    {_row('Phone', lead['phone'])}
+    {_row('Email', lead['email'])}
+    {_row('Interest', lead['service_interest'])}
+    {_row('Urgency', lead['urgency'])}
+    {_row('Page', lead['page_url'])}
+    {_row('Time', lead['created_at'])}
+  </table>
+  <div style="margin:24px 0;text-align:center;">
+    <a href="{dashboard_url}" style="display:inline-block;padding:12px 24px;background:#d4a017;color:#fff;text-decoration:none;border-radius:8px;font-weight:700;">Open dashboard →</a>
+  </div>
+  <p style="color:#888;font-size:13px;margin-top:24px;">— Orby AI</p>
+</div>"""
+                send_email(owner_email, subj, text_body, html_body)
         except Exception as e:
             log.warning('lead email failed for %s: %s', customer_id, e)
         return True
