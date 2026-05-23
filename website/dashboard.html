@@ -214,6 +214,7 @@
       <label><span class="lbl">Services (comma-separated)</span><textarea id="prof-services" placeholder="e.g., Plumbing, Drain Cleaning, Water Heater Install"></textarea></label>
       <label><span class="lbl">Service Area</span><input type="text" id="prof-area" placeholder="e.g., Reno, Sparks, Carson City" /></label>
       <label><span class="lbl">Owner Name</span><input type="text" id="prof-owner" /></label>
+      <label><span class="lbl">Owner Mobile (for SMS notifications, optional)</span><input type="tel" id="prof-owner-phone" placeholder="+15551234567" /></label>
     </div>
 
     <div class="card">
@@ -394,6 +395,7 @@
     var area = p.service_area || [];
     $('prof-area').value = Array.isArray(area) ? area.join(', ') : String(area || '');
     $('prof-owner').value = p.owner_name || p.owner || '';
+    if ($('prof-owner-phone')) $('prof-owner-phone').value = p.owner_phone || '';
     // Action URLs (optional)
     if ($('prof-checkout-url')) $('prof-checkout-url').value = p.checkout_url || '';
     if ($('prof-booking-url'))  $('prof-booking-url').value  = p.booking_url  || '';
@@ -415,6 +417,7 @@
       services: $('prof-services').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
       service_area: $('prof-area').value.split(',').map(function (s) { return s.trim(); }).filter(Boolean),
       owner_name: $('prof-owner').value.trim(),
+      owner_phone: ($('prof-owner-phone') || {}).value ? $('prof-owner-phone').value.trim() : '',
       checkout_url:   ($('prof-checkout-url') || {}).value ? $('prof-checkout-url').value.trim() : '',
       booking_url:    ($('prof-booking-url')  || {}).value ? $('prof-booking-url').value.trim()  : '',
       quote_form_url: ($('prof-quote-url')    || {}).value ? $('prof-quote-url').value.trim()    : '',

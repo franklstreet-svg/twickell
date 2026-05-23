@@ -1790,7 +1790,93 @@ def record_escalation_request(customer_id: str, intent: dict,
     except Exception as e:
         log.warning('escalation owner email failed for %s: %s', customer_id, e)
 
+    # ALSO try SMS if Twilio creds + owner phone are configured (env-gated;
+    # silent no-op if anything is missing). Additive layer on top of email —
+    # owner gets both channels when they want fast paging.
+    try:
+        _send_owner_escalation_sms(customer_id, record)
+    except Exception as e:
+        log.warning('escalation owner SMS failed for %s: %s', customer_id, e)
+
     return {'ok': True, 'request_id': request_id, 'approval_token': approval_token}
+
+
+def _twilio_config() -> dict:
+    """Read Twilio creds from env. Returns dict with all 3 keys; if any are
+    missing the SMS path is silently disabled."""
+    return {
+        'account_sid': os.environ.get('TWILIO_ACCOUNT_SID', '').strip(),
+        'auth_token':  os.environ.get('TWILIO_AUTH_TOKEN', '').strip(),
+        'from_number': os.environ.get('TWILIO_FROM_NUMBER', '').strip(),
+    }
+
+
+def _owner_phone_for(customer_id: str) -> str:
+    """Find the owner's notification phone — owner.json first, then
+    business_profile (owner_phone, then contact_phone as fallback)."""
+    cdir = _cust_dir(customer_id)
+    owner_rec = _read(cdir / 'owner.json', {})
+    phone = (owner_rec.get('owner_phone') or '').strip()
+    if phone:
+        return phone
+    profile = _read(cdir / 'business_profile.json', {})
+    return (profile.get('owner_phone') or profile.get('contact_phone') or profile.get('phone') or '').strip()
+
+
+def _send_twilio_sms(to_phone: str, body: str) -> dict:
+    """Low-level Twilio SMS send via REST API. Returns {'ok': bool, ...}.
+    No-op (silent) when Twilio creds aren't configured — caller doesn't
+    need to check first."""
+    cfg = _twilio_config()
+    if not (cfg['account_sid'] and cfg['auth_token'] and cfg['from_number']):
+        return {'ok': False, 'error': 'twilio not configured', 'skipped': True}
+    if not to_phone:
+        return {'ok': False, 'error': 'no destination phone'}
+    try:
+        r = _requests.post(
+            f"https://api.twilio.com/2010-04-01/Accounts/{cfg['account_sid']}/Messages.json",
+            auth=(cfg['account_sid'], cfg['auth_token']),
+            data={'From': cfg['from_number'], 'To': to_phone, 'Body': body[:1500]},
+            timeout=15,
+        )
+        if r.status_code in (200, 201):
+            data = r.json() if r.content else {}
+            log.info('Twilio SMS sent: to=%s sid=%s', to_phone, data.get('sid', ''))
+            return {'ok': True, 'sid': data.get('sid', '')}
+        log.warning('Twilio SMS failed: status=%s body=%s', r.status_code, r.text[:300])
+        return {'ok': False, 'error': f'Twilio HTTP {r.status_code}'}
+    except Exception as e:
+        log.warning('Twilio SMS exception: %s', e)
+        return {'ok': False, 'error': str(e)}
+
+
+def _send_owner_escalation_sms(customer_id: str, record: dict) -> dict:
+    """Send the owner a short SMS about a new escalation request. Includes
+    the Approve URL so the owner can act from their phone."""
+    cfg = _twilio_config()
+    if not (cfg['account_sid'] and cfg['auth_token'] and cfg['from_number']):
+        return {'ok': False, 'skipped': True, 'error': 'twilio not configured'}
+    to_phone = _owner_phone_for(customer_id)
+    if not to_phone:
+        return {'ok': False, 'error': 'no owner phone on file'}
+    biz = _business_name_for(customer_id)
+    base = _brain_url()
+    approve_url = f"{base}/escalate/approve/{record['approval_token']}"
+    type_label = {
+        'appointment': 'appointment',
+        'order':       'order',
+        'reservation': 'reservation',
+        'quote':       'quote',
+        'general':     'request',
+    }.get(record['request_type'], 'request')
+    visitor_name = record.get('visitor_name', 'visitor')
+    contact = record.get('visitor_phone', '') or record.get('visitor_email', '')
+    details = (record.get('details') or '')[:80]
+    body = (
+        f"[Orby/{biz}] New {type_label} from {visitor_name} ({contact}): "
+        f"{details}\nApprove: {approve_url}"
+    )
+    return _send_twilio_sms(to_phone, body)
 
 
 def _send_owner_escalation_email(customer_id: str, record: dict) -> dict:
