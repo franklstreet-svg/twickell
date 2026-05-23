@@ -230,6 +230,10 @@ def _offline_gate():
     # is alive (otherwise it'll be marked unhealthy and rebooted in a loop).
     if path in ('/health', '/api/system-health'):
         return None
+    # FST LLC freelance services page is live — the demo chat endpoint stays
+    # active even though everything else is paused.
+    if path == '/fst-demo-chat':
+        return None
     # API / widget / chat endpoints — return JSON so consuming code (like the
     # embed widget on customer sites) gets something it can parse instead of
     # the HTML offline page.
@@ -240,11 +244,241 @@ def _offline_gate():
         return jsonify({
             'ok': False,
             'offline': True,
-            'error': 'Orby AI is paused — not taking new requests right now. Contact franklstreet@yahoo.com for updates.',
+            'error': 'Orby AI is paused — not taking new requests right now. Contact frankrstreet@yahoo.com for updates.',
         }), 503
     # Everything else (homepage, dashboard, legal pages, static files): serve
     # the offline HTML page.
     return send_from_directory(WEBSITE_DIR, 'offline.html'), 503
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# FST LLC DEMO CHAT — lives at /fst-demo-chat on twickell.com
+# Lightweight chat for the FST LLC freelance services page. Uses the cheap
+# Llama-3.1-8B-instant model on HF (about a tenth of a penny per turn).
+# Aggressive rate limits + daily total budget cap so a runaway can't drain
+# Frank's HF credit. Captures email/phone from visitor messages and emails
+# Frank instantly via Resend.
+# ───────────────────────────────────────────────────────────────────────────
+
+FST_DAILY_MSG_CAP = 1000           # site-wide messages per day (auto-pauses past this)
+FST_SESSION_MSG_CAP = 12           # per visitor session
+FST_IP_HOURLY_CAP = 30             # per IP per hour
+FST_DAILY_COUNTER = DATA_DIR / 'fst_daily_counter.json'
+FST_LEADS_PATH = DATA_DIR / 'fst_leads.json'
+FST_SESSION_COUNTS = {}            # in-memory: session_id → turn count
+FST_IP_COUNTS = {}                 # in-memory: ip → [timestamps within last hour]
+FST_EMAIL_IN_TEXT = re.compile(r'[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}')
+FST_PHONE_IN_TEXT = re.compile(r'(?:\+?1[-.\s]?)?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})')
+
+FST_SYSTEM_PROMPT = """You are Orby — the demo assistant on twickell.com for FST LLC, a Reno, Nevada freelance tech-services business run by Frank Street.
+
+YOUR JOB: answer questions about FST LLC's services, prices, and what Frank can do. When someone seems genuinely interested, ask for their name and email or phone so Frank can follow up. Be friendly, concise, and honest.
+
+WHAT FST LLC DOES (the only services and prices you may quote — never invent more):
+- Online payments / Stripe setup: $400
+- Chat widget for your site: $300
+- Contact / booking forms: $200
+- Email automation: $250
+- Website fixes & mobile optimization: $300
+- Document help (mail merge, templates, PDFs): $200
+- Excel / Google Sheets help: $200
+- Google Business Profile setup: $150
+- Online booking setup (Calendly / Acuity / Square): $250
+- Business email setup (Google Workspace, etc): $200
+- General small-business tech help: $60/hour
+
+HOW FRANK WORKS: flat fees, no upfront deposit for projects under $500, most jobs done in 2-5 days, based in Reno.
+
+LEAD CAPTURE: when a visitor describes a real need, ask for their name and email or phone so Frank can reach out. If they share contact info, just acknowledge and tell them Frank will email them shortly — the system captures it automatically.
+
+RULES:
+- 2-3 sentences per reply, no more
+- No bullet lists, no markdown headers
+- Never invent services or prices not in the list above
+- Never claim to be Frank — you're his demo assistant
+- If asked to do something off-topic, briefly steer back: "I'm Frank's demo assistant, so I mostly help with questions about FST LLC's services — anything I can help you with there?"
+- If asked technical questions Frank could handle but you don't know specifics, say: "That's a great question for Frank directly — what's the best email or phone for him to reach you?"
+"""
+
+
+def _fst_today_key():
+    from datetime import datetime as _dt, timezone as _tz
+    return _dt.now(_tz.utc).strftime('%Y-%m-%d')
+
+
+def _fst_load_daily():
+    try:
+        d = json.loads(FST_DAILY_COUNTER.read_text())
+    except Exception:
+        d = {}
+    today = _fst_today_key()
+    if d.get('date') != today:
+        d = {'date': today, 'message_count': 0, 'lead_count': 0}
+    return d
+
+
+def _fst_save_daily(d):
+    try:
+        FST_DAILY_COUNTER.parent.mkdir(parents=True, exist_ok=True)
+        FST_DAILY_COUNTER.write_text(json.dumps(d, indent=2))
+    except Exception as e:
+        log.warning('fst daily counter write failed: %s', e)
+
+
+def _fst_check_ip_limit(ip):
+    """Return True if this IP is under the hourly cap, False if over."""
+    now = time.time()
+    bucket = FST_IP_COUNTS.get(ip, [])
+    bucket = [t for t in bucket if now - t < 3600]
+    if len(bucket) >= FST_IP_HOURLY_CAP:
+        FST_IP_COUNTS[ip] = bucket
+        return False
+    bucket.append(now)
+    FST_IP_COUNTS[ip] = bucket
+    if len(FST_IP_COUNTS) > 5000:
+        cutoff = now - 7200
+        for k in list(FST_IP_COUNTS.keys()):
+            FST_IP_COUNTS[k] = [t for t in FST_IP_COUNTS[k] if t > cutoff]
+            if not FST_IP_COUNTS[k]:
+                del FST_IP_COUNTS[k]
+    return True
+
+
+def _fst_extract_lead_signals(text):
+    """Pull email or phone from a visitor message."""
+    out = {}
+    em = FST_EMAIL_IN_TEXT.search(text)
+    if em:
+        out['email'] = em.group(0).rstrip('.,;:!?')
+    ph = FST_PHONE_IN_TEXT.search(text)
+    if ph:
+        out['phone'] = f"({ph.group(1)}) {ph.group(2)}-{ph.group(3)}"
+    return out
+
+
+def _fst_save_lead(lead):
+    """Save lead to disk + email Frank via Resend."""
+    try:
+        leads = []
+        if FST_LEADS_PATH.exists():
+            try:
+                leads = json.loads(FST_LEADS_PATH.read_text())
+            except Exception:
+                leads = []
+        leads.append(lead)
+        FST_LEADS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        FST_LEADS_PATH.write_text(json.dumps(leads, indent=2))
+    except Exception as e:
+        log.warning('FST lead write failed: %s', e)
+
+    # Email Frank
+    try:
+        from bridge_routes import send_email
+        subj = f"[FST LLC] New chat lead — {lead.get('email') or lead.get('phone') or 'no contact'}"
+        body = f"""Someone chatted with Orby on twickell.com and gave you their contact info:
+
+Email: {lead.get('email', '(not shared)')}
+Phone: {lead.get('phone', '(not shared)')}
+Session: {lead.get('session_id', '')}
+Captured at: {lead.get('captured_at', '')}
+
+Their messages so far:
+{chr(10).join('  • ' + m for m in lead.get('messages', [])[-6:])}
+
+Reply to them directly or take action.
+
+— Orby AI on twickell.com
+"""
+        send_email('frankrstreet@yahoo.com', subj, body, '')
+    except Exception as e:
+        log.warning('FST lead email failed: %s', e)
+
+
+@app.route('/fst-demo-chat', methods=['POST'])
+def fst_demo_chat():
+    # IP rate limit
+    ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or 'unknown').split(',')[0].strip()
+    if not _fst_check_ip_limit(ip):
+        return jsonify({'ok': False, 'rate_limited': True,
+                        'reply': "Slow down a bit — try again in a minute, or email frankrstreet@yahoo.com."})
+
+    # Daily site-wide cap
+    daily = _fst_load_daily()
+    if daily['message_count'] >= FST_DAILY_MSG_CAP:
+        return jsonify({'ok': False, 'budget_exceeded': True,
+                        'reply': "Demo's tapped out for today — email frankrstreet@yahoo.com to talk to Frank directly."})
+
+    data = request.get_json(silent=True) or {}
+    user_message = (data.get('message') or '').strip()[:400]
+    session_id = (data.get('session_id') or '').strip()[:64] or f'anon_{ip}'
+
+    if not user_message:
+        return jsonify({'ok': False, 'error': 'empty message'}), 400
+
+    # Per-session cap
+    turns_so_far = FST_SESSION_COUNTS.get(session_id, 0)
+    if turns_so_far >= FST_SESSION_MSG_CAP:
+        return jsonify({'ok': False, 'session_capped': True,
+                        'reply': "I've covered as much as I can in one chat — email frankrstreet@yahoo.com to keep talking with Frank directly."})
+
+    # Extract lead signals BEFORE the LLM call
+    signals = _fst_extract_lead_signals(user_message)
+
+    # Call the cheap LLM directly via HF Router (force 8B model, NOT 70B)
+    reply = None
+    try:
+        hf_token = os.getenv('HF_TOKEN', os.getenv('HF_API_KEY', ''))
+        if hf_token:
+            r = _requests.post(
+                'https://router.huggingface.co/v1/chat/completions',
+                headers={'Authorization': f'Bearer {hf_token}'},
+                json={
+                    'model': 'meta-llama/Llama-3.1-8B-Instruct',
+                    'messages': [
+                        {'role': 'system', 'content': FST_SYSTEM_PROMPT},
+                        {'role': 'user', 'content': user_message},
+                    ],
+                    'max_tokens': 180,
+                    'temperature': 0.7,
+                },
+                timeout=20,
+            )
+            if r.status_code == 200:
+                reply = r.json()['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        log.warning('FST demo chat HF call failed: %s', e)
+
+    if not reply:
+        reply = ("I'm having a hiccup reaching the brain right now — "
+                 "email frankrstreet@yahoo.com and Frank will get back to you fast.")
+
+    # If lead signals were found, save + email Frank
+    if signals:
+        try:
+            from datetime import datetime as _dt, timezone as _tz
+            _fst_save_lead({
+                **signals,
+                'session_id': session_id,
+                'captured_at': _dt.now(_tz.utc).isoformat(),
+                'ip': ip,
+                'messages': [user_message],
+            })
+            daily['lead_count'] = daily.get('lead_count', 0) + 1
+        except Exception as e:
+            log.warning('FST lead save failed: %s', e)
+
+    # Update counters
+    FST_SESSION_COUNTS[session_id] = turns_so_far + 1
+    daily['message_count'] = daily.get('message_count', 0) + 1
+    _fst_save_daily(daily)
+    # Cap in-memory session dict size
+    if len(FST_SESSION_COUNTS) > 5000:
+        # naive — clear oldest half
+        keep = dict(list(FST_SESSION_COUNTS.items())[-2500:])
+        FST_SESSION_COUNTS.clear()
+        FST_SESSION_COUNTS.update(keep)
+
+    return jsonify({'ok': True, 'reply': reply, 'lead_captured': bool(signals)})
 
 
 def _get_profile_dir() -> str:
