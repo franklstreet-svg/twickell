@@ -1135,9 +1135,13 @@ def wc_checkout():
         return jsonify({'ok': False, 'error': 'Stripe not configured on the Bridge.'}), 503
     data = request.get_json(silent=True) or {}
 
-    # Legal acceptance gate — match the consumer purchase flow on twickell.com
+    # Legal acceptance gate — match the consumer purchase flow on twickell.com.
+    # legal_dir MUST match app.py:_LEGAL_DIR so wc_checkout reads what
+    # /api/legal_accept just wrote. Lives on the persistent /data volume
+    # (was /tmp, which got wiped between requests on HF Spaces and was
+    # silently causing this endpoint to 403 every time).
     acceptance_id = (data.get('acceptance_id') or '').strip()
-    legal_dir = Path('/tmp/orby_legal')
+    legal_dir = DATA_DIR / 'orby_legal'
     legal_record = {}
     if acceptance_id:
         legal_file = legal_dir / f'{acceptance_id}.json'

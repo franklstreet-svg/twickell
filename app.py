@@ -187,7 +187,17 @@ log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(levelname)s  %(message)s')
 
 WEBSITE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'website')
-SESSION_DIR = Path('/tmp/orby_sessions')
+
+# Persistent data dir — mirrors bridge_routes.DATA_DIR. On HF this resolves to
+# /data (the Storage Bucket); locally to ./data alongside this file. Used for
+# any data that must survive a container restart (B2B intent tokens, legal
+# acceptance records, etc.). /tmp on HF Spaces does NOT reliably survive
+# between requests — files written by /api/legal_accept disappeared before
+# /api/wc/checkout could read them.
+DATA_DIR = Path(os.environ.get('ORBI_DATA_DIR') or str(Path(__file__).resolve().parent / 'data'))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+SESSION_DIR = Path('/tmp/orby_sessions')  # short-lived chat sessions — OK on /tmp
 SESSION_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
@@ -1732,7 +1742,7 @@ You can use emojis sparingly (📞 💬 ✓). Don't use markdown headers in your
 
 _SCRAPE_MARKER_RE = re.compile(r'##SCRAPE_WEBSITE##(.*?)##SCRAPE_WEBSITE##', re.DOTALL)
 _LEGAL_MARKER_RE  = re.compile(r'##GO_TO_LEGAL##(.*?)##GO_TO_LEGAL##', re.DOTALL)
-_B2B_INTENT_DIR   = Path('/tmp/orby_b2b_intents')
+_B2B_INTENT_DIR   = DATA_DIR / 'orby_b2b_intents'   # persistent — survives container restart
 
 
 def _run_b2b_llm(history, system):
@@ -2505,8 +2515,8 @@ RULES:
 - Always end your message with: ##CONFIG##{"add":[],"remove":[]}##CONFIG## """
 
 
-_LEGAL_DIR = Path('/tmp/orby_legal')
-_DELIVERY_DIR = Path('/tmp/orby_deliveries')
+_LEGAL_DIR = DATA_DIR / 'orby_legal'          # persistent — survives container restart; bridge_routes.wc_checkout reads from the same path
+_DELIVERY_DIR = Path('/tmp/orby_deliveries')  # short-lived welcome-email queue — OK on /tmp
 _CONFIG_RE = re.compile(r'##CONFIG##(.*?)##CONFIG##', re.DOTALL)
 _ACTION_RE = re.compile(r'##ACTION##(.*?)##ACTION##', re.DOTALL)
 
