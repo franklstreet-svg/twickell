@@ -186,19 +186,49 @@ _GENERIC_NAMES = {'home', 'welcome', 'index', 'main', 'site', 'website', 'untitl
 
 
 def _clean_name(raw):
-    """Strip site-suffix patterns, generic words, weird chars."""
+    """Strip site-suffix patterns, generic words, and pick the BRAND side of a
+    separator-split title (e.g. "Pur Blum | Neighborhood Market in Reno" must
+    return "Pur Blum", not the tagline). Brands are conventionally 1-3 words,
+    don't contain interior prepositions, and come FIRST in the title — those
+    properties drive the scorer.
+    """
     if not raw:
         return ''
     v = _clean(raw)
-    # Split on common delimiters and prefer the LONGER side (the business name
-    # is usually longer than "Home" or "Welcome")
     parts = re.split(r'\s*[\|\-–—:]\s*', v)
-    parts = [p for p in parts if p and p.lower() not in _GENERIC_NAMES]
+    parts = [p.strip() for p in parts if p and p.strip().lower() not in _GENERIC_NAMES]
     if not parts:
         return ''
-    # Pick the longest non-generic chunk
-    parts.sort(key=len, reverse=True)
-    name = parts[0].strip()
+    if len(parts) == 1:
+        name = parts[0]
+    else:
+        # Brand-likeness score. Higher = more likely to be the brand.
+        # The old "pick longest" tiebreaker was biased toward marketing
+        # taglines ("Neighborhood Market in Reno") and against actual
+        # company names ("Pur Blum").
+        _PREPS = {'in', 'of', 'for', 'the', 'a', 'an', 'on', 'at', 'to', 'and', 'with', 'by', 'from'}
+        def _brand_score(p: str) -> int:
+            words = p.split()
+            wc = len(words)
+            low_words = [w.lower().strip(",.'’") for w in words]
+            s = 0
+            # Short phrases look more brand-like
+            if 1 <= wc <= 3:
+                s += 3
+            elif wc == 4:
+                s += 1
+            # Interior preposition/article = description tell
+            if not any(w in _PREPS for w in low_words):
+                s += 3
+            # Brand-suffix word in the phrase (LLC, Inc, Co, etc.) is a strong tell
+            if any(w in _NAME_SUFFIX_WORDS for w in low_words):
+                s += 2
+            return s
+        # Tie-break by first position (convention: brand comes before tagline)
+        scored = sorted(
+            ((-_brand_score(p), idx, p) for idx, p in enumerate(parts))
+        )
+        name = scored[0][2]
     # Drop trailing site-suffix words
     name = re.sub(r'\s+(?:official\s+site|home\s*page|website)\s*$', '', name, flags=re.IGNORECASE).strip()
     if 2 < len(name) < 80 and name.lower() not in _GENERIC_NAMES:
