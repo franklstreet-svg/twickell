@@ -417,6 +417,32 @@
     border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px;
   }
   #orby-send:disabled { opacity: 0.4; cursor: not-allowed; }
+  #orby-mic {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    color: var(--bg); border: none; width: 44px;
+    border-radius: 8px; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, box-shadow 0.2s;
+  }
+  #orby-mic.active {
+    background: linear-gradient(135deg, #ef4444, #f87171);
+    color: #fff;
+    animation: orby-mic-pulse 1.4s ease-in-out infinite;
+  }
+  #orby-mic.speaking {
+    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    color: #fff;
+  }
+  @keyframes orby-mic-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.6); }
+    50%     { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+  }
+  #orby-voice-status {
+    padding: 6px 12px; text-align: center;
+    font-size: 11px; color: var(--text-muted);
+    background: rgba(0,0,0,0.18);
+    border-top: 1px solid var(--border);
+  }
 </style>
 
 <button id="orby-bubble" onclick="orbyToggle()" aria-label="Chat with Orby">
@@ -436,9 +462,11 @@
     <div class="orby-msg bot">Hi! I'm Orby, Frank's demo assistant. I can answer questions about FST LLC's services, what things cost, and help you get in touch with Frank if something fits. What's on your mind?</div>
   </div>
   <div id="orby-input-row">
-    <input id="orby-input" type="text" placeholder="Type a question..." maxlength="400" />
+    <button id="orby-mic" onclick="orbyMicToggle()" title="Click to talk to Orby" aria-label="Toggle voice">🎤</button>
+    <input id="orby-input" type="text" placeholder="Type or click 🎤 to talk" maxlength="400" />
     <button id="orby-send" onclick="orbySend()">Send</button>
   </div>
+  <div id="orby-voice-status">🎤 Click the mic to talk — Orby will speak back</div>
 </div>
 
 <script>
@@ -482,6 +510,7 @@
       if (data.ok && data.reply) {
         orbyAdd('bot', data.reply);
         orbyTurns += 1;
+        if (orbyVoiceOn) orbySpeak(data.reply);
       } else if (data.budget_exceeded) {
         orbyAdd('system', "Demo's tapped out for today — email frankrstreet@yahoo.com and Frank will get back to you fast.");
       } else {
@@ -498,6 +527,144 @@
   document.getElementById('orby-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { e.preventDefault(); orbySend(); }
   });
+
+  // ── Voice (mic in + speaker out) ──────────────────────────────────────
+  const orbySR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let orbyVoiceOn = false;
+  let orbyRec = null;
+  let orbyRecActive = false;
+  let orbySpeaking = false;
+  let orbyVoice = null;
+
+  function orbyPickVoice() {
+    if (!window.speechSynthesis) return null;
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    // Prefer Microsoft Natural / Neural female voices, then any en-US female
+    return voices.find(v => /Online \(Natural\)/i.test(v.name) && /en[-_]US/i.test(v.lang))
+        || voices.find(v => /Neural/i.test(v.name) && /en[-_]US/i.test(v.lang))
+        || voices.find(v => /en[-_]US/i.test(v.lang) && /aria|jenny|samantha|allison|emma|zira|karen|victoria/i.test(v.name))
+        || voices.find(v => /en[-_]US/i.test(v.lang))
+        || voices[0];
+  }
+  if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = () => { orbyVoice = orbyPickVoice(); };
+    orbyVoice = orbyPickVoice();
+  }
+
+  function orbyVoiceStatus(text) {
+    const el = document.getElementById('orby-voice-status');
+    if (el) el.textContent = text;
+  }
+
+  function orbySetMicVisual(state) {
+    const b = document.getElementById('orby-mic');
+    if (!b) return;
+    b.classList.remove('active', 'speaking');
+    if (state === 'active') b.classList.add('active');
+    if (state === 'speaking') b.classList.add('speaking');
+  }
+
+  async function orbyMicToggle() {
+    if (!orbySR) {
+      orbyAdd('system', "Voice isn't supported in this browser — try Chrome or Edge, or just type below.");
+      return;
+    }
+    if (orbyVoiceOn) {
+      orbyVoiceOn = false;
+      orbyStopRec();
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      orbySpeaking = false;
+      orbySetMicVisual('off');
+      orbyVoiceStatus("🎤 Click the mic to talk — Orby will speak back");
+      return;
+    }
+    // Ask permission via a silent probe so the prompt is clean
+    try {
+      const probe = await navigator.mediaDevices.getUserMedia({ audio: true });
+      probe.getTracks().forEach(t => t.stop());
+    } catch (e) {
+      orbyAdd('system', "Mic permission denied. Enable mic in your browser settings, or type below.");
+      return;
+    }
+    orbyVoiceOn = true;
+    orbySetMicVisual('active');
+    orbyVoiceStatus("Listening… speak whenever you're ready.");
+    // Greet by voice on first activation
+    if (!window._orbyGreetedVocally) {
+      window._orbyGreetedVocally = true;
+      orbySpeak("Hi! I'm Orby — Frank's demo assistant. Ask me anything about FST LLC's services.");
+    } else {
+      setTimeout(orbyStartRec, 200);
+    }
+  }
+
+  function orbyStartRec() {
+    if (!orbyVoiceOn || orbySpeaking || orbyRecActive) return;
+    if (orbyRec) { try { orbyRec.abort(); } catch(e) {} }
+    orbyRec = new orbySR();
+    orbyRec.continuous = false;
+    orbyRec.interimResults = false;
+    orbyRec.lang = 'en-US';
+    orbyRec.onstart = () => {
+      orbyRecActive = true;
+      orbyVoiceStatus("Listening…");
+    };
+    orbyRec.onresult = (e) => {
+      const text = ((e.results[0] && e.results[0][0] && e.results[0][0].transcript) || '').trim();
+      if (text) {
+        document.getElementById('orby-input').value = text;
+        orbySend();
+      }
+    };
+    orbyRec.onerror = (e) => {
+      orbyRecActive = false;
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        orbyVoiceOn = false;
+        orbySetMicVisual('off');
+        orbyVoiceStatus("Mic permission denied — you can still type below.");
+      }
+    };
+    orbyRec.onend = () => {
+      orbyRecActive = false;
+      if (orbyVoiceOn && !orbySpeaking) setTimeout(orbyStartRec, 400);
+    };
+    try { orbyRec.start(); } catch(e) { orbyRecActive = false; }
+  }
+
+  function orbyStopRec() {
+    if (orbyRec) { try { orbyRec.abort(); } catch(e) {} orbyRec = null; }
+    orbyRecActive = false;
+  }
+
+  function orbySpeak(text) {
+    if (!window.speechSynthesis || !text) return;
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+    orbySpeaking = true;
+    orbyStopRec();
+    orbySetMicVisual('speaking');
+    orbyVoiceStatus("Orby is speaking…");
+    // Strip markdown asterisks etc. for cleaner TTS
+    const clean = String(text).replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
+    const utt = new SpeechSynthesisUtterance(clean);
+    if (orbyVoice) utt.voice = orbyVoice;
+    utt.rate = 1.05;
+    utt.pitch = 1.05;
+    utt.volume = 1.0;
+    utt.onend = () => {
+      orbySpeaking = false;
+      if (orbyVoiceOn) {
+        orbySetMicVisual('active');
+        orbyVoiceStatus("Listening… speak whenever you're ready.");
+        setTimeout(orbyStartRec, 250);
+      } else {
+        orbySetMicVisual('off');
+        orbyVoiceStatus("🎤 Click the mic to talk — Orby will speak back");
+      }
+    };
+    utt.onerror = utt.onend;
+    window.speechSynthesis.speak(utt);
+  }
 </script>
 
 </body>
