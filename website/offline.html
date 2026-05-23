@@ -637,33 +637,89 @@
     orbyRecActive = false;
   }
 
-  function orbySpeak(text) {
-    if (!window.speechSynthesis || !text) return;
-    try { window.speechSynthesis.cancel(); } catch(e) {}
+  let orbyCurrentAudio = null;
+
+  function orbyFinishSpeak() {
+    orbySpeaking = false;
+    if (orbyVoiceOn) {
+      orbySetMicVisual('active');
+      orbyVoiceStatus("Listening… speak whenever you're ready.");
+      setTimeout(orbyStartRec, 250);
+    } else {
+      orbySetMicVisual('off');
+      orbyVoiceStatus("🎤 Click the mic to talk — Orby will speak back");
+    }
+  }
+
+  async function orbySpeak(text) {
+    if (!text) return;
+    // Cancel anything currently playing
+    if (orbyCurrentAudio) {
+      try { orbyCurrentAudio.pause(); } catch(e) {}
+      orbyCurrentAudio = null;
+    }
+    if (window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch(e) {}
+    }
     orbySpeaking = true;
     orbyStopRec();
     orbySetMicVisual('speaking');
     orbyVoiceStatus("Orby is speaking…");
-    // Strip markdown asterisks etc. for cleaner TTS
+
+    // Strip markdown for cleaner TTS
     const clean = String(text).replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*]+)\*/g, '$1');
-    const utt = new SpeechSynthesisUtterance(clean);
-    if (orbyVoice) utt.voice = orbyVoice;
-    utt.rate = 1.05;
-    utt.pitch = 1.05;
-    utt.volume = 1.0;
-    utt.onend = () => {
-      orbySpeaking = false;
-      if (orbyVoiceOn) {
-        orbySetMicVisual('active');
-        orbyVoiceStatus("Listening… speak whenever you're ready.");
-        setTimeout(orbyStartRec, 250);
-      } else {
-        orbySetMicVisual('off');
-        orbyVoiceStatus("🎤 Click the mic to talk — Orby will speak back");
+
+    // Try server-side Edge TTS first (much better voice quality than browser default)
+    try {
+      const resp = await fetch('/tts', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ text: clean })
+      });
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        orbyCurrentAudio = audio;
+        // Wait for the audio to fully buffer before play — prevents the
+        // "gargling" sound from playing while bytes are still arriving.
+        await new Promise((res) => {
+          const go = () => res();
+          const timeoutId = setTimeout(go, 4000);
+          audio.oncanplaythrough = () => { clearTimeout(timeoutId); go(); };
+          audio.onerror = () => { clearTimeout(timeoutId); res(); };
+          try { audio.load(); } catch(e) {}
+        });
+        await new Promise((res) => {
+          audio.onended = () => {
+            URL.revokeObjectURL(url);
+            orbyCurrentAudio = null;
+            res();
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(url);
+            orbyCurrentAudio = null;
+            res();
+          };
+          audio.play().catch(() => res());
+        });
+        orbyFinishSpeak();
+        return;
       }
-    };
-    utt.onerror = utt.onend;
-    window.speechSynthesis.speak(utt);
+    } catch (e) { /* fall through to browser TTS */ }
+
+    // Fallback — browser speechSynthesis. Quality is worse but at least
+    // something speaks if /tts fails.
+    if (window.speechSynthesis) {
+      const utt = new SpeechSynthesisUtterance(clean);
+      if (orbyVoice) utt.voice = orbyVoice;
+      utt.rate = 1.05; utt.pitch = 1.05; utt.volume = 1.0;
+      utt.onend = orbyFinishSpeak;
+      utt.onerror = orbyFinishSpeak;
+      window.speechSynthesis.speak(utt);
+    } else {
+      orbyFinishSpeak();
+    }
   }
 </script>
 

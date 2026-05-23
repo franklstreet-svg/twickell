@@ -230,9 +230,9 @@ def _offline_gate():
     # is alive (otherwise it'll be marked unhealthy and rebooted in a loop).
     if path in ('/health', '/api/system-health'):
         return None
-    # FST LLC freelance services page is live — the demo chat endpoint stays
-    # active even though everything else is paused.
-    if path == '/fst-demo-chat':
+    # FST LLC freelance services page is live — the demo chat and its TTS
+    # voice synthesis endpoint stay active even though everything else is paused.
+    if path in ('/fst-demo-chat', '/tts'):
         return None
     # API / widget / chat endpoints — return JSON so consuming code (like the
     # embed widget on customer sites) gets something it can parse instead of
