@@ -590,10 +590,10 @@
     orbyVoiceOn = true;
     orbySetMicVisual('active');
     orbyVoiceStatus("Listening… speak whenever you're ready.");
-    // Greet by voice on first activation
+    // Greet by voice on first activation — matches the displayed greeting word-for-word
     if (!window._orbyGreetedVocally) {
       window._orbyGreetedVocally = true;
-      orbySpeak("Hi! I'm Orby — Frank's demo assistant. Ask me anything about FST LLC's services.");
+      orbySpeak("Hi! I'm Orby, Frank's demo assistant. I can answer questions about FST LLC's services, what things cost, and help you get in touch with Frank if something fits. What's on your mind?");
     } else {
       setTimeout(orbyStartRec, 200);
     }
