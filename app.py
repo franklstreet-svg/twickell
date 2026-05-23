@@ -2046,8 +2046,11 @@ def _try_server_side_handoff(history, session_id) -> str:
 
 
 def _run_b2b_llm(history, system):
-    """Try Groq → HF → Anthropic and return the first non-empty reply."""
-    for tier, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+    """Try HF → Groq → Anthropic and return the first non-empty reply.
+    HF is tier 1 so inference bills against the HF Inference Providers credit
+    (HF_MODEL is Mistral-Small-24B-Instruct-2501). Groq + Anthropic remain
+    as fallbacks when HF is rate-limited, down, or on circuit-breaker cooldown."""
+    for tier, fn in [('huggingface', _chat_huggingface), ('groq', _chat_groq), ('anthropic', _chat_anthropic)]:
         try:
             r = fn(history, system=system)
             if r:
@@ -2463,7 +2466,9 @@ def customer_chat():
     sys_prompt = _build_customer_system_prompt(profile, product)
     history = [{'role': 'user', 'content': message}]
     reply = None
-    for tier_name, fn in [('groq', _chat_groq), ('huggingface', _chat_huggingface), ('anthropic', _chat_anthropic)]:
+    # HF first so inference bills against the HF Inference Providers credit;
+    # Groq + Anthropic stay as fallbacks for when HF is rate-limited or down.
+    for tier_name, fn in [('huggingface', _chat_huggingface), ('groq', _chat_groq), ('anthropic', _chat_anthropic)]:
         try:
             r = fn(history, system=sys_prompt)
             if r:
