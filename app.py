@@ -1869,6 +1869,24 @@ def business_demo_chat():
         try:
             payload = json.loads(scrape_match.group(1).strip())
             scrape_url = (payload.get('url') or '').strip()
+            # Strip control characters, embedded whitespace, and zero-width
+            # Unicode (ZWSP, ZWNJ, ZWJ, LRM/RLM, directional embeds, word
+            # joiner, BOM) — Llama occasionally injects these inside the
+            # JSON value, and Python's urllib then rejects the URL with
+            # "URL can't contain control characters."
+            scrape_url = re.sub(
+                '[\x00-\x20\x7f​-‏‪-‮⁠﻿]',
+                '',
+                scrape_url,
+            )
+            # Collapse an accidental double scheme like "https://https://x.com"
+            # (another Llama quirk when the user already typed "https://").
+            scrape_url = re.sub(
+                r'^(https?://)(?:https?://)+',
+                r'\1',
+                scrape_url,
+                flags=re.IGNORECASE,
+            )
         except Exception:
             scrape_url = ''
         if scrape_url:
