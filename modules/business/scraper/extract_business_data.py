@@ -246,8 +246,13 @@ _COPYRIGHT_STRICT = re.compile(
     re.IGNORECASE,
 )
 
-# Generic abbreviations that ARE NOT the real business name
-_ABBREV_NAMES = {'scs', 'llc', 'inc', 'corp', 'ltd', 'co', 'plc', 'gmbh', 'sa'}
+# Corporate-form suffixes that are NEVER the real business name on their own.
+# Only generic legal suffixes go here — never brand abbreviations like SCS,
+# IBM, HP, GE, AT&T, FedEx. Brand abbreviations are legitimate business names
+# even when short; they're handled by the acronym-expansion logic below
+# (so "SCS" in the copyright line gets expanded to "Sierra Contractors
+# Source" if that full phrase appears in the body text).
+_ABBREV_NAMES = {'llc', 'inc', 'corp', 'ltd', 'co', 'plc', 'gmbh', 'sa', 'ag', 'sarl', 'pty', 'bv'}
 
 
 # ── Owner / leadership name extraction ─────────────────────────────────────
@@ -450,20 +455,28 @@ def _add_owner(store: dict, name: str, title: str, source_url: str,
 
 def _extract_copyright_names(pages):
     """Pull business name candidates from footer copyright lines.
-    Strict pattern — skips obvious abbreviations like just 'SCS'."""
+    Strict pattern — skips corporate-suffix-only matches like 'LLC' or 'Inc'.
+
+    Allows short brand acronyms (SCS, HP, GE, IBM, AT&T) — they ARE
+    legitimate business names. The acronym-expansion logic in the caller
+    will try to find their full form in the body text and prefer that;
+    if it can't, we still return the acronym since the copyright line is
+    the most authoritative signal on a website."""
     candidates = []
     for page in pages or []:
         text = page.get('text', '') or ''
         for m in _COPYRIGHT_STRICT.finditer(text):
             name = _clean(m.group(1))
+            # Strip trailing punctuation / dashes / whitespace that get
+            # captured because the regex's class includes them.
             name = re.sub(r'[.\s,\-–]+$', '', name)
-            if not name or len(name) < 4:
+            # Also strip LEADING dashes/whitespace that got pulled in
+            # when the copyright line uses "© 2017 - SCS -" format.
+            name = re.sub(r'^[.\s,\-–]+', '', name)
+            if not name or len(name) < 2:
                 continue
-            # Skip generic abbreviations ALONE
+            # Skip generic legal/corporate suffixes used alone (not brand acronyms).
             if name.lower() in _ABBREV_NAMES:
-                continue
-            # Skip if it's all uppercase and short (likely abbrev)
-            if name.isupper() and len(name) <= 4:
                 continue
             candidates.append(name)
     return _unique(candidates)
@@ -1011,14 +1024,42 @@ class BusinessDataExtractor:
                 chosen = copy_names[0]
                 chosen_source = 'copyright'
                 chosen_confidence = 'high'
-                # If copyright looks like an abbreviation (e.g. "SCS"), see if body
-                # has a full multi-word form that starts the same way
-                if len(chosen.split()) == 1 and len(chosen) <= 5:
+                # If copyright looks like a brand abbreviation (e.g. "SCS",
+                # "IBM", "HP"), see if the body has the full multi-word
+                # expansion of that abbreviation and prefer the full name.
+                # Two ways to match the abbreviation to a full name:
+                #   (a) PREFIX match: full name's first word starts with the
+                #       abbreviation's first 3 chars (e.g. "SCS" → "SCS Online
+                #       Plan Service")
+                #   (b) ACRONYM match: the first letter of each word in the
+                #       full name equals the letters of the abbreviation
+                #       (e.g. "SCS" → "Sierra Contractors Source",
+                #       "IBM" → "International Business Machines")
+                # Acronym match is strictly preferred over prefix match when
+                # both exist — it's the more meaningful expansion.
+                if len(chosen.split()) == 1 and 2 <= len(chosen) <= 5 and chosen.isalpha():
+                    abbrev_letters = chosen.upper()
+                    acronym_match = None
+                    prefix_match = None
                     for bn in body_names:
-                        if bn.split()[0].lower().startswith(chosen.lower()[:3]):
-                            chosen = bn
-                            chosen_source = 'copyright+body'
-                            break
+                        bn_words = bn.split()
+                        # ACRONYM: first letter of each significant word == abbrev letters
+                        # (skip stop-words like "of", "and", "the" when computing the acronym)
+                        sig_words = [w for w in bn_words if w.lower() not in {'of', 'and', 'the', 'for', 'a', 'an', '&'}]
+                        if sig_words and len(sig_words) == len(abbrev_letters):
+                            initials = ''.join(w[0].upper() for w in sig_words if w)
+                            if initials == abbrev_letters:
+                                acronym_match = bn
+                                break  # acronym match is strongest, take it
+                        # PREFIX: first word starts with first 3 chars of abbrev
+                        if prefix_match is None and bn_words and bn_words[0].lower().startswith(chosen.lower()[:3]):
+                            prefix_match = bn
+                    if acronym_match:
+                        chosen = acronym_match
+                        chosen_source = 'copyright+acronym_expansion'
+                    elif prefix_match:
+                        chosen = prefix_match
+                        chosen_source = 'copyright+prefix_expansion'
             elif body_names:
                 chosen = body_names[0]
                 chosen_source = 'body_frequency'
