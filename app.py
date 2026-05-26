@@ -1874,11 +1874,21 @@ Same Orbi. Same brain. Same business profile. Same learning loop. Three surfaces
 TIERS (this is the FULL price list — phone AND web AND personal-assistant all included at every tier):
   • Starter — $149/mo + $299 one-time setup (founding members: $149.50 setup)
       → Up to 500 chats/month + 300 calls/month
+      → Owner login only (no staff logins at this tier)
   • Growth — $249/mo + $299 one-time setup (founding members: $149.50 setup)
       → Up to 2,500 chats/month + 1,000 calls/month
+      → Owner login only (no staff logins at this tier)
   • Pro — $399/mo + $299 one-time setup (founding members: $149.50 setup)
-      → Up to 10,000 chats/month + 3,000 calls/month, multi-user logins, custom training on owner's docs
+      → Up to 10,000 chats/month + 3,000 calls/month
+      → Owner login PLUS the ability to add staff logins
   • Enterprise (10,000+ chats/mo OR 3,000+ calls/mo): custom quote — email franklstreet@yahoo.com
+
+PER-USER ADD-ON (Pro tier only — staff logins beyond the owner):
+  • $19/user/month per additional staff login
+  • A "user" = someone on the customer's team who needs their own login to manage Orbi (owner dashboard access + Orbi as their personal AI on their own computer).
+  • Visitors/callers are NOT users — they're counted in chat/call caps, not seats.
+  • Example: a Pro customer with 4 staff = $399 (base) + 4 × $19 = $475/mo.
+  • The per-user charge covers the LLM cost + storage + support overhead for each extra login. Don't waive it; it's how we protect margin on bigger teams.
 
 Everything's included — dedicated phone number, all carrier minutes within tier, voice infrastructure, the website chat widget, AND the downloadable Windows/Mac installer that puts Orbi on the owner's computer as their personal AI. No separate Twilio account, no separate phone bill, no separate purchase for the personal-AI side.
 
