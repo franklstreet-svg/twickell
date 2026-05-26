@@ -2560,7 +2560,10 @@ def business_demo_chat():
     history_path = None
     history = []
     if session_id:
-        history_path = Path(os.path.dirname(os.path.abspath(__file__))) / 'business_chat_sessions' / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
+        # Persistent: write to DATA_DIR so visitor chat history survives a
+        # container restart on HF Spaces. (Previously this was hardcoded to
+        # the app directory, which gets wiped on every rebuild.)
+        history_path = DATA_DIR / 'business_chat_sessions' / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
         history_path.parent.mkdir(parents=True, exist_ok=True)
         if history_path.exists():
             try:
@@ -2978,7 +2981,10 @@ def customer_chat():
     # Lead detection — pull contact info + intent signals from this message + history
     try:
         # Per-session brief history for context (rolling window)
-        sess_path = Path(os.path.dirname(os.path.abspath(__file__))) / 'customer_chat_sessions' / customer_id / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
+        # Persistent: write to DATA_DIR so per-customer chat history survives
+        # a container restart on HF Spaces. (Previously this was hardcoded to
+        # the app directory, which gets wiped on every rebuild.)
+        sess_path = DATA_DIR / 'customer_chat_sessions' / customer_id / f'{re.sub(r"[^A-Za-z0-9_-]", "_", session_id)[:64]}.json'
         sess_path.parent.mkdir(parents=True, exist_ok=True)
         sess_history = []
         if sess_path.exists():
