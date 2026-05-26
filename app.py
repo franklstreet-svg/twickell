@@ -218,7 +218,7 @@ except Exception as _bridge_err:  # don't crash twickell if bridge_routes has an
 # git history are all preserved. To bring twickell.com back online, delete
 # this block (the OFFLINE_MODE flag and the before_request handler below).
 # ───────────────────────────────────────────────────────────────────────────
-OFFLINE_MODE = True
+OFFLINE_MODE = False
 
 
 @app.before_request

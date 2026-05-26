@@ -11,8 +11,8 @@
   var DEPLOYMENT = String(CONF.deployment || 'website_controller').trim();
   var GREETING   = CONF.greeting || "Hi! I'm Orby. How can I help?";
   var THEME      = CONF.theme || {};
-  var ACCENT     = THEME.accent || '#d4a017';
-  var ACCENT2    = THEME.accent2 || '#f0c040';
+  var ACCENT     = THEME.accent || '#0fb9b1';
+  var ACCENT2    = THEME.accent2 || '#2dd4bf';
   var BG         = THEME.bg || '#0a0f1e';
   var TEXT       = THEME.text || '#e8eaf0';
   var POSITION   = (CONF.position || 'bottom-right').toLowerCase();
@@ -63,16 +63,16 @@
       + '.orbi-widget-root *{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}'
       + '.orbi-toggle{background:linear-gradient(135deg,' + ACCENT + ',' + ACCENT2 + ');color:' + BG + ';padding:13px 22px;border-radius:999px;cursor:pointer;font-weight:800;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,0.25);border:none;display:flex;align-items:center;gap:8px;}'
       + '.orbi-toggle:hover{transform:translateY(-1px);}'
-      + '.orbi-window{display:none;width:360px;max-width:calc(100vw - 48px);height:520px;max-height:70vh;background:' + BG + ';color:' + TEXT + ';border-radius:16px;overflow:hidden;box-shadow:0 20px 48px rgba(0,0,0,0.4);margin-bottom:12px;flex-direction:column;border:1px solid rgba(212,160,23,0.3);}'
+      + '.orbi-window{display:none;width:360px;max-width:calc(100vw - 48px);height:520px;max-height:70vh;background:' + BG + ';color:' + TEXT + ';border-radius:16px;overflow:hidden;box-shadow:0 20px 48px rgba(0,0,0,0.4);margin-bottom:12px;flex-direction:column;border:1px solid rgba(15,185,177,0.3);}'
       + '.orbi-header{background:linear-gradient(135deg,' + ACCENT + ',' + ACCENT2 + ');color:' + BG + ';padding:14px 16px;font-weight:800;display:flex;justify-content:space-between;align-items:center;}'
       + '.orbi-close{background:rgba(10,15,30,0.2);border:none;color:' + BG + ';width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1;}'
       + '.orbi-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:' + BG + ';}'
       + '.orbi-msg{padding:10px 14px;border-radius:14px;max-width:80%;line-height:1.4;font-size:14px;word-wrap:break-word;}'
-      + '.orbi-msg.user{align-self:flex-end;background:rgba(212,160,23,0.18);color:' + TEXT + ';}'
+      + '.orbi-msg.user{align-self:flex-end;background:rgba(15,185,177,0.18);color:' + TEXT + ';}'
       + '.orbi-msg.bot{align-self:flex-start;background:rgba(232,234,240,0.08);color:' + TEXT + ';}'
       + '.orbi-msg.typing{align-self:flex-start;color:rgba(232,234,240,0.5);font-style:italic;}'
-      + '.orbi-input-row{display:flex;gap:8px;padding:12px;background:rgba(0,0,0,0.2);border-top:1px solid rgba(212,160,23,0.2);}'
-      + '.orbi-input{flex:1;background:rgba(232,234,240,0.06);border:1px solid rgba(212,160,23,0.3);color:' + TEXT + ';padding:10px 12px;border-radius:10px;font-size:14px;outline:none;}'
+      + '.orbi-input-row{display:flex;gap:8px;padding:12px;background:rgba(0,0,0,0.2);border-top:1px solid rgba(15,185,177,0.2);}'
+      + '.orbi-input{flex:1;background:rgba(232,234,240,0.06);border:1px solid rgba(15,185,177,0.3);color:' + TEXT + ';padding:10px 12px;border-radius:10px;font-size:14px;outline:none;}'
       + '.orbi-input:focus{border-color:' + ACCENT + ';}'
       + '.orbi-send{background:linear-gradient(135deg,' + ACCENT + ',' + ACCENT2 + ');color:' + BG + ';border:none;padding:0 16px;border-radius:10px;cursor:pointer;font-weight:700;font-size:14px;}'
       + '.orbi-send:disabled{opacity:0.4;cursor:not-allowed;}'

@@ -10,11 +10,11 @@
     --bg: #0a0f1e;
     --surface: #111827;
     --surface2: #1a2235;
-    --gold: #d4a017;
-    --gold-light: #f0c040;
+    --gold: #0fb9b1;
+    --gold-light: #2dd4bf;
     --text: #e8eaf0;
     --text-muted: #aab0bc;
-    --border: rgba(212,160,23,0.2);
+    --border: rgba(15,185,177,0.2);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -93,7 +93,7 @@
     font-size: 1.18rem;
   }
   .launch-banner {
-    background: linear-gradient(135deg, rgba(212,160,23,0.16), rgba(240,192,64,0.04));
+    background: linear-gradient(135deg, rgba(15,185,177,0.16), rgba(45,212,191,0.04));
     border: 2px solid var(--gold);
     border-radius: 14px;
     padding: 18px 24px;
@@ -345,13 +345,13 @@
     background: linear-gradient(135deg, var(--gold), var(--gold-light));
     color: var(--bg); border: none; cursor: pointer;
     font-size: 26px; font-weight: 800;
-    box-shadow: 0 8px 24px rgba(212,160,23,0.4);
+    box-shadow: 0 8px 24px rgba(15,185,177,0.4);
     display: flex; align-items: center; justify-content: center;
     animation: orb-pulse 3s ease-in-out infinite;
   }
   @keyframes orb-pulse {
-    0%,100% { box-shadow: 0 8px 24px rgba(212,160,23,0.4); }
-    50%     { box-shadow: 0 8px 32px rgba(212,160,23,0.7); }
+    0%,100% { box-shadow: 0 8px 24px rgba(15,185,177,0.4); }
+    50%     { box-shadow: 0 8px 32px rgba(15,185,177,0.7); }
   }
   #orby-bubble:hover { transform: translateY(-2px); }
   #orby-bubble .label-tip {
@@ -395,9 +395,9 @@
   }
   .orby-msg { padding: 10px 14px; border-radius: 12px;
               max-width: 84%; line-height: 1.5; font-size: 14px; }
-  .orby-msg.bot { align-self: flex-start; background: rgba(212,160,23,0.08);
+  .orby-msg.bot { align-self: flex-start; background: rgba(15,185,177,0.08);
                   border: 1px solid var(--border); color: var(--text); }
-  .orby-msg.me  { align-self: flex-end; background: rgba(212,160,23,0.22);
+  .orby-msg.me  { align-self: flex-end; background: rgba(15,185,177,0.22);
                   color: var(--text); }
   .orby-msg.system { align-self: center; color: var(--text-muted);
                      font-size: 12px; font-style: italic; }

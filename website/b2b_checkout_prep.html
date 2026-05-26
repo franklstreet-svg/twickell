@@ -9,11 +9,11 @@
   --bg: #0a0f1e;
   --surface: #111827;
   --surface2: #1a2235;
-  --gold: #d4a017;
-  --gold-light: #f0c040;
+  --gold: #0fb9b1;
+  --gold-light: #2dd4bf;
   --text: #e8eaf0;
   --text-muted: #e0e4ec;
-  --border: rgba(212,160,23,0.2);
+  --border: rgba(15,185,177,0.2);
   --danger: #ef4444;
   --success: #22c55e;
 }
@@ -31,11 +31,11 @@ body {
 .orb {
   width: 36px; height: 36px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, var(--gold-light), var(--gold) 60%, #7a5000);
-  box-shadow: 0 0 18px rgba(212,160,23,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
+  box-shadow: 0 0 18px rgba(15,185,177,0.4), inset 0 2px 4px rgba(255,255,255,0.3);
   animation: pulse 3s ease-in-out infinite;
 }
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 18px rgba(212,160,23,0.4), inset 0 2px 4px rgba(255,255,255,0.3); }
+  0%, 100% { box-shadow: 0 0 18px rgba(15,185,177,0.4), inset 0 2px 4px rgba(255,255,255,0.3); }
   50% { box-shadow: 0 0 32px var(--gold), inset 0 2px 4px rgba(255,255,255,0.3); }
 }
 .brand { font-weight: 800; font-size: 1.2rem; }
@@ -66,7 +66,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(212,160,23,0.08);
+  border-bottom: 1px solid rgba(15,185,177,0.08);
   font-size: 14.5px;
 }
 .summary-row:last-child { border: none; padding-bottom: 0; }
@@ -89,7 +89,7 @@ h1 {
   transition: border-color 0.15s, background 0.15s;
 }
 .checks .item:hover { border-color: var(--gold); }
-.checks .item.checked { border-color: var(--gold); background: rgba(212,160,23,0.07); }
+.checks .item.checked { border-color: var(--gold); background: rgba(15,185,177,0.07); }
 .checks .item-top {
   display: flex; gap: 12px; align-items: flex-start;
 }
@@ -100,7 +100,7 @@ h1 {
 .checks .item .title { font-weight: 700; color: var(--text); font-size: 14.5px; margin-bottom: 4px; }
 .checks .item .summary { color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
 .checks .chevron {
-  background: rgba(212,160,23,0.12);
+  background: rgba(15,185,177,0.12);
   border: 1px solid var(--border);
   color: var(--gold-light);
   width: 32px; height: 32px;
@@ -112,7 +112,7 @@ h1 {
   transition: transform 0.25s ease;
   font-family: monospace;
 }
-.checks .chevron:hover { background: rgba(212,160,23,0.22); color: #fff; }
+.checks .chevron:hover { background: rgba(15,185,177,0.22); color: #fff; }
 .checks .item.open .chevron { transform: rotate(180deg); }
 .checks .expanded {
   max-height: 0;
@@ -126,7 +126,7 @@ h1 {
   max-height: 1200px;  /* generous so any reasonable section fits without re-clipping */
   margin-top: 14px;
   padding-top: 14px;
-  border-top: 1px dashed rgba(212,160,23,0.25);
+  border-top: 1px dashed rgba(15,185,177,0.25);
 }
 .checks .expanded p { margin-bottom: 10px; }
 .checks .expanded p:last-child { margin-bottom: 0; }
@@ -143,7 +143,7 @@ h1 {
 }
 
 .notes {
-  background: rgba(212,160,23,0.06);
+  background: rgba(15,185,177,0.06);
   border-left: 3px solid var(--gold);
   padding: 14px 18px;
   border-radius: 6px;

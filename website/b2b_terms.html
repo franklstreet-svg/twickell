@@ -8,8 +8,8 @@
   <style>
     :root {
       --bg:#0a0f1e; --surface:#111827; --surface2:#1a2235;
-      --gold:#d4a017; --gold-light:#f0c040; --gold-glow:rgba(212,160,23,.35);
-      --text:#e8eaf0; --text-muted:#e0e4ec; --border:rgba(212,160,23,.18);
+      --gold:#0fb9b1; --gold-light:#2dd4bf; --gold-glow:rgba(15,185,177,.35);
+      --text:#e8eaf0; --text-muted:#e0e4ec; --border:rgba(15,185,177,.18);
     }
     * { box-sizing:border-box; margin:0; padding:0; }
     body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.75; }
@@ -32,7 +32,7 @@
     .legal-section ul{margin:12px 0 14px 24px;color:var(--text-muted);}
     .legal-section li{margin-bottom:6px;}
     .legal-section strong{color:var(--text);}
-    .critical-box{background:rgba(212,160,23,.08);border-left:3px solid var(--gold);padding:14px 18px;border-radius:6px;margin:14px 0;}
+    .critical-box{background:rgba(15,185,177,.08);border-left:3px solid var(--gold);padding:14px 18px;border-radius:6px;margin:14px 0;}
     .warning-box{background:rgba(239,68,68,.08);border-left:3px solid #ef4444;padding:14px 18px;border-radius:6px;margin:14px 0;color:#fca5a5;}
     .caution-box{background:rgba(59,130,246,.08);border-left:3px solid #3b82f6;padding:14px 18px;border-radius:6px;margin:14px 0;}
     footer{padding:30px 24px;border-top:1px solid var(--border);color:var(--text-muted);font-size:13px;text-align:center;}
@@ -47,8 +47,8 @@
   </div>
 </nav>
 
-<div style="background:linear-gradient(90deg,rgba(212,160,23,.12),rgba(240,192,64,.06));border-bottom:1px solid var(--border);padding:14px 24px;text-align:center;position:sticky;top:60px;z-index:99;">
-  <button onclick="_orbiCloseTab()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--bg);border:none;padding:11px 26px;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 0 16px rgba(212,160,23,.4);">← Close this tab and go back to your checkout</button>
+<div style="background:linear-gradient(90deg,rgba(15,185,177,.12),rgba(45,212,191,.06));border-bottom:1px solid var(--border);padding:14px 24px;text-align:center;position:sticky;top:60px;z-index:99;">
+  <button onclick="_orbiCloseTab()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--bg);border:none;padding:11px 26px;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 0 16px rgba(15,185,177,.4);">← Close this tab and go back to your checkout</button>
   <div style="color:var(--text-muted);font-size:12px;margin-top:6px;">This document opened in a separate browser tab. Click above to close it and return to your checkout page — your progress and checkboxes are still there.</div>
 </div>
 <script>
