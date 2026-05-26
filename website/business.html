@@ -455,6 +455,14 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 </head>
 <body>
 
+<!-- ============ COMING SOON BANNER (waitlist mode) ============ -->
+<div id="coming-soon-banner" style="background:linear-gradient(90deg,rgba(15,185,177,0.18),rgba(45,212,191,0.10));border-bottom:2px solid #0fb9b1;padding:14px 20px;text-align:center;font-size:14.5px;color:#e8eaf0;font-weight:600;line-height:1.55;">
+  🚀 <strong style="color:#2dd4bf;">Orby is launching soon.</strong>
+  Try the demo below — when she's ready,
+  <a href="#pricing" style="color:#2dd4bf;text-decoration:underline;font-weight:700;">join the waitlist</a>
+  and we'll email you the install link the moment it's available.
+</div>
+
 <nav>
   <div class="container nav-inner">
     <div class="logo"><div class="orb"></div><span>Orby AI</span></div>
@@ -463,7 +471,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
       <a href="#privacy">Privacy</a>
-      <a href="#pricing" class="nav-cta">Buy now</a>
+      <a href="#pricing" class="nav-cta">Join Waitlist</a>
     </div>
   </div>
 </nav>
@@ -745,7 +753,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
           <li>She learns from your answers</li>
           <li>Industry pack included</li>
         </ul>
-        <button class="btn btn-outline" onclick="buyWC('starter')">Buy Starter</button>
+        <button class="btn btn-outline" onclick="buyWC('starter')">Join Waitlist · Starter</button>
       </div>
       <div class="tier featured">
         <span class="badge">Most Popular</span>
@@ -759,7 +767,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
           <li>Priority lead alerts (SMS optional)</li>
           <li>Priority email support</li>
         </ul>
-        <button class="btn btn-primary" onclick="buyWC('growth')">Buy Growth</button>
+        <button class="btn btn-primary" onclick="buyWC('growth')">Join Waitlist · Growth</button>
       </div>
       <div class="tier">
         <div class="tier-name">Pro</div>
@@ -772,7 +780,7 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
           <li>Phone support during business hours</li>
           <li>Custom industry pack work</li>
         </ul>
-        <button class="btn btn-outline" onclick="buyWC('pro')">Buy Pro</button>
+        <button class="btn btn-outline" onclick="buyWC('pro')">Join Waitlist · Pro</button>
       </div>
     </div>
     <p style="text-align:center; margin-top:28px; color: var(--text-muted); font-size:14px;">
@@ -944,21 +952,95 @@ footer { padding: 48px 0 32px; border-top: 1px solid var(--border); color: var(-
 
 <!-- BUY FLOW — all purchases go through Orby in the chat -->
 <script>
-const TIER_PROMPTS = {
-  starter: "I'd like to buy the Starter tier — let's set me up.",
-  growth:  "I'd like to buy the Growth tier — let's set me up.",
-  pro:     "I'd like to buy the Pro tier — let's set me up.",
-};
+const TIER_PROMPTS = { starter: "Starter", growth: "Growth", pro: "Pro" };
 
+// WAITLIST MODE — Orby's installer isn't built yet, so the buy buttons
+// no longer push the visitor through the chat checkout flow. Instead
+// they open a small overlay to capture name + email + business name +
+// tier preference and POST it to /waitlist. Frank emails the visitor
+// when the installer ships. To restore real checkout: revert this
+// function to fill #demoInput with TIER_PROMPTS[tier] like the
+// pre-waitlist version did.
 function buyWC(tier) {
-  const promptText = TIER_PROMPTS[tier] || TIER_PROMPTS.growth;
-  const inputEl = document.getElementById('demoInput');
-  const demoEl = document.getElementById('demo');
-  if (inputEl && demoEl) {
-    inputEl.value = promptText;
-    demoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    setTimeout(() => { inputEl.focus(); }, 600);
+  const tierName = TIER_PROMPTS[tier] || 'Standard';
+  let overlay = document.getElementById('waitlist-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'waitlist-overlay';
+    overlay.innerHTML = ''
+      + '<div class="wl-backdrop" onclick="closeWaitlist()"></div>'
+      + '<div class="wl-card" role="dialog" aria-modal="true" aria-labelledby="wl-title">'
+      +   '<button class="wl-close" onclick="closeWaitlist()" aria-label="Close">×</button>'
+      +   '<h2 id="wl-title">Join the Waitlist · <span id="wl-tier">Standard</span></h2>'
+      +   '<p class="wl-sub">Orby is in final testing. Drop your name and email and Frank will email you the install link the moment she\'s ready. No charge until launch.</p>'
+      +   '<form id="wl-form" class="wl-form" autocomplete="on">'
+      +     '<label>Your name<input id="wl-name" type="text" autocomplete="name" required></label>'
+      +     '<label>Your email<input id="wl-email" type="email" autocomplete="email" required></label>'
+      +     '<label>Business name (optional)<input id="wl-biz" type="text" autocomplete="organization"></label>'
+      +     '<input type="hidden" id="wl-tier-hidden" value="">'
+      +     '<button type="submit" class="wl-submit">Add me to the waitlist</button>'
+      +     '<div id="wl-msg" class="wl-msg"></div>'
+      +   '</form>'
+      + '</div>'
+      + '<style>'
+      + '#waitlist-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;}'
+      + '.wl-backdrop{position:absolute;inset:0;background:rgba(10,15,30,0.78);backdrop-filter:blur(6px);}'
+      + '.wl-card{position:relative;background:#111827;border:2px solid #0fb9b1;border-radius:16px;padding:32px 28px;max-width:460px;width:100%;color:#e8eaf0;box-shadow:0 20px 60px rgba(0,0,0,0.4);}'
+      + '.wl-card h2{color:#2dd4bf;font-size:1.5rem;margin-bottom:8px;}'
+      + '.wl-card .wl-sub{color:#aab0bc;font-size:14.5px;line-height:1.55;margin-bottom:22px;}'
+      + '.wl-close{position:absolute;top:12px;right:16px;background:transparent;border:none;color:#aab0bc;font-size:28px;cursor:pointer;line-height:1;padding:4px 8px;}'
+      + '.wl-close:hover{color:#fff;}'
+      + '.wl-form{display:flex;flex-direction:column;gap:14px;}'
+      + '.wl-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:#e8eaf0;}'
+      + '.wl-form input{padding:11px 14px;border:1px solid rgba(15,185,177,0.25);border-radius:9px;background:rgba(0,0,0,0.3);color:#e8eaf0;font-size:15px;font-family:inherit;}'
+      + '.wl-form input:focus{outline:none;border-color:#0fb9b1;box-shadow:0 0 0 3px rgba(15,185,177,0.18);}'
+      + '.wl-submit{margin-top:6px;padding:14px 24px;background:linear-gradient(135deg,#0fb9b1,#2dd4bf);color:#0a0f1e;font-weight:800;font-size:16px;border:none;border-radius:10px;cursor:pointer;transition:transform .15s,box-shadow .15s;}'
+      + '.wl-submit:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,212,191,0.32);}'
+      + '.wl-submit:disabled{opacity:0.55;cursor:wait;}'
+      + '.wl-msg{min-height:22px;text-align:center;font-size:14px;font-weight:600;}'
+      + '.wl-msg.ok{color:#6fdc94;}.wl-msg.err{color:#fca5a5;}'
+      + '</style>';
+    document.body.appendChild(overlay);
+    document.getElementById('wl-form').addEventListener('submit', async function(ev) {
+      ev.preventDefault();
+      const btn = ev.target.querySelector('.wl-submit');
+      const msg = document.getElementById('wl-msg');
+      const payload = {
+        name:  document.getElementById('wl-name').value.trim(),
+        email: document.getElementById('wl-email').value.trim(),
+        business_name: document.getElementById('wl-biz').value.trim(),
+        tier:  document.getElementById('wl-tier-hidden').value,
+      };
+      btn.disabled = true; btn.textContent = 'Adding you…';
+      msg.className = 'wl-msg';
+      try {
+        const r = await fetch('/waitlist', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) throw new Error('Server returned ' + r.status);
+        msg.className = 'wl-msg ok';
+        msg.textContent = '✓ You\'re on the waitlist. Frank will email you when Orby ships.';
+        btn.textContent = 'Added ✓';
+        setTimeout(closeWaitlist, 2400);
+      } catch (e) {
+        msg.className = 'wl-msg err';
+        msg.textContent = 'Couldn\'t reach the waitlist — please email frankrstreet@yahoo.com instead.';
+        btn.disabled = false;
+        btn.textContent = 'Try again';
+      }
+    });
   }
+  document.getElementById('wl-tier').textContent = tierName;
+  document.getElementById('wl-tier-hidden').value = tier;
+  overlay.style.display = 'flex';
+  setTimeout(() => { const n = document.getElementById('wl-name'); if (n) n.focus(); }, 80);
+}
+
+function closeWaitlist() {
+  const o = document.getElementById('waitlist-overlay');
+  if (o) o.style.display = 'none';
 }
 
 // If the visitor came back from refusing legal, surface a friendly note
