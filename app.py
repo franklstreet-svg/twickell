@@ -1768,9 +1768,9 @@ Mentioning a wrong business name to an owner is the single fastest way to lose t
 Step 5 — Tier selection (after you have email)
 Ask: "How busy is your site right now? Roughly how many people chat or message you in a typical month — under 500, between 500 and 2,500, or more than 2,500?"
 Map their answer — DOUBLE-CHECK YOUR MATH HERE, the visitor will notice if you misplace the bracket:
-  - Under 500 chats/mo  → Starter ($99/mo)
-  - 500 to 2,500/mo     → Growth ($199/mo)   ← 1,000 lives HERE, not Starter
-  - 2,500 to 10,000/mo  → Pro ($349/mo)
+  - Under 500 chats/mo  → Starter ($149/mo, includes up to 300 calls/mo)
+  - 500 to 2,500/mo     → Growth ($249/mo, includes up to 1,000 calls/mo)   ← 1,000 chats lives HERE, not Starter
+  - 2,500 to 10,000/mo  → Pro ($399/mo, includes up to 3,000 calls/mo + multi-user + custom training)
   - 10,000+             → Enterprise — invite an email to franklstreet@yahoo.com (no self-serve)
 
 Step 6 — Hand off to legal review
@@ -1864,21 +1864,25 @@ OTHER CAPABILITIES (mention when relevant):
 PRODUCT FACTS (only these — never invent)
 ══════════════════════════════════════════
 
-ONE PRODUCT — Orby AI — sold on two surfaces. The website chat surface ships today and is what we self-serve sell on twickell.com right now. The phone surface is launching shortly, waitlist only. Same Orby. Same brain. Same business profile.
+ONE PRODUCT — "My Orbi AI Solutions" — that does THREE jobs at once for one bundled price:
+  1. Answers the customer's business phone 24/7 (voice receptionist)
+  2. Handles the chat widget on the customer's website
+  3. Lives on the owner's own Windows/Mac computer as a personal AI (writes letters, builds spreadsheets, organizes files, opens documents on request)
 
-WEBSITE TIERS (this is what you're selling in this chat — what they buy today):
-  • Starter: up to 500 chats/mo — $99/mo PLUS $299 one-time setup (founding members: $149.50 setup)
-  • Growth: up to 2,500 chats/mo — $199/mo PLUS $299 one-time setup (founding members: $149.50 setup)
-  • Pro: up to 10,000 chats/mo — $349/mo PLUS $299 one-time setup (founding members: $149.50 setup)
-  • Enterprise (10,000+): custom quote — email franklstreet@yahoo.com
-Install: paste one <script> tag into their existing website. Works on WordPress, Squarespace, Wix, Shopify, custom-built — anything.
+Same Orbi. Same brain. Same business profile. Same learning loop. Three surfaces. ONE PRICE. We do NOT sell the phone or the website widget separately — never quote a "Website Controller tier" vs "Receptionist tier" or pretend they're two products. They are one Orbi with three jobs.
 
-PHONE TIERS (LAUNCHING SHORTLY — for context only, NOT in the self-serve buy flow):
-  • Phone Starter: $99/mo PLUS $299 setup (founding members: $149.50 setup)
-  • Phone Growth: $249/mo PLUS $299 setup (founding members: $149.50 setup)
-  • Phone Pro: $449/mo PLUS $299 setup (founding members: $149.50 setup)
-Phone number, all carrier minutes, and voice infrastructure are INCLUDED. No separate Twilio account, no separate phone bill.
-If a visitor asks about phone: give a 1-sentence overview ("Same Orby — same brain — but on the phone instead of the website. Launching shortly. Want me to add you to the waitlist?") and offer to email franklstreet@yahoo.com.
+TIERS (this is the FULL price list — phone AND web AND personal-assistant all included at every tier):
+  • Starter — $149/mo + $299 one-time setup (founding members: $149.50 setup)
+      → Up to 500 chats/month + 300 calls/month
+  • Growth — $249/mo + $299 one-time setup (founding members: $149.50 setup)
+      → Up to 2,500 chats/month + 1,000 calls/month
+  • Pro — $399/mo + $299 one-time setup (founding members: $149.50 setup)
+      → Up to 10,000 chats/month + 3,000 calls/month, multi-user logins, custom training on owner's docs
+  • Enterprise (10,000+ chats/mo OR 3,000+ calls/mo): custom quote — email franklstreet@yahoo.com
+
+Everything's included — dedicated phone number, all carrier minutes within tier, voice infrastructure, the website chat widget, AND the downloadable Windows/Mac installer that puts Orbi on the owner's computer as their personal AI. No separate Twilio account, no separate phone bill, no separate purchase for the personal-AI side.
+
+Install (after purchase): customer downloads the Orbi installer (.exe Windows / .pkg Mac) and double-clicks. The installer creates an `Orby/` folder on their computer. Orbi asks for their website URL, scrapes it to learn the business, then they paste one `<script>` tag into their website (for chat) and forward their phone line to the dedicated number we provisioned (for the receptionist).
 
 PRICING RULE — NON-NEGOTIABLE — THREE PIECES TRAVEL TOGETHER:
 Every time you quote ANY monthly amount OR the $299 setup fee, you MUST ALSO mention the founding-member 50%-off setup ($149.50 instead of $299, for our first 1,000 customers per product). The monthly, the setup fee, and the founding-member discount are ONE pricing statement — never split them up.
@@ -2206,7 +2210,7 @@ _AFFIRM_RE = re.compile(
 # "yes, that's my email" or any other unrelated yes.
 _PRICING_SUMMARY_RE = re.compile(
     r"(?:"
-    r"\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)"
+    r"\$\s*(?:99|149|199|249|349|399|449)\s*(?:per month|a month|/mo|/month|monthly)"
     r"|setup fee|one[\s-]time setup"
     r"|legal review|legal page|legal step"
     r"|ready to (?:go|proceed|move|head|do)"
@@ -2712,7 +2716,7 @@ def business_demo_chat():
     # fee OR the founding-member 50%-off discount. Catch every combination.
     # Fires on monthly mentions AND on bare setup-fee mentions, since the
     # founding-member discount must ride with EITHER price piece.
-    _monthly_re   = re.compile(r'\$\s*(?:99|149|199|249|349|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
+    _monthly_re   = re.compile(r'\$\s*(?:99|149|199|249|349|399|449)\s*(?:per month|a month|/mo|/month|monthly)\b', re.IGNORECASE)
     _setup_re     = re.compile(r'\$\s*299|setup fee|one[\s-]time setup|setup is', re.IGNORECASE)
     _founding_re  = re.compile(r'\$\s*149\.?\s*50|149 dollars|half off|fifty percent off|50%\s*off|founding member', re.IGNORECASE)
     mentions_monthly  = bool(_monthly_re.search(reply))
