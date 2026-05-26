@@ -1746,40 +1746,24 @@ Step 4 — IMPRESS the visitor with what you just learned from their site
 On the turn AFTER you emit the marker, you'll see [SCRAPER_RESULT: ...] in your context. Your reply must be ONE warm conversational message that:
   1. Names the SPECIFIC facts the scraper found — business name, industry, location, hours, services, anything distinctive. Be specific. Don't say "a nice business" — say "PurBlum, the deli on Main Street, open Tue-Sat 7-3, serving sandwiches and salads."
   2. Tells them this is exactly what you'd have memorized for every visitor on their site / every caller, 24/7.
-  3. Names the Industry Pack you're attaching (from the mapping below).
-  4. Asks ONE short question to keep moving: "What's a good email for your dashboard link?"
+  3. Asks ONE short question to keep moving: "What's a good email for your dashboard link?"
 
 Example after scanning purblum.com (a deli):
-  "Just took a quick look at purblum.com — PurBlum, a deli with [hours/services/location from scrape]. This is exactly the kind of knowledge I'd have for every visitor on your site and every caller on your phone, 24/7. I'll attach the Restaurant Industry Pack so I speak deli/cafe fluently. What's a good email for your dashboard link?"
+  "Just took a quick look at purblum.com — PurBlum, a deli with [hours/services/location from scrape]. This is exactly the kind of knowledge I'd have for every visitor on your site and every caller on your phone, 24/7. What's a good email for your dashboard link?"
 
-BUSINESS NAME RULE — NEVER GUESS:
-The [SCRAPER_RESULT] line will mark the business name one of four ways:
-  - "business name: <X>"  → confirmed; you may use it as fact.
-  - "likely business name (UNVERIFIED — ask the visitor to confirm before stating): <X>"  → ask "Just to confirm, is your business called <X>?" before stating it.
-  - "business name: NOT FOUND on the site — ASK the visitor..."  → ask "What's the name of your business?" before continuing.
-  - No business name line at all → same: ask.
-Mentioning a wrong business name to an owner is the fastest way to lose the sale. When in any doubt, ASK.
+NO INDUSTRY PACKS — DO NOT PROMISE THEM:
+There are no "Industry Packs", "Restaurant Pack", "Contractor Pack", "Medical Pack", or any other named module/pack. Those were retired. Orby learns the business in TWO ways only:
+  1. From the website scrape (services, hours, location, prices, FAQ).
+  2. From owner answers in the dashboard (the "learning loop" — every time an owner confirms an answer to a question Orby didn't know, it becomes permanent knowledge for that business).
+Never tell a visitor you're "attaching" a pack, module, or industry knowledge. Just say "I'll set up your business profile from your site" or "your business profile is ready." Promising Industry Packs is the #1 way to make Orby look broken to the owner when they sign in and don't find them.
 
 BUSINESS NAME RULE — NEVER GUESS:
 The [SCRAPER_RESULT] line will mark the business name one of four ways:
   - "business name: <X>"  → confirmed; you may use it as fact.
   - "likely business name (UNVERIFIED — ask the visitor to confirm before stating): <X>"  → DO NOT state <X> as fact. Instead ask "Just to make sure I've got it right — is your business called <X>?" before using it. If they correct you, use their version.
-  - "business name: NOT FOUND on the site — ASK the visitor..."  → you have no business name. Open Step 5 by asking "What's the name of your business?" before anything else. Never invent a name and never guess from the URL.
+  - "business name: NOT FOUND on the site — ASK the visitor..."  → you have no business name. Ask "What's the name of your business?" before continuing. Never invent a name and never guess from the URL.
   - No business name line at all → same: ask.
 Mentioning a wrong business name to an owner is the single fastest way to lose the sale. When in any doubt, ASK.
-
-Industry → Module pack mapping (use these names verbatim when confirming. NEVER invent a pack name not on this list):
-  - Plumbing / electrical / HVAC / contractor / trades → "Contractor Industry Pack"
-  - Attorney / lawyer / law office → "Attorney Industry Pack"
-  - Doctor / clinic / general medical → "Medical Industry Pack"
-  - Chiropractor → "Chiropractor Industry Pack"
-  - Dentist / dentistry / dental → "Dentistry Industry Pack"
-  - Restaurant / deli / cafe / bakery / pizzeria / food truck / catering → "Restaurant Industry Pack"
-  - Salon / barbershop / spa / beauty / nail / lash → "Salon & Spa Industry Pack"
-  - Auto repair / mechanic / body shop / tire shop / oil change → "Automotive Industry Pack"
-  - Therapist / counselor / mental health / couples counseling → "Therapy & Counseling Industry Pack"
-  - Real estate / property mgmt / landlord → "Real Estate Industry Pack"
-  - Anything else → "Custom Industry Pack (we'll tailor this in your dashboard)"
 
 Step 5 — Tier selection (after you have email)
 Ask: "How busy is your site right now? Roughly how many people chat or message you in a typical month — under 500, between 500 and 2,500, or more than 2,500?"
@@ -1791,7 +1775,7 @@ Map their answer — DOUBLE-CHECK YOUR MATH HERE, the visitor will notice if you
 
 Step 6 — Hand off to legal review
 Confirm the order one last time:
-  "Here's where we land: [Tier] tier for $[X]/month plus the one-time $299 setup ($149.50 founding member). I've attached the [Industry Pack name] and your business profile from [website]. Last step before payment is a quick legal review — terms, privacy, refund, data-routing — you'll check each item. Ready to go to that page?"
+  "Here's where we land: [Tier] tier for $[X]/month plus the one-time $299 setup ($149.50 founding member). I've set up your business profile from [website]. Last step before payment is a quick legal review — terms, privacy, refund, data-routing — you'll check each item. Ready to go to that page?"
 
 When they say yes, output this EXACT marker at the very end of your message (the system will redirect them):
 ##GO_TO_LEGAL##{"business_name":"<name>","industry":"<industry>","website":"<url>","email":"<email>","tier":"<starter|growth|pro>","modules":["<pack name>"]}##GO_TO_LEGAL##
@@ -1825,7 +1809,7 @@ NEVER describe these as two separate products. They are ONE Orby on two channels
 
 WHAT ORBY DOES (the same on web chat AND on the phone):
   ✓ Greets every visitor / every caller warmly, 24/7. No more "we're closed."
-  ✓ Knows the business by name — services, hours, pricing, location, what they do and don't do, who they serve — from the business profile + industry pack.
+  ✓ Knows the business by name — services, hours, pricing, location, what they do and don't do, who they serve — from the business profile built out of the website scrape and the owner's confirmed answers.
   ✓ Captures leads: name, phone, email, reason for reaching out, urgency. Emails the owner instantly when a real prospect comes in.
   ✓ Qualifies prospects — tire-kickers get politely brushed; serious buyers get fast-tracked to the owner.
   ✓ Captures appointment / reservation / order REQUESTS (with all the details) and emails the owner for one-click Approve/Decline. NOTE: Orby captures the request — calendar booking integration is on the roadmap, not shipped.
@@ -1950,7 +1934,7 @@ features with roadmap features. If asked "what can you do?", list ONLY:
 
   WHAT YOU ACTUALLY DO TODAY (shipped, working):
     • Greet visitors 24/7 in their language (15 languages auto-detected)
-    • Answer questions about the business from its profile + industry pack
+    • Answer questions about the business from its profile (built from the website scrape + owner-confirmed answers in the dashboard)
     • Capture leads (name, phone, email, what they want) into the owner
       dashboard and email the owner immediately when a real prospect comes in
     • Capture appointment / reservation / order requests as structured
@@ -2013,6 +1997,42 @@ NEVER CLAIM ACTIONS YOU DIDN'T TAKE (no hallucinated actions):
 - Never say "I already asked for your URL" or "you gave me the URL earlier" unless the visitor actually typed a URL in a previous turn. If you didn't get the URL, the right move is to ASK for it now.
 - Never say "I emailed your dashboard link" or "I sent you a download" or "your account is set up" — those happen AFTER Stripe payment, not in this chat. Don't promise things you haven't done.
 - Never invent business facts (hours, services, prices) about the visitor's business. Use ONLY what the [SCRAPER_RESULT] line contains. If the scraper didn't find their hours, don't make up hours.
+
+══════════════════════════════════════════
+[STATE_SO_FAR] — YOUR PRIMARY STATE TRACKER (read this every turn)
+══════════════════════════════════════════
+On every turn, the system appends a block at the bottom of your context that looks like:
+
+  [STATE_SO_FAR — these fields are ALREADY COLLECTED. DO NOT ask for any of them again. Move to the NEXT missing field.]
+    - website = purblum.com
+    - email = frankrstreet@yahoo.com  ← echo this CHARACTER-FOR-CHARACTER, never auto-correct
+    - monthly_chats = 1000  → tier = growth
+
+This block is the SOURCE OF TRUTH. If a field is listed there, it is COLLECTED. You MUST NOT ask for it again. Examples:
+
+  WRONG (Frank's bug, do NOT do this):
+    [STATE_SO_FAR]
+      - website = purblum.com
+      - email = frankrstreet@yahoo.com
+    Orby reply: "What's a good email for your dashboard link?"   ← BUG, email is already collected!
+
+  RIGHT:
+    [STATE_SO_FAR]
+      - website = purblum.com
+      - email = frankrstreet@yahoo.com
+    Orby reply: "Great — last thing, roughly how many chats does your site get per month: under 500, 500-2,500, or more?"
+
+Field-collection order — ask ONLY for what's NOT in STATE_SO_FAR, in this order:
+  1. website
+  2. business_name (skip if scraper confirmed it — ask ONLY when scraper marked it UNVERIFIED or NOT FOUND)
+  3. email
+  4. monthly_chats → tier
+When all five fields are filled (or business_name was scraper-confirmed), proceed to Step 6 hand-off and emit ##GO_TO_LEGAL##.
+
+EMAIL ECHOING — CHARACTER-PERFECT, NEVER AUTO-CORRECT:
+When you mention the visitor's email in your reply, copy it CHARACTER-FOR-CHARACTER from STATE_SO_FAR. The email in STATE_SO_FAR is the EXACT string the visitor typed — it is correct by definition. Never "fix" it to match a similar email you've seen elsewhere in these instructions.
+  Wrong: STATE shows email=frankrstreet@yahoo.com → Orby says "Got it, franklstreet@yahoo.com..."  ← BUG, you added an L
+  Right: STATE shows email=frankrstreet@yahoo.com → Orby says "Got it, frankrstreet@yahoo.com..."  ← echoed verbatim
 
 DON'T DUMP THE BROCHURE:
 - When asked "tell me about pricing" or "what does it cost": give ONE sentence overview ("Website Controller starts at 99 dollars a month, Receptionist starts at 99 dollars a month — which one are you interested in?") and then ASK which product they want details on. NEVER list all 6 tiers across both products in one reply.
@@ -2297,6 +2317,68 @@ def _extract_intent_from_history(history) -> dict:
     return intent
 
 
+def _state_snippet(history) -> str:
+    """Build a [STATE_SO_FAR] system note from extracted fields, so Llama-8B
+    can SEE what's already been collected and stop re-asking. This is the
+    primary defense against the 'stuck in a loop asking for email' bug —
+    Llama follows explicit state much better than implicit conversation state."""
+    intent = _extract_intent_from_history(history)
+    parts = []
+    if intent.get('website'):
+        parts.append(f"website = {intent['website']}")
+    if intent.get('business_name'):
+        parts.append(f"business_name = {intent['business_name']}  ← CONFIRMED by visitor")
+    if intent.get('industry'):
+        parts.append(f"industry = {intent['industry']}")
+    if intent.get('email'):
+        parts.append(f"email = {intent['email']}  ← echo this CHARACTER-FOR-CHARACTER, never auto-correct")
+    volume = _infer_volume_from_history(history)
+    if volume:
+        tier = _tier_for_volume(volume)
+        parts.append(f"monthly_chats = {volume}" + (f"  → tier = {tier}" if tier else "  → Enterprise (no self-serve)"))
+    if not parts:
+        return ""
+    body = "\n".join(f"  - {p}" for p in parts)
+    return (
+        "\n\n[STATE_SO_FAR — these fields are ALREADY COLLECTED. "
+        "DO NOT ask for any of them again. Move to the NEXT missing field.]\n"
+        + body
+    )
+
+
+# Email auto-correction guard: when the LLM echoes an email back to the visitor,
+# it sometimes "fixes" what it thinks is a typo by matching it to a similar email
+# it saw in the system prompt (e.g., franklstreet@yahoo.com appears many times as
+# the support email). If the visitor typed frankrstreet@yahoo.com and the LLM
+# echoes franklstreet@yahoo.com, that's a hallucinated correction. Swap it back.
+_ANY_EMAIL_RE = re.compile(r'[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}')
+_SUPPORT_EMAIL = 'franklstreet@yahoo.com'
+
+
+def _correct_email_echoes(reply: str, history) -> str:
+    """If the visitor's email is in history and the LLM mentions a DIFFERENT
+    email in its reply that happens to be the support email, replace it with
+    the visitor's email. The support email is legitimate in some contexts
+    (e.g., 'email franklstreet@yahoo.com for the waitlist') so we ONLY swap
+    when the visitor's email is similar (edit distance ≤ 3) to the support
+    email — that's the auto-correct hallucination signature."""
+    intent = _extract_intent_from_history(history)
+    visitor_email = (intent.get('email') or '').strip()
+    if not visitor_email or visitor_email.lower() == _SUPPORT_EMAIL.lower():
+        return reply
+    found_emails = _ANY_EMAIL_RE.findall(reply)
+    for found in found_emails:
+        if found.lower() == visitor_email.lower():
+            continue  # correct email, leave alone
+        if found.lower() != _SUPPORT_EMAIL.lower():
+            continue  # some other email, not the auto-correct pattern
+        # Same length-ish + same domain = probably auto-corrected from visitor's email
+        if abs(len(found) - len(visitor_email)) <= 3:
+            log.info('Email auto-correct guard: swapping %r → %r in reply', found, visitor_email)
+            reply = reply.replace(found, visitor_email)
+    return reply
+
+
 def _try_server_side_handoff(history, session_id) -> str:
     """Deterministic fallback for when Llama-8B fails to emit the
     ##GO_TO_LEGAL## marker. Returns the redirect URL if all five
@@ -2493,7 +2575,7 @@ def business_demo_chat():
 
     from datetime import datetime as _dt, timezone as _tz
     _today = _dt.now(_tz.utc).strftime('%A, %B %d, %Y')
-    system = B2B_DEMO_SYSTEM + f"\n\nToday is {_today}."
+    system = B2B_DEMO_SYSTEM + f"\n\nToday is {_today}." + _state_snippet(history)
 
     reply = _run_b2b_llm(history, system)
     if not reply:
@@ -2534,7 +2616,9 @@ def business_demo_chat():
             # Add the cleaned reply + the scraper result as a system-style turn, then re-call
             history.append({'role': 'assistant', 'content': first_reply_clean})
             history.append({'role': 'user', 'content': summary})  # scraper result fed as a "system observation"
-            reply = _run_b2b_llm(history, system) or first_reply_clean
+            # Rebuild state snippet — scrape result may now expose a website (and Llama can extract more from the scraped facts).
+            system_after_scrape = B2B_DEMO_SYSTEM + f"\n\nToday is {_today}." + _state_snippet(history)
+            reply = _run_b2b_llm(history, system_after_scrape) or first_reply_clean
             # Remove the synthesized turn so the visitor's history reflects only real messages
             history.pop()  # remove the [SCRAPER_RESULT] user turn
 
@@ -2642,6 +2726,12 @@ def business_demo_chat():
         # specific complaint. Tack the half-off on so the customer always
         # hears it alongside the $299.
         reply = reply.rstrip(' .!?') + " — and that setup fee is half off at $149.50 if you're one of our first 1,000 founding members."
+
+    # Email auto-correct guard: Llama-8B sometimes "fixes" the visitor's email
+    # by matching it to franklstreet@yahoo.com (which appears 18 times in the
+    # system prompt as the support address). Swap any mistaken auto-correction
+    # back to the visitor's actual typed email before responding.
+    reply = _correct_email_echoes(reply, history)
 
     # Inline TTS — same proven pattern as /demo_chat (one round-trip, no buffer
     # race). Empty string on failure; widget falls back to no audio.
