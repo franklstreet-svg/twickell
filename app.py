@@ -1744,12 +1744,23 @@ CRITICAL: Do NOT ask for business name, industry, email, or anything else before
 
 Step 4 — IMPRESS the visitor with what you just learned from their site
 On the turn AFTER you emit the marker, you'll see [SCRAPER_RESULT: ...] in your context. Your reply must be ONE warm conversational message that:
-  1. Names the SPECIFIC facts the scraper found — business name, industry, location, hours, services, anything distinctive. Be specific. Don't say "a nice business" — say "PurBlum, the deli on Main Street, open Tue-Sat 7-3, serving sandwiches and salads."
-  2. Tells them this is exactly what you'd have memorized for every visitor on their site / every caller, 24/7.
-  3. Asks ONE short question to keep moving: "What's a good email for your dashboard link?"
+  1. **If the scraper returned 'owner: <Name>' WITHOUT the "UNVERIFIED" tag, greet the OWNER BY NAME.** This is the killer wow moment of the demo. Example opening: "Hey Frank! Just took a look at scsplanroom.com..." Personalized greeting is the single most memorable thing she can do.
+  2. Names the SPECIFIC facts the scraper found — business name, industry, location, hours, services, anything distinctive. Be specific. Don't say "a nice business" — say "Builders Exchange / Contractors Source serving Reno and Carson City, with Contractor Classifieds, E-Nevada Builder, and Private Projects as your main services."
+  3. If the scraper returned 'other leadership' (e.g., a Production Manager), you may mention them by name when relevant — shows the visitor how much detail you picked up.
+  4. Tells them this is exactly what you'd have memorized for every visitor on their site / every caller, 24/7.
+  5. Asks ONE short question to keep moving: "What's a good email for your dashboard link?"
 
-Example after scanning purblum.com (a deli):
+Example after scanning scsplanroom.com (scraper returned high-confidence owner = Frank Hawbolt + Jana Higgins as Production Manager):
+  "Hey Frank! Just took a quick look at scsplanroom.com — looks like you run the Builders Exchange / Contractors Source serving Reno and Carson City. I see your main services are Contractor Classifieds, E-Nevada Builder, and Private Projects, and Jana Higgins is your Production Manager. This is exactly the kind of knowledge I'd have memorized for every visitor on your site and every caller on your phone, 24/7. What's a good email for your dashboard link?"
+
+Example after scanning purblum.com (no owner name on the site):
   "Just took a quick look at purblum.com — PurBlum, a deli with [hours/services/location from scrape]. This is exactly the kind of knowledge I'd have for every visitor on your site and every caller on your phone, 24/7. What's a good email for your dashboard link?"
+
+OWNER NAME CONFIDENCE — DO NOT GUESS:
+The [SCRAPER_RESULT] line will mark the owner one of three ways:
+  - "owner: <Name> (<title>)"  → HIGH confidence. State as fact and greet by first name.
+  - "likely owner (UNVERIFIED — confirm before stating as fact): <Name> (<title>)"  → DO NOT greet them as <Name>. Instead ask "Just to confirm, is the owner over there <Name>?" before personalizing.
+  - No owner line → don't make one up. Don't try to guess from the URL or from staff names in the snippet.
 
 NO INDUSTRY PACKS — DO NOT PROMISE THEM:
 There are no "Industry Packs", "Restaurant Pack", "Contractor Pack", "Medical Pack", or any other named module/pack. Those were retired. Orby learns the business in TWO ways only:
@@ -2496,18 +2507,22 @@ def _run_b2b_llm(history, system):
 def _scrape_summary(url: str) -> str:
     """Run the universal scraper if available; return a short summary
     Orby can use on the next LLM turn. Best-effort — never raise.
-    Limited to 3 pages and 15 sec hard-stop so the chat reply doesn't time out."""
+    Crawls up to 8 pages with a 28-second hard-stop. The page-budget is
+    deliberately generous so the owner-name extractor (which often only
+    matches on /about, /team, or /contact subpages) actually gets a
+    chance to find leadership info — Frank's bar is 'she finds the
+    owner's name' so the scrape can't bail at 3 pages."""
     import threading
     result_holder = {'r': None}
     def _do_scrape():
         try:
             from modules.business.scraper.site_scraper import SiteScraper
-            result_holder['r'] = SiteScraper(max_pages=3).scrape(url)
+            result_holder['r'] = SiteScraper(max_pages=8).scrape(url)
         except Exception as e:
             result_holder['r'] = {'ok': False, 'error': str(e)}
     t = threading.Thread(target=_do_scrape, daemon=True)
     t.start()
-    t.join(timeout=15)
+    t.join(timeout=28)
     if t.is_alive():
         return f"[SCRAPER_RESULT: site {url} took too long to scan — ask the visitor to describe their business briefly]"
     try:
@@ -2534,7 +2549,23 @@ def _scrape_summary(url: str) -> str:
             bits.append("business name: NOT FOUND on the site — ASK the visitor what their business is called; do NOT guess")
         if profile.get('description'): bits.append(f"description: {profile['description'][:160]}")
         if profile.get('business_type'): bits.append(f"type: {profile['business_type']}")
-        if profile.get('owner_name'): bits.append(f"owner: {profile['owner_name']}")
+        # Owner / leadership — include title + confidence so Orby uses it correctly.
+        # If high confidence, she may state it as fact. If anything else, she should confirm.
+        owner_name = profile.get('owner_name', '')
+        owner_title = profile.get('owner_title', 'owner')
+        owner_conf = profile.get('owner_confidence', '')
+        if owner_name:
+            if owner_conf == 'high':
+                bits.append(f"owner: {owner_name} ({owner_title})")
+            else:
+                bits.append(f"likely owner (UNVERIFIED — confirm before stating as fact): {owner_name} ({owner_title})")
+        # Other leadership found (production manager, ceo, etc.) — feed them all
+        # so Orby can mention them by name when relevant.
+        leadership = profile.get('leadership') or []
+        other_leaders = [p for p in leadership if isinstance(p, dict) and p.get('name') and p.get('name') != owner_name]
+        if other_leaders:
+            who = "; ".join(f"{p.get('name','?')} ({p.get('title','?')})" for p in other_leaders[:4])
+            bits.append(f"other leadership: {who}")
         # Contact is nested
         contact = profile.get('contact') or {}
         if contact.get('phones'): bits.append("phone: " + contact['phones'][0])
@@ -2544,12 +2575,19 @@ def _scrape_summary(url: str) -> str:
             svs = profile['services']
             if isinstance(svs, list) and svs:
                 bits.append("services: " + ", ".join(str(s) for s in svs[:8]))
+        if profile.get('service_area'):
+            sa = profile['service_area']
+            if isinstance(sa, list) and sa:
+                bits.append("service area: " + ", ".join(str(s) for s in sa[:5]))
         if profile.get('hours'):
             hrs = profile['hours']
             if isinstance(hrs, list) and hrs:
                 bits.append("hours: " + "; ".join(str(h) for h in hrs[:3]))
             elif hrs:
                 bits.append(f"hours: {hrs}")
+        # Page count so Orby can be honest about how thorough the scan was
+        if profile.get('_pages_scraped'):
+            bits.append(f"pages scanned: {profile['_pages_scraped']}")
         if not bits:
             return f"[SCRAPER_RESULT: site fetched ({url}) but couldn't extract clean business details — confirm manually with the visitor]"
         return f"[SCRAPER_RESULT for {url}: " + " | ".join(bits) + "]"
