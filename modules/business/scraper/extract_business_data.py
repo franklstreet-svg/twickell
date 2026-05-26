@@ -263,40 +263,76 @@ _OWNER_TITLES = (
     'managing partner', 'principal', 'proprietor', 'director',
 )
 
-# "Owner Jana Higgins" / "Owner: Jana Higgins" / "Founded by Jana Higgins"
+# Honorific prefix that's part of the captured name when present —
+# "Dr. Stephen Stornetta" should be captured whole, not snipped to "Stornetta".
+# Wrapped in (?i:...) so only the honorific word itself is case-insensitive
+# while the name letters that follow stay strictly case-sensitive — without
+# this, re.IGNORECASE on the whole pattern lets [A-Z] match lowercase letters
+# and trailing words like " in" get pulled into the name (Frank's first bug).
+_HONORIFIC = r'(?i:Dr\.?|Mr\.?|Mrs\.?|Ms\.?|Mx\.?|Prof\.?|Sir|Madam|Pastor|Rev\.?|Fr\.?|Sister|Brother)\s+'
+
+# A professional name capture: optional honorific + First (Middle)? Last (Last2)?
+# Case-sensitive on letter classes — IGNORECASE on the parent regex must NOT
+# leak in here, or we match "Senior Vice" / "Dr. X in" / "Dr. Y to" as names.
+_NAME_RE = (
+    r'(?:' + _HONORIFIC + r')?'                # Dr./Mr./etc. (optional)
+    r'[A-Z][a-z]+'                             # First name (strict cap)
+    r'(?:\s+[A-Z]\.?)?'                        # Optional middle initial
+    r'(?:\s+[A-Z][a-z]+){1,2}'                 # 1-2 last name parts (strict cap)
+)
+
+# Post-nominal credentials that can sit between a name and the title word.
+# "Dr. Stephen Stornetta, D.C. Owner" → captures "Dr. Stephen Stornetta" as
+# the name and skips past "D.C." to find "Owner".
+_CREDS = (
+    r'(?i:'
+    r'D\.?C\.?|M\.?D\.?|D\.?D\.?S\.?|D\.?M\.?D\.?|D\.?O\.?|D\.?V\.?M\.?|'
+    r'D\.?P\.?M\.?|D\.?P\.?T\.?|Ph\.?D\.?|J\.?D\.?|Esq\.?|R\.?N\.?|'
+    r'L\.?P\.?N\.?|N\.?P\.?|P\.?A\.?|L\.?M\.?T\.?|L\.?C\.?S\.?W\.?|'
+    r'L\.?M\.?F\.?T\.?|M\.?B\.?A\.?|C\.?P\.?A\.?|F\.?A\.?C\.?P\.?|F\.?A\.?C\.?S\.?|'
+    r'P\.?E\.?|P\.?T\.?|O\.?T\.?|D\.?D\.?'
+    r')(?:[,\s])'                              # creds terminator (comma or space)
+)
+
+# Inline case-insensitive group for title alternations — uses (?i:...) so we
+# don't need re.IGNORECASE on the parent (which would also relax the name
+# regex's case requirements and cause false positives).
+_TITLE_GROUP = r'(?i:' + '|'.join(re.escape(t) for t in _OWNER_TITLES) + r')'
+
+# "Owner Jana Higgins" / "Owner: Jana Higgins" / "Founded by Dr. Smith"
+# Note: no re.IGNORECASE flag — case-insensitivity is scoped to the title
+# word only, so the name capture stays strict-case.
 _OWNER_PATTERNS_TITLE_FIRST = re.compile(
-    r'\b(?:'
-    r'owner|co-?owner|founder|co-?founder|president|ceo|'
+    r'\b(?i:owner|co-?owner|founder|co-?founder|president|ceo|'
     r'chief\s+executive\s+officer|managing\s+director|managing\s+partner|'
-    r'principal|proprietor'
-    r')(?:\s+is|\s*:|\s*[-–]|\s+by)?\s+'
-    r'([A-Z][a-z]+(?:\s+[A-Z]\.?)?(?:\s+[A-Z][a-z]+){1,2})'  # First M. Last (1-3 words)
-    r'\b',
-    re.IGNORECASE,
+    r'principal|proprietor)'
+    r'(?:\s+is|\s*:|\s*[-–]|\s+by)?\s+'
+    r'(' + _NAME_RE + r')'
+    r'\b'
 )
 
-# "Jana Higgins, Owner" / "Jana Higgins — Founder" / "Jana Higgins, CEO"
+# "Jana Higgins, Owner" / "Dr. Stephen Stornetta, D.C. Owner" /
+# "Jana Higgins — Founder" / "Jane Smith, MD - President"
 _OWNER_PATTERNS_TITLE_AFTER = re.compile(
-    r'\b([A-Z][a-z]+(?:\s+[A-Z]\.?)?(?:\s+[A-Z][a-z]+){1,2})\b'
-    r'\s*[,\-–]\s*'
-    r'(' + '|'.join(re.escape(t) for t in _OWNER_TITLES) + r')\b',
-    re.IGNORECASE,
+    r'\b(' + _NAME_RE + r')\b'                 # name capture (strict-case)
+    r'\s*[,\-–]?\s*'                           # optional separator
+    r'(?:' + _CREDS + r'\s*)?'                 # optional credentials (D.C., MD, etc.)
+    r'[,\-–]?\s*'                              # optional second separator
+    r'(' + _TITLE_GROUP + r')\b'               # title (case-insensitive)
 )
 
-# "Meet our owner, Jane Smith" / "Our founder Jane Smith"
+# "Meet our owner, Jane Smith" / "Our founder Dr. Smith" / "Our president Mr. Wong"
 _OWNER_PATTERNS_MEET = re.compile(
-    r'\b(?:meet\s+our|our|the)\s+'
-    r'(?:' + '|'.join(re.escape(t) for t in _OWNER_TITLES) + r')'
+    r'\b(?i:meet\s+our|our|the)\s+'
+    r'(?:' + _TITLE_GROUP + r')'
     r'\s*[,:]?\s+'
-    r'([A-Z][a-z]+(?:\s+[A-Z]\.?)?(?:\s+[A-Z][a-z]+){1,2})\b',
-    re.IGNORECASE,
+    r'(' + _NAME_RE + r')\b'
 )
 
-# "Founded in 2010 by Jane Smith"
+# "Founded in 2010 by Jane Smith" / "founded by Dr. Martin Rutherford"
 _OWNER_PATTERNS_FOUNDED = re.compile(
-    r'\bfounded\s+(?:in\s+\d{4}\s+)?by\s+'
-    r'([A-Z][a-z]+(?:\s+[A-Z]\.?)?(?:\s+[A-Z][a-z]+){1,2})\b',
-    re.IGNORECASE,
+    r'\b(?i:founded)\s+(?:(?i:in)\s+\d{4}\s+)?(?i:by)\s+'
+    r'(' + _NAME_RE + r')\b'
 )
 
 _NAME_BLACKLIST = {
@@ -307,6 +343,14 @@ _NAME_BLACKLIST = {
     'main street', 'first name', 'last name', 'full name',
     'united states', 'new york', 'los angeles', 'san francisco',
     'east coast', 'west coast',
+    # Title qualifier words that combine with role titles in the source —
+    # without these, the TITLE_AFTER pattern grabs "Senior Vice" as a name
+    # when it sees "Senior Vice President" on the page.
+    'senior vice', 'executive vice', 'first vice', 'group vice',
+    'assistant vice', 'associate vice', 'general manager', 'general counsel',
+    'chief executive', 'chief operating', 'chief financial', 'chief technology',
+    'chief marketing', 'chief revenue', 'chief medical', 'chief legal',
+    'vice president', 'senior partner', 'managing partner',
 }
 
 
