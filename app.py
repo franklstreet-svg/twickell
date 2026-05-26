@@ -2138,6 +2138,26 @@ You can use emojis sparingly (📞 💬 ✓). Don't use markdown headers in your
 
 
 _SCRAPE_MARKER_RE = re.compile(r'##SCRAPE_WEBSITE##(.*?)##SCRAPE_WEBSITE##', re.DOTALL)
+
+# Detect a URL in the visitor's message — used by the deterministic scrape
+# fallback to trigger a scrape when the LLM forgot to emit the marker.
+# Permissive: matches http(s)://..., www.foo.com, foo.com, foo.co.uk, etc.
+_URL_IN_USER_MSG_RE = re.compile(
+    r'\b('
+    r'(?:https?://)?'                          # optional scheme
+    r'(?:www\.)?'                              # optional www
+    r'[a-z0-9][a-z0-9\-]*(?:\.[a-z0-9][a-z0-9\-]*)+'  # domain.tld(.tld)*
+    r'(?:/[^\s]*)?'                            # optional path
+    r')\b',
+    re.IGNORECASE,
+)
+
+# Strip hallucinated "[SCRAPER_RESULT: ...]" lines from the LLM's visible
+# reply. The system feeds real scraper results to the LLM as input (in the
+# history), but the LLM should NEVER produce them in its output. Weak models
+# (Llama-3.1-8B) sometimes echo the [SCRAPER_RESULT: ...] format back to
+# pretend they've already scraped, so we strip any such artifact.
+_FAKE_SCRAPER_RESULT_RE = re.compile(r'\[SCRAPER_RESULT[^\]]*\]\s*', re.IGNORECASE | re.DOTALL)
 _LEGAL_MARKER_RE  = re.compile(r'##GO_TO_LEGAL##(.*?)##GO_TO_LEGAL##', re.DOTALL)
 _ESCALATE_MARKER_RE = re.compile(r'##ESCALATE##(.*?)##ESCALATE##', re.DOTALL)
 _B2B_INTENT_DIR   = DATA_DIR / 'orby_b2b_intents'   # persistent — survives container restart
@@ -2639,7 +2659,41 @@ def business_demo_chat():
     redirect_url = ''
 
     # MARKER 1 — Website scrape request: extract URL, run scraper, re-call LLM with result.
+    # DETERMINISTIC FALLBACK: if the LLM forgot to emit ##SCRAPE_WEBSITE## but the
+    # visitor's message contains a URL AND we haven't scraped yet in this session,
+    # build a synthetic marker so the existing scrape path fires. Llama-3.1-8B
+    # routinely hallucinates a fake [SCRAPER_RESULT: ...] line inline instead of
+    # emitting the real marker — this fallback catches that.
     scrape_match = _SCRAPE_MARKER_RE.search(reply)
+    if not scrape_match:
+        url_match = _URL_IN_USER_MSG_RE.search(user_message)
+        already_scraped = any(
+            isinstance(turn, dict)
+            and turn.get('role') == 'user'
+            and isinstance(turn.get('content'), str)
+            and '[SCRAPER_RESULT' in turn['content']
+            for turn in history[:-1]  # exclude the current user turn
+        )
+        # Skip if the URL "is" the entire chat-domain (e.g. visitor typed
+        # "twickell.com" / "scsplanroom.com" but only to ask "what is X" —
+        # we'll let the LLM clarify). Heuristic: scrape only if no scrape
+        # has happened yet AND the message looks like a URL answer
+        # (length under 120 chars and the URL covers most of the text).
+        looks_like_url_answer = (
+            url_match
+            and len(user_message) < 120
+            and len(url_match.group(0)) >= len(user_message) * 0.5
+        )
+        if looks_like_url_answer and not already_scraped:
+            fallback_url = url_match.group(0).strip()
+            if not fallback_url.startswith(('http://', 'https://')):
+                fallback_url = 'https://' + fallback_url
+            log.info('Scrape fallback fired (LLM did not emit marker): %s', fallback_url)
+            # Synthesize a scrape_match-like object via a fake marker string.
+            class _FakeMatch:
+                def group(self_, _n): return json.dumps({'url': fallback_url})
+            scrape_match = _FakeMatch()
+
     if scrape_match:
         try:
             payload = json.loads(scrape_match.group(1).strip())
@@ -2756,6 +2810,11 @@ def business_demo_chat():
     # Catch partial / malformed marker fragments too
     reply = re.sub(r'##(?:SCRAPE_WEBSITE|GO_TO_LEGAL)##\s*\{[^}]*\}?\s*(?:##(?:SCRAPE_WEBSITE|GO_TO_LEGAL)##)?', '', reply, flags=re.DOTALL)
     reply = re.sub(r'##[A-Z_]+##', '', reply)
+    # Strip hallucinated [SCRAPER_RESULT: ...] blocks — the LLM should NEVER
+    # produce these (they're system input, not LLM output). When Llama-8B
+    # forgets the real marker and instead fabricates a scraper result inline,
+    # this guard catches it before the visitor sees made-up data.
+    reply = _FAKE_SCRAPER_RESULT_RE.sub('', reply)
     reply = reply.strip()
     if not reply:
         reply = "Got it — what else would you like to know?"
